@@ -32,7 +32,7 @@
 #
 %NCDF_HOME           $NETCDF_DIR
 %HDF5_HOME           $HDF5_DIR
-%XIOS_HOME           /work/n01/shared/acc/xios-trunk
+%XIOS_HOME           /work/n01/shared/nemo/xios-trunk
 #OASIS_HOME          
 
 %NCDF_INC            -I%NCDF_HOME/include -I%HDF5_HOME/include
@@ -44,8 +44,8 @@
 
 %CPP	             cpp -Dkey_nosignedzero
 %FC                  ftn
-%FCFLAGS             -em -s integer32 -s real64 -O1 -hflex_mp=intolerant -N1023
-%FFLAGS              -em -s integer32 -s real64 -O1 -hflex_mp=intolerant -N1023
+%FCFLAGS             -em -s integer32 -s real64 -O0 -hflex_mp=intolerant -N1023
+%FFLAGS              -em -s integer32 -s real64 -O0 -hflex_mp=intolerant -N1023
 %LD                  CC -Wl,"--allow-multiple-definition"
 %FPPFLAGS            -P -traditional
 %LDFLAGS             -lmpifort_cray
@@ -57,6 +57,6 @@
 #USER_INC            %XIOS_INC %OASIS_INC %NCDF_INC
 #USER_LIB            %XIOS_LIB %OASIS_LIB %NCDF_LIB
 
-%CC                  cc
-%CFLAGS              -O0
+%CC                  cc -Wl,"--allow-multiple-definition"
+%CFLAGS              -O0 -Wl,"--allow-multiple-definition"
 bld::tool::fc_modsearch -J

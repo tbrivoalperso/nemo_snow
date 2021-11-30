@@ -171,7 +171,8 @@ clean_config() {
 
 # define validation dir
 set_valid_dir () {
-    REVISION_NB=`${SVN_CMD} info ${SETTE_DIR}/.. | grep "Last Changed Rev" | awk '{print $NF}'`
+    #REVISION_NB=`${SVN_CMD} info ${SETTE_DIR}/.. | grep "Last Changed Rev" | awk '{print $NF}'`
+    REVISION_NB=`git rev-list --abbrev-commit origin`
     if [ ${#REVISION_NB} -eq 0 ]
     then
         echo "some problems with ${SVN_CMD} info command"
@@ -182,7 +183,7 @@ set_valid_dir () {
     else
     echo "value of revision number of NEMOGCM: ${REVISION_NB}"
     fi
-    [ `${SVN_CMD} status -q ${SETTE_DIR}/../{cfgs,tests,src} | wc -l` -ge 1 ] && REVISION_NB=${REVISION_NB}+
+    #[ `${SVN_CMD} status -q ${SETTE_DIR}/../{cfgs,tests,src} | wc -l` -ge 1 ] && REVISION_NB=${REVISION_NB}+
     # remove last _ST followed by zero or more alphanumeric characters
     NEW_CONF1=$( echo $NEW_CONF | sed -e 's/_ST\([0-9a-zA-Z]*\)$//' )
     export NEMO_VALID=${NEMO_VALIDATION_DIR}/${CMP_NAM}/${REVISION_NB}/${NEW_CONF1}/${TEST_NAME}

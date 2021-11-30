@@ -541,11 +541,13 @@ function identictest(){
 # Show current revision tag and branch name
 #
 echo ""
-lastchange=`${SVN_CMD} info ${MAIN_DIR} | grep 'Last Changed Rev' | awk '{print $NF}'`
-revision=`${SVN_CMD} info ${MAIN_DIR} | grep 'Revision' | awk '{print $NF}'`
+#lastchange=`${SVN_CMD} info ${MAIN_DIR} | grep 'Last Changed Rev' | awk '{print $NF}'`
+lastchange=`git rev-list --abbrev-commit origin`
+#revision=`${SVN_CMD} info ${MAIN_DIR} | grep 'Revision' | awk '{print $NF}'`
+revision=`git rev-list --abbrev-commit origin`
 branchname=`${SVN_CMD} info ${MAIN_DIR} | grep ^URL | awk -F ipsl/forge/projets/nemo/svn/ '{print $NF}'`
-echo "Current code is : $branchname @ r$revision  ( last change @ r$lastchange )"
-[ `${SVN_CMD} status -q ${MAIN_DIR}/{cfgs,tests,src} | wc -l` -ge 1 ] && lastchange=${lastchange}+
+echo "Current code is : $branchname @ $revision  ( last change @ $lastchange )"
+#[ `${SVN_CMD} status -q ${MAIN_DIR}/{cfgs,tests,src} | wc -l` -ge 1 ] && lastchange=${lastchange}+
 
 # by default use the current lastchanged revision
 lastchange=${rev:-$lastchange}
@@ -553,7 +555,7 @@ lastchange=${rev:-$lastchange}
 echo ""
 echo "SETTE validation report generated for : "
 echo ""
-echo "       $branchname @ r$lastchange (last changed revision)"
+echo "       $branchname @ $lastchange (last changed revision)"
 echo ""
 echo "       on $COMPILER arch file"
 echo ""

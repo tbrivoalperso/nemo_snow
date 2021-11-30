@@ -11,7 +11,7 @@
   . ./param.cfg
   get_lite=0
   if [ $# -gt 0 ]; then
-    while getopts l option ; do 
+    while getopts lh option ; do 
        case $option in
           l) get_lite=1;;
           h | *) echo ''
