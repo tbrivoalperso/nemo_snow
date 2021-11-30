@@ -172,7 +172,7 @@ clean_config() {
 # define validation dir
 set_valid_dir () {
     #REVISION_NB=`${SVN_CMD} info ${SETTE_DIR}/.. | grep "Last Changed Rev" | awk '{print $NF}'`
-    REVISION_NB=`git rev-list --abbrev-commit origin`
+    REVISION_NB=`git rev-list --abbrev-commit origin | tail -1l`
     if [ ${#REVISION_NB} -eq 0 ]
     then
         echo "some problems with ${SVN_CMD} info command"
