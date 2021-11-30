@@ -1,0 +1,120 @@
+\documentclass[../main/TOP_manual]{subfiles}
+
+\begin{document}
+
+\chapter{ Model Setup}
+
+The usage of TOP is activated i) by including in the configuration definition the component TOP and ii) by adding the macro key\_top in the configuration CPP file (see for more details “Learn more about the model”).
+As an example, the user can refer to already available configurations in the code, ORCA2\_ICE\_PISCES being the NEMO biogeochemical demonstrator and GYRE\_BFM to see the required configuration elements to couple with an external biogeochemical model (see also Section 4).\\
+Note that, since version 4.0, TOP interface core functionalities are activated by means of logical keys and all submodules preprocessing macros from previous versions were removed.\\
+
+Below is the list of preprocessing keys that apply to the TOP interface (beside key\_top):
+\begin{itemize}
+	\item key\_xios use XIOS I/O
+	\item key\_agrif enables AGRIF coupling
+	\item key\_trdtrc and key\_trdmxl\_trc trend computation for tracers
+\end{itemize}
+
+There are only two entry points in the NEMOGCM model for passive tracers :
+\begin{itemize}
+	\item initialization (trcini) : general initialization of global variables and parameters of BGCM
+	\item time-stepping (trcstp) : time-evolution of SMS first, then time evolution of tracers by transport
+\end{itemize}
+
+\section{ Setting up a passive tracer configuration}
+%------------------------------------------namtrc_int----------------------------------------------------
+\nlst{namtrc}
+%-------------------------------------------------------------------------------------------------------------
+
+As a reminder, the revisited structure of TOP interface now counts for five different modules handled in namelist\_top :
+
+\begin{itemize}
+        \item \textbf{PISCES}, default BGC model
+        \item \textbf{MY\_TRC}, template for creation of new modules couplings (maybe run a single passive tracer)
+        \item \textbf{CFC}, inert tracers dynamics (CFC$_{11}$,CFC$_{12}$,SF$_{6}$) updated based on OMIP-BGC guidelines (Orr et al, 2016)
+        \item \textbf{C14}, radiocarbon passive tracer
+        \item \textbf{AGE}, water age tracking
+\end{itemize}
+
+For inert, C14, and Age tracers, all variables settings (\textit{sn\_tracer} definitions) are hard-coded in \textit{trc\_nam\_*} routines. For instance, for Age tracer:
+%------------------------------------------namtrc_int----------------------------------------------------
+\nlst{nam_trc_age}
+%---------------------------------------------------------------------------------------------------------
+
+The modular approach was also implemented in the definition of the total number of passive tracers (jptra) which is specified by the user in  \textit{namtrc}
+
+\section{ TOP Tracer Initialization}
+
+Two main types of data structure are used within TOP interface to initialize tracer properties and to provide related initial and boundary conditions. 
+In addition to providing name and metadata for tracers, the use of initial and boundary conditions is also defined here (sn\_tracer).
+The data structure is internally initialized by the code with dummy names and all initialization/forcing logical fields are set to \textit{false} .
+Below are listed some features/options of the TOP interface accessible through the \textit{namelist\_top\_ref} and modifiable by means of \textit{namelist\_top\_cfg} (as for NEMO physical ones).
+
+There are three options to initialize TOP tracers in the \textit{namelist\_top } file: (1) initialization to hard-coded constant values when \textit{ln\_trcdta} at \textit{false}, (2) initialization from files when \textit{ln\_trcdta} at \textit{true}, and (3) initialisation from restart files by setting \textit{ln\_rsttr} to \textit{true} in \textit{namelist}.
+
+In the following, an example of the full structure definition is given for four tracers (DIC, Fe, NO$_{3}$, PHY) with initial conditions and different surface boundary and coastal forcings for DIC, Fe, and NO$_{3}$: 
+
+%------------------------------------------namtrc_int----------------------------------------------------
+\nlst{namtrc_cfg}
+%---------------------------------------------------------------------------------------------------------
+
+You have to activate which tracers (\textit{sn\_tracer}) you want to initialize by setting them to \texttt{true} in the  column. 
+
+\nlst{namtrc_dta_cfg}
+
+In \textit{namtrc\_dta}, you prescribe from which files the tracer are initialized (\textit{sn\_trcdta}). 
+A multiplicative factor can also be set for each tracer (\textit{rn\_trfac}). 
+
+
+\section{ TOP Boundaries Conditions}
+
+\subsection{Surface and lateral boundaries}
+
+Lateral and surface boundary conditions for passive tracers are prescribed in \textit{namtrc\_bc} as well as whether temporal interpolation of these files is enabled. Here we show the cases of Fe and NO$_{3}$ from dust and rivers with different output frequencies.
+ 
+%------------------------------------------namtrc_bc----------------------------------------------------
+\nlst{namtrc_bc_cfg}
+%---------------------------------------------------------------------------------------------------------
+
+\subsection{Antartic Ice Sheet tracer supply}
+
+As a reminder, the supply of passive tracers from the AIS is currently implemented only for dissolved Fe. The activation of this Fe source is done by setting \textit{ln\_trcais} to \textit{true} and by adding the Fe tracer (\textit{sn\_tracer(2) = .true.}) in the 'ais' column in \textit{\&namtrc} (see section 2.2). \\
+
+As the external source of Fe from the AIS is represented by associating  a sedimentary Fe content (with a solubility fraction) to the freshwater fluxes of icebergs and ice shelves, these fluxes have to be activated in \textit{namelist\_cfg}. The reading of the freshwater flux file from ice shelves is activated in \textit{namisf} with the namelist parameter \textit{ln\_isf} set to \textit{true}.
+
+You have to choose between two options depending whether the cavities under ice shelves are open or not in your grid configuration:
+\begin{itemize}
+	\item ln\_isfcav\_mlt = .false. (resolved cavities)
+	\item ln\_isfpar\_mlt = .true. (parameterized distribution for unopened cavities)
+\end{itemize}
+
+%------------------------------------------namisf----------------------------------------------------
+\nlst{namisf_cfg_eORCA1}
+%-----------------------------------------------------------------------------------------------------
+
+Runoff from icebergs is activated by setting \textit{ln\_rnf\_icb} to \textit{true} in the \textit{\&namsbc\_rnf} section of \textit{namelist\_cfg}.
+
+%------------------------------------------namsbc_rnf--------------------------------------------------
+\nlst{namsbc_rnf_cfg_eORCA1}
+%---------------------------------------------------------------------------------------------------------
+
+The freshwater flux from ice shelves and icebergs is based on observations and modeled climatologies and is available for eORCA1 and eORCA025 grids :
+\begin{itemize}
+	\item runoff-icb\_DaiTrenberth\_Depoorter\_eORCA1\_JD.nc
+	\item runoff-icb\_DaiTrenberth\_Depoorter\_eORCA025\_JD.nc 
+\end{itemize}
+
+%------------------------------------------namtrc_ais----------------------------------------------------
+\nlst{namtrc_ais_cfg}
+%---------------------------------------------------------------------------------------------------------
+
+Two options for tracer concentrations in iceberg and ice shelf can be set with the namelist parameter \textit{nn\_ais\_tr}:
+\begin{itemize}
+	\item 0 : null concentrations corresponding to dilution of BGC tracers due to freshwater fluxes from icebergs and ice shelves
+	\item 1 : prescribed concentrations set with the \textit{rn\_trafac} factor
+\end{itemize}
+
+The depth until which Fe from melting iceberg is delivered can be set with the namelist parameter \textit{rn\_icbdep}. The value of 120 m is the average underwater depth of the different iceberg size classes modeled by the NEMO iceberg module, which was used to produce the freshwater flux climatology of icebergs.
+
+
+\end{document}
