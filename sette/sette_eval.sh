@@ -150,7 +150,7 @@ function runcmpres(){
 ##                                                                                     ##
 #########################################################################################
 #
-# LOAD param variable (COMPILER, NEMO_VALIDATION_DIR, SVN_CMD)
+# LOAD param variable (COMPILER, NEMO_VALIDATION_DIR )
   SETTE_DIR=$(cd $(dirname "$0"); pwd)
   MAIN_DIR=$(dirname $SETTE_DIR)
   quiet=0
@@ -235,12 +235,15 @@ function runcmpres(){
 #
 if [ ${quiet} -eq 0 ] ; then echo "" ; fi
 localchanges=`git status --short -uno | wc -l`
-revision=`git rev-list --abbrev-commit origin | tail -1l`
-branchname=`${SVN_CMD} info ${MAIN_DIR} | grep ^URL | awk -F ipsl/forge/projets/nemo/svn/ '{print $NF}'`
+revision=`git rev-list --abbrev-commit origin | head -1l`
+rev_date0=`git log -1 | grep Date | sed -e 's/.*Date: *//' -e's/ +.*$//'`
+rev_date=`${DATE_CONV}"${rev_date0}" +"%y%j"`
+revision=${rev_date}_${revision}
+branchname=`git branch --show-current`
 if [ ${quiet} -eq 0 ] ; then 
  if [ $localchanges > 0 ] ; then
   echo "Current code is : $branchname @ $revision  ( with local changes )"
-  lastchange=${revision}_++
+  lastchange=${revision}+
  else
   echo "Current code is : $branchname @ $revision"
   lastchange=$revision

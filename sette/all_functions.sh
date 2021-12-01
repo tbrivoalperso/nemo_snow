@@ -171,19 +171,24 @@ clean_config() {
 
 # define validation dir
 set_valid_dir () {
-    #REVISION_NB=`${SVN_CMD} info ${SETTE_DIR}/.. | grep "Last Changed Rev" | awk '{print $NF}'`
-    REVISION_NB=`git rev-list --abbrev-commit origin | tail -1l`
+    REVISION_NB=`git rev-list --abbrev-commit origin | head -1l`
+    REV_DATE0="`git log -1 | grep Date | sed -e 's/.*Date: *//' -e's/ +.*$//'`"
+    REV_DATE=`${DATE_CONV}"${REV_DATE0}" +"%y%j"`
+    REVISION_NB=${REV_DATE}_${REVISION_NB}
     if [ ${#REVISION_NB} -eq 0 ]
     then
-        echo "some problems with ${SVN_CMD} info command"
-        echo "some problems with ${SVN_CMD} info command" >> ${SETTE_DIR}/output.sette
+        echo "some problems with git rev-list command"
+        echo "some problems with git rev-list command" >> ${SETTE_DIR}/output.sette
         REVISION_NB=`date +%Y%m%d`
         echo "put in ${REVISION_NB} date"
         echo "put in ${REVISION_NB} date" >> ${SETTE_DIR}/output.sette
     else
     echo "value of revision number of NEMOGCM: ${REVISION_NB}"
     fi
-    #[ `${SVN_CMD} status -q ${SETTE_DIR}/../{cfgs,tests,src} | wc -l` -ge 1 ] && REVISION_NB=${REVISION_NB}+
+    localchanges=`git status --short -uno | wc -l`
+    if [ $localchanges > 0 ] ; then
+     REVISION_NB=${REVISION_NB}+
+    fi
     # remove last _ST followed by zero or more alphanumeric characters
     NEW_CONF1=$( echo $NEW_CONF | sed -e 's/_ST\([0-9a-zA-Z]*\)$//' )
     export NEMO_VALID=${NEMO_VALIDATION_DIR}/${CMP_NAM}/${REVISION_NB}/${NEW_CONF1}/${TEST_NAME}
