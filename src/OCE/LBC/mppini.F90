@@ -948,7 +948,7 @@ CONTAINS
       !
       INTEGER :: idiv, iimax, ijmax, iarea
       INTEGER :: inbi, inbj, inx, iny, inry, isty
-      INTEGER :: ji, jn
+      INTEGER :: ji, jj, jn
       INTEGER, ALLOCATABLE, DIMENSION(:,:) ::   inboce           ! number oce oce pint in each mpi subdomain
       INTEGER, ALLOCATABLE, DIMENSION(:  ) ::   inboce_1d
       INTEGER, ALLOCATABLE, DIMENSION(:,:) ::   iimppt, ijpi
@@ -1037,6 +1037,15 @@ CONTAINS
       inboce = RESHAPE(inboce_1d, (/inbi, inbj/))
       ldIsOce(:,:) = inboce(:,:) /= 0
       DEALLOCATE(inboce, inboce_1d)
+      !
+#if defined key_xios
+      ! Only when using XIOS: XIOS does a domain decomposition only in bands (for IO performances).
+      !                       XIOS is crashing if one of these bands contains only land-domains which have been suppressed.
+      ! -> solution (before a fix of xios): force to keep at least one land-domain by band of mpi domains
+      DO jj = 1, inbj
+         IF( COUNT( ldIsOce(:,jj) ) == 0 )   ldIsOce(1,jj) = .TRUE.   ! for to keep 1st MPI domain in the row of domains
+      END DO
+#endif      
       !
    END SUBROUTINE mpp_is_ocean
 
