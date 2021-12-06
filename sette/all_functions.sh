@@ -186,7 +186,7 @@ set_valid_dir () {
     echo "value of revision number of NEMOGCM: ${REVISION_NB}"
     fi
     localchanges=`git status --short -uno | wc -l`
-    if [ $localchanges > 0 ] ; then
+    if [[ $localchanges > 0 ]] ; then
      REVISION_NB=${REVISION_NB}+
     fi
     # remove last _ST followed by zero or more alphanumeric characters
