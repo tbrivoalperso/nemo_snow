@@ -36,11 +36,11 @@ export USER_INPUT='yes'        # Default: yes => request user input on decisions
                                #                 3. regarding creation of directories
 #
 # Check that git branch is usable
-git branch --show-current >&/dev/null
+git branch --show-current >& /dev/null
 if [[ $? == 0 ]] ; then
   # subdirectory below NEMO_VALIDATION_DIR defaults to branchname
-  export SETTE_SUB_VAL="$(git branch --show-current)" 
-  export SETTE_THIS_BRANCH=$SETTE_SUB_VAL
+  export SETTE_SUB_VAL="$(git branch --show-current)"
+  export SETTE_THIS_BRANCH=${SETTE_SUB_VAL}
 else
   # subdirectory below NEMO_VALIDATION_DIR defaults to "MAIN"
   export SETTE_SUB_VAL="MAIN"
