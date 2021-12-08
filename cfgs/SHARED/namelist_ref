@@ -330,6 +330,7 @@
    rn_ldyn_max   =  1.5       ! dynamics nudging magnitude above  the ABL [hour] (~1 rn_Dt)
    rn_ltra_min   =  4.5       ! tracers  nudging magnitude inside the ABL [hour] (~3 rn_Dt)
    rn_ltra_max   =  1.5       ! tracers  nudging magnitude above  the ABL [hour] (~1 rn_Dt)
+   rn_vfac       =  1.        ! multiplicative factor for ocean/ice velocity
    nn_amxl       =  0         ! mixing length: = 0 Deardorff 80 length-scale
                               !                = 1 length-scale based on the distance to the PBL height
                               !                = 2 Bougeault & Lacarrere 89 length-scale
