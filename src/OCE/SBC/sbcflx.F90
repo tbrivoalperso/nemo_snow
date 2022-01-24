@@ -14,6 +14,7 @@ MODULE sbcflx
    USE oce             ! ocean dynamics and tracers
    USE dom_oce         ! ocean space and time domain
    USE sbc_oce         ! surface boundary condition: ocean fields
+   USE trc_oce         ! share SMS/Ocean variables
    USE sbcdcy          ! surface boundary condition: diurnal cycle on qsr
    USE phycst          ! physical constants
    !
@@ -134,6 +135,17 @@ CONTAINS
                qsr(ji,jj) =     sf(jp_qsr)%fnow(ji,jj,1) * tmask(ji,jj,1)
             END_2D
          ENDIF
+#if defined key_top
+      IF( ln_trcdc2dm )  THEN      !  diurnal cycle in TOP
+         IF( ln_dm2dc )  THEN
+            DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+               qsr_mean(ji,jj) = sf(jp_qsr)%fnow(ji,jj,1)  * tmask(ji,jj,1)
+            END_2D
+         ELSE
+            ncpl_qsr_freq = sf(jp_qsr)%freqh * 3600 !  qsr_mean will be computed in TOP
+         ENDIF
+      ENDIF
+#endif
          DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )                  ! set the ocean fluxes from read fields
             utau(ji,jj) =   sf(jp_utau)%fnow(ji,jj,1)                              * umask(ji,jj,1)
             vtau(ji,jj) =   sf(jp_vtau)%fnow(ji,jj,1)                              * vmask(ji,jj,1)
