@@ -453,7 +453,7 @@ CONTAINS
 
             ! stress at F points (zkt/=0 if landfast)
             zs12(ji,jj)= ( zs12(ji,jj) * zalph2 + zp_delf * ( zds(ji,jj) * z1_ecc2 * (1._wp + zkt) ) * 0.5_wp ) &
-               &         * z1_alph2 * zmsk(ji,jj) ! zmsk is for reducing cpu
+               &         * z1_alph2
 
          END_2D
 
