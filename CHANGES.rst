@@ -17,9 +17,9 @@ Improvements and new features of 4.2 release
 
 - New vertical scale factors management
 
- - New HPG schemes, Runge Kutta (preparatory stages includes time-pointer changes, DO LOOP macros
+- New HPG schemes, Runge Kutta (preparatory stages includes time-pointer changes, DO LOOP macros
 
- - Full Shallow Water equations setup
+- Full Shallow Water equations setup
 
 ## AIR SEA INTERACTIONS
 
