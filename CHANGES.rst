@@ -4,10 +4,11 @@ Changes
 
 .. todo::
 
-   List the main additions of the new 4.2 release - February 2022
+  
+# List the main additions of the new 4.2 release - February 2022
 
-   This document lsts the improvements and new features of the 4.2 release compared to the previous 4.0.
-   If you are willing to port an existing configuration in order to start using this new release, it is sugggested to also look at the 4.2 Migration Guide (link to add).
+This document lsts the improvements and new features of the 4.2 release compared to the previous 4.0.
+If you are willing to port an existing configuration in order to start using this new release, it is sugggested to also look at the 4.2 Migration Guide (link to add).
 
 Improvements and new features of 4.2 release
 
