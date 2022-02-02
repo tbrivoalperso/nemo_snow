@@ -359,6 +359,8 @@ CONTAINS
 #endif
       ENDIF
       !
+      ncpl_qsr_freq = sf_dyn(jf_qsr)%freqh  * 3600   !  Get qsr frequency ( needed if diurnal cycle in TOP
+      !
       CALL dta_dyn_rnf_init( Kmm )
       !
       CALL dta_dyn( nit000, Kbb, Kmm, Kaa )
