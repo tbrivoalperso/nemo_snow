@@ -55,16 +55,17 @@ Asking questions, echange information
 - [Register once for all and receive by mail the NEMO newsletter ](https://listes.ipsl.fr/sympa/subscribe/nemo-newsletter) : recommended for all users to receive the major announcements from the project (new releases, open meetings and main informations). Low traffic: about ten messages a year.
 
 
+Contributing to NEMO visibility: projects and publications
+==========================================================
+Please help us justifying the NEMO development efforts by
+-  Adding your publications using NEMO and its outputs here: https://www.nemo-ocean.eu/bibliography/publications/add
+-  Describing your project using NEMO here: https://www.nemo-ocean.eu/projects/add
 
-
-Since 2014 the project has a `Special Issue`_ in the open-access journal
-Geoscientific Model Development (GMD) from the European Geosciences Union (EGU_).
+NEMO also has a `Special Issue`_ in the open-access journal
+Geoscientific Model Development (GMD) from the European Geosciences Union (https://gmd.copernicus.org/articles/special_issue40.html).
 The main scope is to collect relevant manuscripts covering various topics and
 to provide a single portal to assess the model potential and evolution.
 
-Used by a wide audience,
-numerous :website:`associated projects<projects>` have been carried out and
-extensive :website:`bibliography<bibliography/publications>` published.
 
 More on NEMO's features
 =======================
