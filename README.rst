@@ -12,7 +12,6 @@ Welcome to NEMO home page!
 NEMO_ for *Nucleus for European Modelling of the Ocean* is a state-of-the-art modelling framework for
 research activities and forecasting services in ocean and climate sciences,
 developed in a sustainable way by the NEMO European consortium since 2008.
-NEMO has 3 major components:
 
 This page intends to help to get started using NEMO platform and to orientate users to the different levels of information. 
 It starts here with NEMO release 4.2.0. [Former web platform forge](https://forge.ipsl.jussieu.fr/nemo) (SVN+Trac) contains previous documentation and releases since the beginning of the project up to of NEMO 4.0.
@@ -20,7 +19,7 @@ If you are already using NEMO with a previous release, refer to the Migration Gu
 
 Getting started
 ===============
-Getting hands on NEMO: first steps are described in detail in the "How to" NEMO users's guide
+Getting hands on NEMO: first steps are described in detail in the "How to" NEMO users's guide.
 Download, build the environment create the executable, and make a first run are described here: https://sites.nemo-ocean.io/user-guide/ 
 
 A summary on  how to get code dependencies, compile and execute NEMO is also available here
@@ -43,7 +42,7 @@ are available from zenodo
  |NEMO-MBG|   |https://zenodo.org/record/1471700|
 ============ ================== 
 
-These reference manuals are the publications that should be cited in your own publications.
+These reference manuals are the publications that should be cited in your own publications. Please visit [How to cite?](https://www.nemo-ocean.eu/bibliography/how-to-cite/) for details.
 
 New features of 4.2.0 release are described here (:file:`./CHANGES.md`)
 
