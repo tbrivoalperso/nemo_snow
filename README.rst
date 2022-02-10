@@ -31,18 +31,21 @@ Project documentation
 =====================
 
 Reference manuals fully describing NEMO  for the three main component
-- |OCE| models the ocean {thermo}dynamics and solves the primitive equations (:file:`./src/OCE`)
-- |ICE| simulates sea-ice {thermo}dynamics, brine inclusions and  subgrid-scale thickness variations (:file:`./src/ICE`)
-- |MBG| models the {on,off}line oceanic tracers transport and biogeochemical processes  (:file:`./src/TOP`)
+
+* |OCE| models the ocean {thermo}dynamics and solves the primitive equations (:file:`./src/OCE`)
+
+* |ICE| simulates sea-ice {thermo}dynamics, brine inclusions and  subgrid-scale thickness variations (:file:`./src/ICE`)
+
+* |MBG| models the {on,off}line oceanic tracers transport and biogeochemical processes  (:file:`./src/TOP`)
 are available from zenodo
 
-============ ================== 
- Component    Reference Manual   
-============ ================== 
+============ ==============================================   =============================================== 
+ Component    Reference Manual (from zenondo, DOI to quote)   Reference manual (pdf on line version on gitlab)  
+============ ==============================================   ===============================================  
  |NEMO-OCE|   |https://zenodo.org/record/1464816|    
  |NEMO-ICE|   |https://zenodo.org/record/1471689|
  |NEMO-MBG|   |https://zenodo.org/record/1471700|
-============ ================== 
+============ ==============================================   ===============================================  
 
 These reference manuals are the publications that should be cited in your own publications. Please visit [How to cite?](https://www.nemo-ocean.eu/bibliography/how-to-cite/) for details.
 
