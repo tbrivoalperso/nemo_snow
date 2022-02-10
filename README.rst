@@ -16,6 +16,7 @@ NEMO has 3 major components:
 
 This page intends to help to get started using NEMO platform and to orientate users to the different levels of information. 
 It starts here with NEMO release 4.2.0. [Former web platform forge](https://forge.ipsl.jussieu.fr/nemo) (SVN+Trac) contains previous documentation and releases since the beginning of the project up to of NEMO 4.0.
+If you are already using NEMO with a previous release, refer to the Migration Guide to help making the move to 4.2.0.
 
 Getting started
 ===============
@@ -29,21 +30,18 @@ Project documentation
 =====================
 
 Reference manuals fully describing NEMO  for the three main component
-- |OCE| models the ocean {thermo}dynamics and solves the primitive equations
-  (:file:`./src/OCE`)
-- |ICE| simulates sea-ice {thermo}dynamics, brine inclusions and
-  subgrid-scale thickness variations (:file:`./src/ICE`)
-- |MBG| models the {on,off}line oceanic tracers transport and biogeochemical processes
-  (:file:`./src/TOP`)
+- |OCE| models the ocean {thermo}dynamics and solves the primitive equations (:file:`./src/OCE`)
+- |ICE| simulates sea-ice {thermo}dynamics, brine inclusions and  subgrid-scale thickness variations (:file:`./src/ICE`)
+- |MBG| models the {on,off}line oceanic tracers transport and biogeochemical processes  (:file:`./src/TOP`)
 are available from zenodo
 
-============ ================== ===================
- Component    Reference Manual   Quick Start Guide
-============ ================== ===================
- |NEMO-OCE|   |DOI man OCE|_     |DOI qsg|
- |NEMO-ICE|   |DOI man ICE|
- |NEMO-MBG|   |DOI man MBG|
-============ ================== ===================
+============ ================== 
+ Component    Reference Manual   
+============ ================== 
+ |NEMO-OCE|   |https://zenodo.org/record/3878122|    
+ |NEMO-ICE|   |https://zenodo.org/record/3878122|
+ |NEMO-MBG|   |https://zenodo.org/record/3878122|
+============ ================== 
 
 These reference manuals are the publications that should be cited in your own publications.
 
