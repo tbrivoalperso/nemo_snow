@@ -20,7 +20,9 @@ If you are already using NEMO with a previous release, refer to the Migration Gu
 Getting started
 ===============
 Getting hands on NEMO: first steps are described in detail in the "How to" NEMO users's guide.
-Download, build the environment create the executable, and make a first run are described here: https://sites.nemo-ocean.io/user-guide/ 
+Download, build the environment create the executable, and make a first run are described here: https://sites.nemo-ocean.io/user-guide/. 
+This users guide covers in detail what is available from gitlab and supported by NEMO System Team.
+Aside from this web platform, the tests cases are also available from https://github.com/NEMO-ocean/NEMO-examples. These tests cases can be useful for studentes, outreach, exploring some specific aspects of NEMO with light configurations... It is also set up in order to gather the tests cases you may have developped and want to share with the community. Feel free to contribute! 
 
 A summary on  how to get code dependencies, compile and execute NEMO is also available here
 (:file:`./INSTALL.rst`).
