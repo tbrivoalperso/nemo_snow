@@ -38,9 +38,9 @@ are available from zenodo
 ============ ================== 
  Component    Reference Manual   
 ============ ================== 
- |NEMO-OCE|   |https://zenodo.org/record/3878122|    
- |NEMO-ICE|   |https://zenodo.org/record/3878122|
- |NEMO-MBG|   |https://zenodo.org/record/3878122|
+ |NEMO-OCE|   |https://zenodo.org/record/1464816|    
+ |NEMO-ICE|   |https://zenodo.org/record/1471689|
+ |NEMO-MBG|   |https://zenodo.org/record/1471700|
 ============ ================== 
 
 These reference manuals are the publications that should be cited in your own publications.
