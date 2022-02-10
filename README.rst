@@ -1,33 +1,73 @@
 .. todo::
-
-
-
-NEMO_ for *Nucleus for European Modelling of the Ocean* is a state-of-the-art modelling framework for
-research activities and forecasting services in ocean and climate sciences,
-developed in a sustainable way by a European consortium since 2008.
-
 .. contents::
    :local:
 
-Overview
-========
 
-The NEMO ocean model has 3 major components:
 
+
+
+Welcome to NEMO home page!
+==========================
+
+NEMO_ for *Nucleus for European Modelling of the Ocean* is a state-of-the-art modelling framework for
+research activities and forecasting services in ocean and climate sciences,
+developed in a sustainable way by the NEMO European consortium since 2008.
+NEMO has 3 major components:
+
+This page intends to help to get started using NEMO platform and to orientate users to the different levels of information. 
+It starts here with NEMO release 4.2.0. [Former web platform forge](https://forge.ipsl.jussieu.fr/nemo) (SVN+Trac) contains previous documentation and releases since the beginning of the project up to of NEMO 4.0.
+
+Getting started
+===============
+Getting hands on NEMO: first steps are described in detail in the "How to" NEMO users's guide
+Download, build the environment create the executable, and make a first run are described here: https://sites.nemo-ocean.io/user_guide/
+
+A summary on  how to get code dependencies, compile and execute NEMO is also available here
+(:file:`./INSTALL.rst`).
+
+Project documentation
+=====================
+
+Reference manuals fully describing NEMO  for the three main component
 - |OCE| models the ocean {thermo}dynamics and solves the primitive equations
   (:file:`./src/OCE`)
 - |ICE| simulates sea-ice {thermo}dynamics, brine inclusions and
   subgrid-scale thickness variations (:file:`./src/ICE`)
 - |MBG| models the {on,off}line oceanic tracers transport and biogeochemical processes
   (:file:`./src/TOP`)
+are available from zenodo
 
-These physical core engines are described in
-their respective `reference publications <#project-documentation>`_ that
-must be cited for any work related to their use (see :doc:`cite`).
+============ ================== ===================
+ Component    Reference Manual   Quick Start Guide
+============ ================== ===================
+ |NEMO-OCE|   |DOI man OCE|_     |DOI qsg|
+ |NEMO-ICE|   |DOI man ICE|
+ |NEMO-MBG|   |DOI man MBG|
+============ ================== ===================
 
-Assets and solutions
-====================
+These reference manuals are the publications that should be cited in your own publications.
 
+New features of 4.2.0 release are described here (:file:`./CHANGES.md`)
+
+Asking questions, echange information
+=====================================
+- [Register once for all and use the NEMO forums](https://nemo-ocean.discourse.group) to share and discuss with the NEMO community.
+- [Register once for all and receive by mail the NEMO newsletter ](https://listes.ipsl.fr/sympa/subscribe/nemo-newsletter) : recommended for all users to receive the major announcements from the project (new releases, open meetings and main informations). Low traffic: about ten messages a year.
+
+
+
+
+Since 2014 the project has a `Special Issue`_ in the open-access journal
+Geoscientific Model Development (GMD) from the European Geosciences Union (EGU_).
+The main scope is to collect relevant manuscripts covering various topics and
+to provide a single portal to assess the model potential and evolution.
+
+Used by a wide audience,
+numerous :website:`associated projects<projects>` have been carried out and
+extensive :website:`bibliography<bibliography/publications>` published.
+
+More on NEMO's features
+=======================
 Not only does the NEMO framework model the ocean circulation,
 it offers various features to enable
 
@@ -46,47 +86,15 @@ address specific physical processes (:file:`./tests`).
 
 A set of :doc:`utilities <tools>` is also provided to {pre,post}process your data (:file:`./tools`).
 
-Project documentation
-=====================
+Contributing to NEMO development
+================================
 
-A walkthrough tutorial illustrates how to get code dependencies, compile and execute NEMO
-(:file:`./INSTALL.rst`).
+NEMO intends to be written in a way allowing easy plug of developments.
+You are also welcome to contribute to the development of the NEMO Shared reference.
+NEMO development is driven by  NEMO Consortium planning and producing NEMO's sustainable development in order to
+keep a reliable evolving framework.
+Development is organised and scheduled through a five years development strategy, Working groups and the activities of the development team (named NEMO System Team) in a yearly workplan. [More information here] (https://forge.nemo-ocean.eu/developers/home/-/wikis/Home)
 
-Reference manuals and quick start guide can be build from source and
-exported to HTML or PDF formats (:file:`./doc`) or
-downloaded directly from the :forge:`development platform<wiki/Documentations>`.
-
-============ ================== ===================
- Component    Reference Manual   Quick Start Guide
-============ ================== ===================
- |NEMO-OCE|   |DOI man OCE|_     |DOI qsg|
- |NEMO-ICE|   |DOI man ICE|
- |NEMO-MBG|   |DOI man MBG|
-============ ================== ===================
-
-Since 2014 the project has a `Special Issue`_ in the open-access journal
-Geoscientific Model Development (GMD) from the European Geosciences Union (EGU_).
-The main scope is to collect relevant manuscripts covering various topics and
-to provide a single portal to assess the model potential and evolution.
-
-Used by a wide audience,
-numerous :website:`associated projects<projects>` have been carried out and
-extensive :website:`bibliography<bibliography/publications>` published.
-
-Development board
-=================
-
-The NEMO Consortium pulling together 5 European institutes
-(CMCC_, CNRS_, MOI_, `Met Office`_ and NERC_) plans the sustainable development in order to
-keep a reliable evolving framework since 2008.
-
-It defines the |DOI dev stgy|_ that is implemented by the System Team on a yearly basis
-in order to release a new version almost every four years.
-
-When the need arises, :forge:`working groups<wiki/WorkingGroups>` are created or resumed to
-gather the community expertise for advising on the development activities.
-
-.. |DOI dev stgy| replace:: multi-year development strategy
 
 Disclaimer
 ==========
