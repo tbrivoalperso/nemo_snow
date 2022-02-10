@@ -15,13 +15,16 @@ developed in a sustainable way by the NEMO European consortium since 2008.
 
 This page intends to help to get started using NEMO platform and to orientate users to the different levels of information. 
 It starts here with NEMO release 4.2.0. [Former web platform forge](https://forge.ipsl.jussieu.fr/nemo) (SVN+Trac) contains previous documentation and releases since the beginning of the project up to of NEMO 4.0.
-If you are already using NEMO with a previous release, refer to the Migration Guide to help making the move to 4.2.0.
+
 
 Getting started
 ===============
 Getting hands on NEMO: first steps are described in detail in the "How to" NEMO users's guide.
 Download, build the environment create the executable, and make a first run are described here: https://sites.nemo-ocean.io/user-guide/. 
-This users guide covers in detail what is available from gitlab and supported by NEMO System Team.
+
+If you are already using NEMO with a previous release, refer to the [Migration Guide] (https://sites.nemo-ocean.io/user-guide/migration.html) to help making the move to 4.2.0.
+
+The above users guides cover in detail what is available from gitlab and supported by NEMO System Team.
 Aside from this web platform, the tests cases are also available from https://github.com/NEMO-ocean/NEMO-examples. These tests cases can be useful for studentes, outreach, exploring some specific aspects of NEMO with light configurations... It is also set up in order to gather the tests cases you may have developped and want to share with the community. Feel free to contribute! 
 
 A summary on  how to get code dependencies, compile and execute NEMO is also available here
@@ -54,13 +57,16 @@ New features of 4.2.0 release are described here (:file:`./CHANGES.md`)
 Asking questions, echange information
 =====================================
 - [Register once for all and use the NEMO forums](https://nemo-ocean.discourse.group) to share and discuss with the NEMO community.
+
 - [Register once for all and receive by mail the NEMO newsletter ](https://listes.ipsl.fr/sympa/subscribe/nemo-newsletter) : recommended for all users to receive the major announcements from the project (new releases, open meetings and main informations). Low traffic: about ten messages a year.
 
 
 Contributing to NEMO visibility: projects and publications
 ==========================================================
 Please help us justifying the NEMO development efforts by
+
 -  Adding your publications using NEMO and its outputs here: https://www.nemo-ocean.eu/bibliography/publications/add
+
 -  Describing your project using NEMO here: https://www.nemo-ocean.eu/projects/add
 
 NEMO also has a `Special Issue`_ in the open-access journal
