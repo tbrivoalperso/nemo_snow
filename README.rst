@@ -21,7 +21,7 @@ If you are already using NEMO with a previous release, refer to the Migration Gu
 Getting started
 ===============
 Getting hands on NEMO: first steps are described in detail in the "How to" NEMO users's guide
-Download, build the environment create the executable, and make a first run are described here: https://sites.nemo-ocean.io/user_guide/
+Download, build the environment create the executable, and make a first run are described here: https://sites.nemo-ocean.io/user-guide/ 
 
 A summary on  how to get code dependencies, compile and execute NEMO is also available here
 (:file:`./INSTALL.rst`).
