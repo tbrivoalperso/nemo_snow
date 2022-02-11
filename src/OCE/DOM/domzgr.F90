@@ -329,11 +329,11 @@ CONTAINS
       !
       IF( iom_varid( inum, 'mbku', ldstop = .FALSE. ) > 0 ) THEN
          IF(lwp) WRITE(numout,*) '          mbku, mbkv & mbkf read in ', TRIM(cn_domcfg), ' file'
-         CALL iom_get( inum, jpdom_global, 'mbku', z2d )
+         CALL iom_get( inum, jpdom_global, 'mbku', z2d, cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
          k_bot_u(:,:) = NINT( z2d(:,:) )
-         CALL iom_get( inum, jpdom_global, 'mbkv', z2d )
+         CALL iom_get( inum, jpdom_global, 'mbkv', z2d, cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
          k_bot_v(:,:) = NINT( z2d(:,:) )
-         CALL iom_get( inum, jpdom_global, 'mbkf', z2d )
+         CALL iom_get( inum, jpdom_global, 'mbkf', z2d, cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
          k_bot_f(:,:) = NINT( z2d(:,:) )
          k_mbkuvf = 1
       ELSE
