@@ -191,8 +191,7 @@ MODULE dom_oce
 !   INTEGER , PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   mbk_t, mbk_u, mbk_v   !: bottom last  wet T-, U-, and V-level
 !!gm
    INTEGER , PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   mbkt, mbku, mbkv, mbkf   !: bottom last wet T-, U-, V- and F-level
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   tmask_i                  !: interior domain T-point mask
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   tmask_h            !: internal domain T-point mask (Figure 8.5 NEMO book)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   tmask_i                  !: interior (excluding halos+duplicated points) domain T-point mask
 
    INTEGER , PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   mikt, miku, mikv, mikf   !: top first wet T-, U-, V-, F-level           (ISF)
 
@@ -326,7 +325,7 @@ CONTAINS
       ALLOCATE( risfdep(jpi,jpj) , bathy(jpi,jpj) , STAT=ierr(ii)  )
          !
       ii = ii+1
-      ALLOCATE( tmask_i(jpi,jpj) , tmask_h(jpi,jpj) ,                                           &
+      ALLOCATE( tmask_i(jpi,jpj) ,                                                              &
          &      ssmask (jpi,jpj) , ssumask(jpi,jpj) , ssvmask(jpi,jpj) , ssfmask(jpi,jpj) ,     &
          &      mbkt   (jpi,jpj) , mbku   (jpi,jpj) , mbkv   (jpi,jpj) , mbkf(jpi,jpj)    , STAT=ierr(ii) )
          !
