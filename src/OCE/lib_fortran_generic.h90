@@ -21,12 +21,7 @@
 #      define ARRAY2_IN(i,j,k)  ptab2(i,j,k)
 #      define J_SIZE(ptab)      SIZE(ptab,2)
 #      define K_SIZE(ptab)      SIZE(ptab,3)
-#   endif
-#   if defined OPERATION_GLOBSUM
 #      define MASK_ARRAY(i,j)   tmask_i(i,j)
-#   endif
-#   if defined OPERATION_FULL_GLOBSUM
-#      define MASK_ARRAY(i,j)   tmask_h(i,j)
 #   endif
 
    FUNCTION FUNCTION_GLOBSUM( cdname, ptab )
