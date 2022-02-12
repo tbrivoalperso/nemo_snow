@@ -48,7 +48,7 @@ are available from zenodo
  Component    Reference Manual (from zenondo, DOI to quote)   Reference manual (pdf on line version on gitlab)  
 ============ ==============================================   ===============================================  
  |NEMO-OCE|   |https://zenodo.org/record/1464816|    
- |NEMO-ICE|   |https://zenodo.org/record/1471689|
+ |NEMO-ICE|   |https://zenodo.org/record/1471689|              *Updated version will be online since Mar 2022*
  |NEMO-MBG|   |https://zenodo.org/record/1471700|
 ============ ==============================================   ===============================================  
 
