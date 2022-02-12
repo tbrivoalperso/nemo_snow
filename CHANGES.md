@@ -1,14 +1,9 @@
-*******
-Changes
-*******
+# List the main additions of the new 4.2 release - February 2022
 
 This section provides you an overview of the major NEMO upgrades as included in the new 4.2 release. 
 It includes instructions on how to move to new version and a list of the novelties of changed NEMO modules.
-If you are willing to port an existing configuration in order to start using this new release, it is sugggested to also look at the 4.2 [Migration Guide](https://sites.nemo-ocean.io/user-guide/migration.html).
-  
-# List the main additions of the new 4.2 release - February 2022
 
-This document lists the improvements and new features of the 4.2 release compared to the previous 4.0.
+If you are willing to port an existing configuration in order to start using this new release, it is sugggested to also look at the 4.2 [Migration Guide](https://sites.nemo-ocean.io/user-guide/migration.html).
 
 ## KERNEL
 
