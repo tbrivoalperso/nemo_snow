@@ -1,4 +1,4 @@
-# List the main additions of the new 4.2 release - February 2022
+# List of the main additions of the new 4.2 release - February 2022
 
 This section provides you an overview of the major NEMO upgrades as included in the new 4.2 release. 
 It includes instructions on how to move to new version and a list of the novelties of changed NEMO modules.
