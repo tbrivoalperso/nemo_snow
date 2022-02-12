@@ -2,20 +2,18 @@
 Changes
 *******
 
-.. todo::
-
+This section provides you an overview of the major NEMO upgrades as included in the new 4.2 release. 
+It includes instructions on how to move to new version and a list of the novelties of changed NEMO modules.
+If you are willing to port an existing configuration in order to start using this new release, it is sugggested to also look at the 4.2 [Migration Guide](https://sites.nemo-ocean.io/user-guide/migration.html).
   
 # List the main additions of the new 4.2 release - February 2022
 
 This document lists the improvements and new features of the 4.2 release compared to the previous 4.0.
-If you are willing to port an existing configuration in order to start using this new release, it is sugggested to also look at the 4.2 Migration Guide (link to add).
-
-Improvements and new features of 4.2 release
 
 ## KERNEL
 
 - Quasi Eulerian Coordinates
-- New HPG schemes (imrpoveents and new option)
+- New HPG schemes (improvements and new option)
 - Preparatory stages for new RK3 time stepping scheme (includes time-pointer changes, DO LOOP macros, changes in main arrays dimensions)
 - Full Shallow Water setup
 - New vertical scale factors management in time reducing meùory footprint : added key qco (Quasi Eulerian Coordinates), key linssh, see Migration Guide
@@ -38,6 +36,7 @@ Improvements and new features of 4.2 release
 
 - EAP & VP rheology (V&V to complete)
 - Melt ponds (preliminary implementation)
+- Updated Reference Manual will be made available to users by March 2022
 
 ## ENHANCEMENTS
 
@@ -60,7 +59,6 @@ Improvements and new features of 4.2 release
 
 ## High Performance Computing HPC
 
-
 - MPI Communication cleanup & improvements using MPI3
 - Reduce memory footprint
 - Improved computational performance of solar penetration scheme
@@ -69,7 +67,6 @@ So as some new features implemented, and now needing further work to produce act
 - Mixed precision preparatory phase
 - Loop fusion
 - Tiling
-
 
 ## VERIFICATION & VALIDATION
 
