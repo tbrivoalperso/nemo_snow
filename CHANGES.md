@@ -31,7 +31,7 @@ If you are willing to port an existing configuration in order to start using thi
 
 - EAP & VP rheology (V&V to complete)
 - Melt ponds (preliminary implementation)
-(Updated Reference Manual will be made available to users by March 2022)
+- (Updated Reference Manual will be made available to users by March 2022)
 
 ## ENHANCEMENTS
 
@@ -43,7 +43,7 @@ If you are willing to port an existing configuration in order to start using thi
 
 - Ice sheet iron sources
 - Scheme for vertical penetration of visible light
-(Updated Reference Manual will be made available to users by March 2022)
+- (Updated Reference Manual will be made available to users by March 2022)
 
 ## DATA interface
 
