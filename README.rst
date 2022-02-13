@@ -48,8 +48,8 @@ are available from zenodo
  Component    Reference Manual (from zenondo, DOI to quote)   Reference manual (pdf on line version on gitlab)  
 ============ ==============================================   ===============================================  
  |NEMO-OCE|   |https://zenodo.org/record/1464816|    
- |NEMO-ICE|   |https://zenodo.org/record/1471689|              *Updated version will be online since Mar 2022*
- |NEMO-MBG|   |https://zenodo.org/record/1471700|
+ |NEMO-ICE|   |https://zenodo.org/record/1471689|             *Updated version will be online since Mar 2022*
+ |NEMO-MBG|   |https://zenodo.org/record/1471700|.            *Updated version will be online since Mar 2022*
 ============ ==============================================   ===============================================  
 
 These reference manuals are the publications that should be cited in your own publications. Please visit [How to cite?](https://www.nemo-ocean.eu/bibliography/how-to-cite/) for details.
