@@ -392,16 +392,16 @@ The explicit specification of a range of mesh-related fields are required for
 the definition of a configuration.
 These include:
 
-\begin{clines}
+\begin{forlines}
 integer   Ni0glo, NjOglo, jpkglo       /* global domain sizes (without MPI halos)                */
-logical   l\_Iperio, l\_Jperio         /* lateral global domain b.c.: i- j-periodicity           */
-logical   l\_NFold                     /* lateral global domain b.c.: North Pole folding         */
-char(1)   c\_NFtype                    /*    type of North pole Folding: T or F point            */
+logical   l_Iperio, l_Jperio           /* lateral global domain b.c.: i- j-periodicity           */
+logical   l_NFold                      /* lateral global domain b.c.: North Pole folding         */
+char(1)   c_NFtype                     /*    type of North pole Folding: T or F point            */
 real      glamt, glamu, glamv, glamf   /* geographic longitude (t,u,v and f points respectively) */
 real      gphit, gphiu, gphiv, gphif   /* geographic latitude                                    */
 real      e1t, e1u, e1v, e1f           /* horizontal scale factors                               */
 real      e2t, e2u, e2v, e2f           /* horizontal scale factors                               */
-\end{clines}
+\end{forlines}
 
 The values of the geographic longitude and latitude arrays at indices $i,j$ correspond to
 the analytical expressions of the longitude $\lambda$ and latitude $\varphi$ as a function of $(i,j)$,
@@ -413,12 +413,12 @@ evaluated for the same arguments as $\lambda$ and $\varphi$.
 %% =================================================================================================
 \subsubsection{Optional fields}
 
-\begin{clines}
+\begin{forlines}
                         /* Optional:                                                 */
 int    ORCA, ORCA_index /* configuration name, configuration resolution              */
 double e1e2u, e1e2v     /* U and V surfaces (if grid size reduction in some straits) */
 double ff_f, ff_t       /* Coriolis parameter (if not on the sphere)                 */
-\end{clines}
+\end{forlines}
 
 \NEMO\ can support the local reduction of key strait widths by
 altering individual values of e2u or e1v at the appropriate locations.
@@ -560,7 +560,7 @@ The explicit specification of a range of fields related to the vertical grid are
 the definition of a configuration.
 These include:
 
-\begin{clines}
+\begin{forlines}
 int    ln_zco, ln_zps, ln_sco            /* flags for z-coord, z-coord with partial steps and s-coord    */
 int    ln_isfcav                         /* flag  for ice shelf cavities                                 */
 double e3t_1d, e3w_1d                    /* reference vertical scale factors at T and W points           */
@@ -569,7 +569,7 @@ double e3uw_0, e3vw_0                    /* vertical scale factors 3D coordinate
 int    bottom_level, top_level           /* last wet T-points, 1st wet T-points (for ice shelf cavities) */
                                          /* For reference:                                               */
 float  bathy_metry                       /* bathymetry used in setting top and bottom levels             */
-\end{clines}
+\end{forlines}
 
 This set of vertical metrics is sufficient to describe the initial depth and thickness of
 every gridcell in the model regardless of the choice of vertical coordinate.
@@ -639,11 +639,11 @@ it should be noted here that a successful use of these options requires
 appropriate mask fields to be present in the domain configuration file.
 Among the possibilities are:
 
-\begin{clines}
+\begin{forlines}
 int closea_mask     /* non-zero values in closed sea areas for optional masking                */
 int closea_mask_rnf /* non-zero values in closed sea areas with runoff locations (precip only) */
 int closea_mask_emp /* non-zero values in closed sea areas with runoff locations (total emp)   */
-\end{clines}
+\end{forlines}
 
 %% =================================================================================================
 \subsection{Output grid files}

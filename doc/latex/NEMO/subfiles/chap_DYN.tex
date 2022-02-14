@@ -916,9 +916,9 @@ As far as tracer conservation is concerned,
 barotropic velocities used to advect tracers must also be updated at \textit{now} time step.
 This implies to change the traditional order of computations in \NEMO:
 most of momentum trends (including the barotropic mode calculation) updated first, tracers' after.
-This \textit{de facto} makes semi-implicit hydrostatic pressure gradient
-(see section \autoref{subsec:DYN_hpg_imp})
-and time splitting not compatible.
+%%This \textit{de facto} makes semi-implicit hydrostatic pressure gradient
+%%(see section \autoref{subsec:DYN_hpg_imp})
+%%and time splitting not compatible.
 Advective barotropic velocities are obtained by using a secondary set of filtering weights,
 uniquely defined from the filter coefficients used for the time averaging (\citet{shchepetkin.mcwilliams_OM05}).
 Consistency between the time averaged continuity equation and the time stepping of tracers is here the key to
