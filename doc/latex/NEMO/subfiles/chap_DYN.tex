@@ -623,10 +623,14 @@ module \mdl{zpsdhe} located in the TRA directory and described in \autoref{sec:T
 
 Pressure gradient formulations in an $s$-coordinate have been the subject of a vast number of papers
 (\eg, \citet{song_MWR98, shchepetkin.mcwilliams_OM05}).
-A number of different pressure gradient options are coded but the ROMS-like,
-density Jacobian with cubic polynomial method is currently disabled whilst known bugs are under investigation.
+A number of different pressure gradient options are coded. The ROMS-like,
+density Jacobian with cubic polynomial method has been debugged and from vn4.2 is available as an option.
 
-$\bullet$ Traditional coding (see for example \citet{madec.delecluse.ea_JPO96}: (\np[=.true.]{ln_dynhpg_sco}{ln\_dynhpg\_sco})
+\begin{itemize}
+\item
+Traditional coding (see for example \citet{madec.delecluse.ea_JPO96}: (\np[=.true.]{ln_hpg_sco}{ln\_hpg\_sco})
+\end{itemize}
+
 \begin{equation}
   \label{eq:DYN_hpg_sco}
   \left\{
@@ -644,32 +648,55 @@ computed as in \autoref{eq:DYN_hpg_zco_surf} - \autoref{eq:DYN_hpg_zco},
 and $z_T$ is the depth of the $T$-point evaluated from the sum of the vertical scale factors at the $w$-point
 ($e_{3w}$).
 
-$\bullet$ Traditional coding with adaptation for ice shelf cavities (\np[=.true.]{ln_dynhpg_isf}{ln\_dynhpg\_isf}).
-This scheme need the activation of ice shelf cavities (\np[=.true.]{ln_isfcav}{ln\_isfcav}).
+\begin{itemize}
+\item
+Traditional coding with adaptation for ice shelf cavities (\np[=.true.]{ln_hpg_isf}{ln\_hpg\_isf}).
+This scheme needs the activation of ice shelf cavities (\np[=.true.]{ln_isfcav}{ln\_isfcav}).
 
-$\bullet$ Pressure Jacobian scheme (prj) (a research paper in preparation) (\np[=.true.]{ln_dynhpg_prj}{ln\_dynhpg\_prj})
+\item
+Pressure Jacobian scheme (prj) (\np[=.true.]{ln_hpg_prj}{ln\_hpg\_prj}). 
 
-$\bullet$ Density Jacobian with cubic polynomial scheme (DJC) \citep{shchepetkin.mcwilliams_OM05}
-(\np[=.true.]{ln_dynhpg_djc}{ln\_dynhpg\_djc}) (currently disabled; under development)
+\item
+Density Jacobian with cubic polynomial scheme (DJC) (\np[=.true.]{ln_hpg_djc}{ln\_hpg\_djc}) 
+\citep{shchepetkin.mcwilliams_OM05}. This scheme has been coded for vqs (vanishing
+quasi-sigma) coordinates but not for ice shelf cavities.
+\end{itemize}
 
 Note that expression \autoref{eq:DYN_hpg_sco} is commonly used when the variable volume formulation is activated
 (\texttt{vvl?}) because in that case, even with a flat bottom,
 the coordinate surfaces are not horizontal but follow the free surface \citep{levier.treguier.ea_trpt07}.
-The pressure jacobian scheme (\np[=.true.]{ln_dynhpg_prj}{ln\_dynhpg\_prj}) is available as
-an improved option to \np[=.true.]{ln_dynhpg_sco}{ln\_dynhpg\_sco} when \texttt{vvl?} is active.
-The pressure Jacobian scheme uses a constrained cubic spline to
-reconstruct the density profile across the water column.
+At version 4.2 the density field used by dyn\_hpg is the density anomaly field rhd rather than $1+\mathrm{rhd}$. 
+The calculation of the source term for the free surface has been adjusted to take this into account. 
+The true in situ density $\rho= \rho_0 (1 + r_0(z) + rhd )$ where $r_0(z)$ accounts for the variation of density
+with depth for water with a potential temperature of $4^{\circ}$C and salinity of $35.16504$g/kg 
+(see (13) and (14) of \citet{roquet.madec.ea_OM15}).        
+
+The pressure Jacobian scheme (\np[=.true.]{ln_hpg_prj}{ln\_hpg\_prj}) is available as
+an option to \np[=.true.]{ln_hpg_sco}{ln\_hpg\_sco} when \texttt{vvl?} is active.
+It works well for moderately steep slopes but produces large velocities in the SEAMOUNT test case 
+when the slopes are steep. It uses a constrained cubic spline to
+reconstruct the vertical density profile within a water column.
 This method maintains the monotonicity between the density nodes.
-The pressure can be calculated by analytical integration of the density profile and
+The pressure is calculated by analytical integration of the density profile. and
 a pressure Jacobian method is used to solve the horizontal pressure gradient.
-This method can provide a more accurate calculation of the horizontal pressure gradient than the standard scheme.
+For the force in the $i$-direction, it calculates the difference of the pressures on the 
+$i+\tfrac{1}{2}$ and $i-\tfrac{1}{2}$ faces of the cell using pressures calculated at the same height. 
+In grid cells just above the bathymetry, this height is higher than the cells' centre.  
+
+The DJC scheme is based on section 5 of \cite{shchepetkin.mcwilliams_OM05}. For the force in the 
+$i$-direction, it uses constrained cubic splines to re-construct the density along lines of constant $s$ 
+and constant $i$ in the $(i,s)$ plane. It calculates a line integral of $\rho$ and then integrates
+vertically to obtain the horizontal pressure gradient. The constrained cubic splines require
+boundary conditions to be specified at the upper and lower boundaries and at points where there are steps 
+in the vqs coordinates. The user can choose between von Neumann and linear extrapolation boundary conditions
+via the \texttt{ln\_hpg\_djc\_vnh} and \texttt{ln\_hpg\_djc\_vnv} namelist switches.              
 
 %% =================================================================================================
 \subsection{Ice shelf cavity}
 \label{subsec:DYN_hpg_isf}
 
 Beneath an ice shelf, the total pressure gradient is the sum of the pressure gradient due to the ice shelf load and
-the pressure gradient due to the ocean load (\np[=.true.]{ln_dynhpg_isf}{ln\_dynhpg\_isf}).\\
+the pressure gradient due to the ocean load (\np[=.true.]{ln_hpg_isf}{ln\_hpg\_isf}).\\
 
 The main hypothesis to compute the ice shelf load is that the ice shelf is in an isostatic equilibrium.
 The top pressure is computed integrating from surface to the base of the ice shelf a reference density profile
