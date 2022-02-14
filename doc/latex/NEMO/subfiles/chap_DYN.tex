@@ -677,8 +677,7 @@ It works well for moderately steep slopes but produces large velocities in the S
 when the slopes are steep. It uses a constrained cubic spline to
 reconstruct the vertical density profile within a water column.
 This method maintains the monotonicity between the density nodes.
-The pressure is calculated by analytical integration of the density profile. and
-a pressure Jacobian method is used to solve the horizontal pressure gradient.
+The pressure is calculated by analytical integration of the density profile.
 For the force in the $i$-direction, it calculates the difference of the pressures on the 
 $i+\tfrac{1}{2}$ and $i-\tfrac{1}{2}$ faces of the cell using pressures calculated at the same height. 
 In grid cells just above the bathymetry, this height is higher than the cells' centre.  
@@ -709,64 +708,64 @@ The pressure gradient due to ocean load is computed using the expression \autore
 \autoref{subsec:DYN_hpg_sco}.
 
 %% =================================================================================================
-\subsection[Time-scheme (\forcode{ln_dynhpg_imp})]{Time-scheme (\protect\np{ln_dynhpg_imp}{ln\_dynhpg\_imp})}
-\label{subsec:DYN_hpg_imp}
-
-The default time differencing scheme used for the horizontal pressure gradient is a leapfrog scheme and
-therefore the density used in all discrete expressions given above is the  \textit{now} density,
-computed from the \textit{now} temperature and salinity.
-In some specific cases
-(usually high resolution simulations over an ocean domain which includes weakly stratified regions)
-the physical phenomenon that controls the time-step is internal gravity waves (IGWs).
-A semi-implicit scheme for doubling the stability limit associated with IGWs can be used
-\citep{brown.campana_MWR78, maltrud.smith.ea_JGR98}.
-It involves the evaluation of the hydrostatic pressure gradient as
-an average over the three time levels $t-\rdt$, $t$, and $t+\rdt$
-(\ie\ \textit{before}, \textit{now} and  \textit{after} time-steps),
-rather than at the central time level $t$ only, as in the standard leapfrog scheme.
-
-$\bullet$ leapfrog scheme (\np[=.true.]{ln_dynhpg_imp}{ln\_dynhpg\_imp}):
-
-\begin{equation}
-  \label{eq:DYN_hpg_lf}
-  \frac{u^{t+\rdt}-u^{t-\rdt}}{2\rdt} = \;\cdots \;
-  -\frac{1}{\rho_o \,e_{1u} }\delta_{i+1/2} \left[ {p_h^t } \right]
-\end{equation}
-
-$\bullet$ semi-implicit scheme (\np[=.true.]{ln_dynhpg_imp}{ln\_dynhpg\_imp}):
-\begin{equation}
-  \label{eq:DYN_hpg_imp}
-  \frac{u^{t+\rdt}-u^{t-\rdt}}{2\rdt} = \;\cdots \;
-  -\frac{1}{4\,\rho_o \,e_{1u} } \delta_{i+1/2} \left[ p_h^{t+\rdt} +2\,p_h^t +p_h^{t-\rdt}  \right]
-\end{equation}
-
-The semi-implicit time scheme \autoref{eq:DYN_hpg_imp} is made possible without
-significant additional computation since the density can be updated to time level $t+\rdt$ before
-computing the horizontal hydrostatic pressure gradient.
-It can be easily shown that the stability limit associated with the hydrostatic pressure gradient doubles using
-\autoref{eq:DYN_hpg_imp} compared to that using the standard leapfrog scheme \autoref{eq:DYN_hpg_lf}.
-Note that \autoref{eq:DYN_hpg_imp} is equivalent to applying a time filter to the pressure gradient to
-eliminate high frequency IGWs.
-Obviously, when using \autoref{eq:DYN_hpg_imp},
-the doubling of the time-step is achievable only if no other factors control the time-step,
-such as the stability limits associated with advection or diffusion.
-
-In practice, the semi-implicit scheme is used when \np[=.true.]{ln_dynhpg_imp}{ln\_dynhpg\_imp}.
-In this case, we choose to apply the time filter to temperature and salinity used in the equation of state,
-instead of applying it to the hydrostatic pressure or to the density,
-so that no additional storage array has to be defined.
-The density used to compute the hydrostatic pressure gradient (whatever the formulation) is evaluated as follows:
-\[
-  % \label{eq:DYN_rho_flt}
-  \rho^t = \rho( \widetilde{T},\widetilde {S},z_t)
-  \quad	  \text{with}	\quad
-  \widetilde{X} = 1 / 4 \left(  X^{t+\rdt} +2 \,X^t + X^{t-\rdt}  \right)
-\]
-
-Note that in the semi-implicit case, it is necessary to save the filtered density,
-an extra three-dimensional field, in the restart file to restart the model with exact reproducibility.
-This option is controlled by  \np{nn_dynhpg_rst}{nn\_dynhpg\_rst}, a namelist parameter.
-
+%% \subsection[Time-scheme (\forcode{ln_dynhpg_imp})]{Time-scheme (\protect\np{ln_dynhpg_imp}{ln\_dynhpg\_imp})}
+%% \label{subsec:DYN_hpg_imp}
+%% 
+%% The default time differencing scheme used for the horizontal pressure gradient is a leapfrog scheme and
+%% therefore the density used in all discrete expressions given above is the  \textit{now} density,
+%% computed from the \textit{now} temperature and salinity.
+%% In some specific cases
+%% (usually high resolution simulations over an ocean domain which includes weakly stratified regions)
+%% the physical phenomenon that controls the time-step is internal gravity waves (IGWs).
+%% A semi-implicit scheme for doubling the stability limit associated with IGWs can be used
+%% \citep{brown.campana_MWR78, maltrud.smith.ea_JGR98}.
+%% It involves the evaluation of the hydrostatic pressure gradient as
+%% an average over the three time levels $t-\rdt$, $t$, and $t+\rdt$
+%% (\ie\ \textit{before}, \textit{now} and  \textit{after} time-steps),
+%% rather than at the central time level $t$ only, as in the standard leapfrog scheme.
+%% 
+%% $\bullet$ leapfrog scheme (\np[=.true.]{ln_dynhpg_imp}{ln\_dynhpg\_imp}):
+%% 
+%% \begin{equation}
+%%   \label{eq:DYN_hpg_lf}
+%%   \frac{u^{t+\rdt}-u^{t-\rdt}}{2\rdt} = \;\cdots \;
+%%   -\frac{1}{\rho_o \,e_{1u} }\delta_{i+1/2} \left[ {p_h^t } \right]
+%% \end{equation}
+%% 
+%% $\bullet$ semi-implicit scheme (\np[=.true.]{ln_dynhpg_imp}{ln\_dynhpg\_imp}):
+%% \begin{equation}
+%%   \label{eq:DYN_hpg_imp}
+%%   \frac{u^{t+\rdt}-u^{t-\rdt}}{2\rdt} = \;\cdots \;
+%%   -\frac{1}{4\,\rho_o \,e_{1u} } \delta_{i+1/2} \left[ p_h^{t+\rdt} +2\,p_h^t +p_h^{t-\rdt}  \right]
+%% \end{equation}
+%% 
+%% The semi-implicit time scheme \autoref{eq:DYN_hpg_imp} is made possible without
+%% significant additional computation since the density can be updated to time level $t+\rdt$ before
+%% computing the horizontal hydrostatic pressure gradient.
+%% It can be easily shown that the stability limit associated with the hydrostatic pressure gradient doubles using
+%% \autoref{eq:DYN_hpg_imp} compared to that using the standard leapfrog scheme \autoref{eq:DYN_hpg_lf}.
+%% Note that \autoref{eq:DYN_hpg_imp} is equivalent to applying a time filter to the pressure gradient to
+%% eliminate high frequency IGWs.
+%% Obviously, when using \autoref{eq:DYN_hpg_imp},
+%% the doubling of the time-step is achievable only if no other factors control the time-step,
+%% such as the stability limits associated with advection or diffusion.
+%% 
+%% In practice, the semi-implicit scheme is used when \np[=.true.]{ln_dynhpg_imp}{ln\_dynhpg\_imp}.
+%% In this case, we choose to apply the time filter to temperature and salinity used in the equation of state,
+%% instead of applying it to the hydrostatic pressure or to the density,
+%% so that no additional storage array has to be defined.
+%% The density used to compute the hydrostatic pressure gradient (whatever the formulation) is evaluated as follows:
+%% \[
+%%   % \label{eq:DYN_rho_flt}
+%%   \rho^t = \rho( \widetilde{T},\widetilde {S},z_t)
+%%   \quad	  \text{with}	\quad
+%%   \widetilde{X} = 1 / 4 \left(  X^{t+\rdt} +2 \,X^t + X^{t-\rdt}  \right)
+%% \]
+%% 
+%% Note that in the semi-implicit case, it is necessary to save the filtered density,
+%% an extra three-dimensional field, in the restart file to restart the model with exact reproducibility.
+%% This option is controlled by  \np{nn_dynhpg_rst}{nn\_dynhpg\_rst}, a namelist parameter.
+%% 
 %% =================================================================================================
 \section[Surface pressure gradient (\textit{dynspg.F90})]{Surface pressure gradient (\protect\mdl{dynspg})}
 \label{sec:DYN_spg}
