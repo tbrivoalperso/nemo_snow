@@ -537,6 +537,15 @@ CONTAINS
          IF( lwp    ) WRITE(numout, *) kt,' MAXVAL(abs(ssh(:,:,Kaa)))) =', z_tmax
       END IF
 
+#if defined key_agrif
+      ! *********************************** !
+      ! After scale factors at w- points    !
+      ! *********************************** !
+      ! At some point, "after" depths at T-points may be required 
+      ! for AGRIF vertical remap. To prevent from saving an
+      ! additional array, re-compute depths from e3w when needed
+      CALL dom_vvl_interpol( e3t(:,:,:,Kaa), e3w(:,:,:,Kaa), 'W'  )
+#endif
       ! *********************************** !
       ! After scale factors at u- v- points !
       ! *********************************** !

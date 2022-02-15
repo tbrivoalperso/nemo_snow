@@ -200,7 +200,8 @@ CONTAINS
          ptsd(ji,jj,jk,jp_sal) = sf_tsd(jp_sal)%fnow(ji,jj,jk)
       END_3D
       !
-      IF( ln_sco ) THEN                   !==   s- or mixed s-zps-coordinate   ==!
+! JC I think it's more convenient to consider the general sco case as the rule
+!      IF( ln_sco ) THEN                   !==   s- or mixed s-zps-coordinate   ==!
          !
          IF( .NOT. l_istiled .OR. ntile == 1 )  THEN                       ! Do only on the first tile
             IF( kt == nit000 .AND. lwp )THEN
@@ -236,31 +237,31 @@ CONTAINS
             ptsd(ji,jj,jpk,jp_sal) = 0._wp
          END_2D
          !
-      ELSE                                !==   z- or zps- coordinate   ==!
-         !
-         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpk )
-            ptsd(ji,jj,jk,jp_tem) = ptsd(ji,jj,jk,jp_tem) * tmask(ji,jj,jk)    ! Mask
-            ptsd(ji,jj,jk,jp_sal) = ptsd(ji,jj,jk,jp_sal) * tmask(ji,jj,jk)
-         END_3D
-         !
-         IF( ln_zps ) THEN                      ! zps-coordinate (partial steps) interpolation at the last ocean level
-            DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
-               ik = mbkt(ji,jj)
-               IF( ik > 1 ) THEN
-                  zl = ( gdept_1d(ik) - gdept_0(ji,jj,ik) ) / ( gdept_1d(ik) - gdept_1d(ik-1) )
-                  ptsd(ji,jj,ik,jp_tem) = (1.-zl) * ptsd(ji,jj,ik,jp_tem) + zl * ptsd(ji,jj,ik-1,jp_tem)
-                  ptsd(ji,jj,ik,jp_sal) = (1.-zl) * ptsd(ji,jj,ik,jp_sal) + zl * ptsd(ji,jj,ik-1,jp_sal)
-               ENDIF
-               ik = mikt(ji,jj)
-               IF( ik > 1 ) THEN
-                  zl = ( gdept_0(ji,jj,ik) - gdept_1d(ik) ) / ( gdept_1d(ik+1) - gdept_1d(ik) )
-                  ptsd(ji,jj,ik,jp_tem) = (1.-zl) * ptsd(ji,jj,ik,jp_tem) + zl * ptsd(ji,jj,ik+1,jp_tem)
-                  ptsd(ji,jj,ik,jp_sal) = (1.-zl) * ptsd(ji,jj,ik,jp_sal) + zl * ptsd(ji,jj,ik+1,jp_sal)
-               END IF
-            END_2D
-         ENDIF
-         !
-      ENDIF
+!      ELSE                                !==   z- or zps- coordinate   ==!
+!         !
+!         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpk )
+!            ptsd(ji,jj,jk,jp_tem) = ptsd(ji,jj,jk,jp_tem) * tmask(ji,jj,jk)    ! Mask
+!            ptsd(ji,jj,jk,jp_sal) = ptsd(ji,jj,jk,jp_sal) * tmask(ji,jj,jk)
+!         END_3D
+!         !
+!         IF( ln_zps ) THEN                      ! zps-coordinate (partial steps) interpolation at the last ocean level
+!            DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+!               ik = mbkt(ji,jj)
+!               IF( ik > 1 ) THEN
+!                  zl = ( gdept_1d(ik) - gdept_0(ji,jj,ik) ) / ( gdept_1d(ik) - gdept_1d(ik-1) )
+!                  ptsd(ji,jj,ik,jp_tem) = (1.-zl) * ptsd(ji,jj,ik,jp_tem) + zl * ptsd(ji,jj,ik-1,jp_tem)
+!                  ptsd(ji,jj,ik,jp_sal) = (1.-zl) * ptsd(ji,jj,ik,jp_sal) + zl * ptsd(ji,jj,ik-1,jp_sal)
+!               ENDIF
+!               ik = mikt(ji,jj)
+!               IF( ik > 1 ) THEN
+!                  zl = ( gdept_0(ji,jj,ik) - gdept_1d(ik) ) / ( gdept_1d(ik+1) - gdept_1d(ik) )
+!                  ptsd(ji,jj,ik,jp_tem) = (1.-zl) * ptsd(ji,jj,ik,jp_tem) + zl * ptsd(ji,jj,ik+1,jp_tem)
+!                  ptsd(ji,jj,ik,jp_sal) = (1.-zl) * ptsd(ji,jj,ik,jp_sal) + zl * ptsd(ji,jj,ik+1,jp_sal)
+!               END IF
+!            END_2D
+!         ENDIF
+!         !
+!      ENDIF
       !
       IF( .NOT.ln_tsd_dmp ) THEN                   !==   deallocate T & S structure   ==!
          !                                              (data used only for initialisation)

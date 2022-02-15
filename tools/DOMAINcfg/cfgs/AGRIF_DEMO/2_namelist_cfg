@@ -1,4 +1,3 @@
-!!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !! NEMO/OCE :   Configuration namelist_cfg used to overwrite defaults value defined in namelist_ref
 !!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !! NEMO/OCE  :  1 - Domain & run manager (namrun, namcfg, namdom, namzgr, namzgr_sco )
@@ -14,18 +13,18 @@
 !-----------------------------------------------------------------------
 &namdom        !   space and time domain (bathymetry, mesh, timestep)
 !-----------------------------------------------------------------------
-   ln_read_cfg = .true.
-   nn_bathy    =    1      ! = 0 compute analyticaly
+   ln_read_cfg = .false.
+   nn_bathy = 2
                            ! = 1 read the bathymetry file
                            ! = 2 compute from external bathymetry
                            ! = 3 compute from parent (if "key_agrif")
-   nn_interp   =    1                          ! type of interpolation (nn_bathy =2)
+   nn_interp = 1
    cn_domcfg   =  'ORCA_R2_zps_domcfg.nc'                
-   cn_topo     =  'bathymetry_ORCA12_V3.3.nc'  ! external topo file (nn_bathy =2)
-   cn_bath     =  'Bathymetry'                 ! topo name in file  (nn_bathy =2)
-   cn_lon      =  'nav_lon'                    ! lon  name in file  (nn_bathy =2)
-   cn_lat      =  'nav_lat'                    ! lat  name in file  (nn_bathy =2)
-   rn_scale    = 1
+   cn_topo = 'GEBCO_2020.nc'
+   cn_bath = 'elevation'
+   cn_lon = 'lon'
+   cn_lat = 'lat'
+   rn_scale = -1
    rn_bathy    =    0.     !  value of the bathymetry. if (=0) bottom flat at jpkm1
    jphgr_msh   =       0               !  type of horizontal mesh
    ppglam0     =  999999.0             !  longitude of first raw and column T-point (jphgr_msh = 1)
@@ -54,16 +53,18 @@
    !                       !      ===>>> will become the only possibility in v4.0
    !                       ! =F : e3 analytical derivative of depth function
    !                       !      only there for backward compatibility test with v3.6
+      !                      ! if ln_e3_dep = T
+      ln_dept_mid = .true.   ! =T : set T points in the middle of cells
    !                       !
-   cp_cfg      =  "orca"   !  name of the configuration
+   cp_cfg = 'dumb'
    jp_cfg      =       2   !  resolution of the configuration
-   jpidta      =     180   !  1st lateral dimension ( >= jpi )
-   jpjdta      =     148   !  2nd    "         "    ( >= jpj )
+   jpidta = 108
+   jpjdta = 88
    jpkdta      =      31   !  number of levels      ( >= jpk )
-   Ni0glo      =     180   !  1st dimension of global domain --> i =jpidta
-   Nj0glo      =     148   !  2nd    -                  -    --> j  =jpjdta
-   jpkglo      =      31
-   jperio      =       4   !  lateral cond. type (between 0 and 6)
+   Ni0glo = 108
+   Nj0glo = 88
+   jpkglo      =      29 
+   jperio = 0
    ln_use_jattr = .false.  !  use (T) the file attribute: open_ocean_jstart, if present
                            !  in netcdf input files, as the start j-row for reading
    ln_domclo = .false.     ! computation of closed sea masks (see namclo)
