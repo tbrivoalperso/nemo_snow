@@ -14,34 +14,16 @@
 &namdom        !   space and time domain (bathymetry, mesh, timestep)
 !-----------------------------------------------------------------------
    ln_read_cfg = .false.
-   nn_bathy = 2
+   nn_bathy = -1 
                            !  or compute (2) from external bathymetry
-   nn_interp = 1
-   cn_domcfg   = 'ORCA_R2_zps_domcfg_agrif.nc'                
-   cn_topo = 'GEBCO_2020.nc'
-   cn_bath = 'elevation'
-   cn_lon = 'lon'
-   cn_lat = 'lat'
-   rn_scale = -1
-   rn_bathy    =    0.     !  value of the bathymetry. if (=0) bottom flat at jpkm1
-   jphgr_msh   =       0               !  type of horizontal mesh
-   ppglam0     =  999999.0             !  longitude of first raw and column T-point (jphgr_msh = 1)
-   ppgphi0     =  999999.0             ! latitude  of first raw and column T-point (jphgr_msh = 1)
-   ppe1_deg    =  999999.0             !  zonal      grid-spacing (degrees)
-   ppe2_deg    =  999999.0             !  meridional grid-spacing (degrees)
-   ppe1_m      =  999999.0             !  zonal      grid-spacing (degrees)
-   ppe2_m      =  999999.0             !  meridional grid-spacing (degrees)
-   ppsur       =   -4762.96143546300   !  ORCA r4, r2 and r05 coefficients
-   ppa0        =     255.58049070440   ! (default coefficients)
-   ppa1        =     245.58132232490   !
-   ppkth       =      21.43336197938   !
-   ppacr       =       3.0             !
-   ppdzmin     =  999999.              !  Minimum vertical spacing
-   pphmax      =  999999.              !  Maximum depth
-   ldbletanh   =  .FALSE.              !  Use/do not use double tanf function for vertical coordinates
-   ppa2        =  999999.              !  Double tanh function parameters
-   ppkth2      =  999999.              !
-   ppacr2      =  999999.              !
+   jphgr_msh   =       2   !  f-plan 
+   ppgphi0     =      43.7 !  reference latitude
+   ppe1_m      =    5000.0 !  zonal      grid-spacing (degrees)
+   ppe2_m      =    5000.0 !  meridional grid-spacing (degrees)
+   ppkth       =       0.0 ! if =0. assume uniform grid over pphmax meters
+   pphmax      =    3600.0 !  Maximum depth
+   rn_e3zps_min=    99999. !  partial step thickness is set larger than the minimum of
+   rn_e3zps_rat=    0.1    !  rn_e3zps_min and rn_e3zps_rat*e3t, with 0<rn_e3zps_rat<1
 /
 !-----------------------------------------------------------------------
 &namcfg        !   parameters of the configuration
@@ -51,15 +33,17 @@
    !                       !      ===>>> will become the only possibility in v4.0
    !                       ! =F : e3 analytical derivative of depth function
    !                       !      only there for backward compatibility test with v3.6
+      !                      ! if ln_e3_dep = T
+      ln_dept_mid = .true.   ! =T : set T points in the middle of cells
    !                       !
-   cp_cfg = 'dumb'
-   jp_cfg      =       2   !  resolution of the configuration
-   jpidta = 132
-   jpjdta = 140
+   cp_cfg = 'DOME'
+   jp_cfg      =       5   !  resolution of the configuration
+   jpidta = 168
+   jpjdta = 104
    jpkdta      =      31   !  number of levels      ( >= jpk )
-   Ni0glo = 132
-   Nj0glo = 140
-   jpkglo      =      31
+   Ni0glo = 168
+   Nj0glo = 104
+   jpkglo      =      31 
    jperio = 0
    ln_use_jattr = .false.  !  use (T) the file attribute: open_ocean_jstart, if present
                            !  in netcdf input files, as the start j-row for reading
@@ -70,8 +54,8 @@
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
    ln_zco      = .false.   !  z-coordinate - full    steps
-   ln_zps      = .true.   !  z-coordinate - partial steps
-   ln_sco      = .false.   !  s- or hybrid z-s-coordinate
+   ln_zps      = .false.   !  z-coordinate - partial steps
+   ln_sco      = .true.    !  s- or hybrid z-s-coordinate
    ln_isfcav   = .false.   !  ice shelf cavity             (T: see namzgr_isf)
 /
 !-----------------------------------------------------------------------
@@ -81,6 +65,15 @@
 !-----------------------------------------------------------------------
 &namzgr_sco    !   s-coordinate or hybrid z-s-coordinate                (default F)
 !-----------------------------------------------------------------------
+   ln_s_sh94   = .true.    !  Song & Haidvogel 1994 hybrid S-sigma   (T)|
+                           !  stretching coefficients for all functions
+   rn_sbot_min =  600.0    !  minimum depth of s-bottom surface (>0) (m)
+   rn_sbot_max = 3600.0    !  maximum depth of s-bottom surface (= ocean depth) (>0) (m)
+                        !!!!!!!  Envelop bathymetry
+   rn_rmax     =    1.0    !  maximum cut-off r-value allowed (0<r_max<1)
+                        !!!!!!!  SH94 stretching coefficients  (ln_s_sh94 = .true.)
+   rn_theta    =    0.0    !  surface control parameter (0<=theta<=20)
+   rn_bb       =    0.8    !  stretching with SH94 s-sigma
 /
 !-----------------------------------------------------------------------
 &namclo ! (closed sea : need ln_domclo = .true. in namcfg)
@@ -93,6 +86,7 @@
 !-----------------------------------------------------------------------
 &namagrif      !  AGRIF zoom                                            ("key_agrif")
 !-----------------------------------------------------------------------
+    ln_vert_remap = .true.
 /
 !-----------------------------------------------------------------------
 &namnc4        !   netcdf4 chunking and compression settings            ("key_netcdf4")

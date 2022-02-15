@@ -54,6 +54,8 @@
    !                       !      ===>>> will become the only possibility in v4.0
    !                       ! =F : e3 analytical derivative of depth function
    !                       !      only there for backward compatibility test with v3.6
+      !                      ! if ln_e3_dep = T
+      ln_dept_mid = .true.   ! =T : set T points in the middle of cells
    !                       !
    cp_cfg      =  "orca"   !  name of the configuration
    jp_cfg      =       2   !  resolution of the configuration

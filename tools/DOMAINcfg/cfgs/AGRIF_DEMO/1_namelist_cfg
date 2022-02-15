@@ -14,10 +14,12 @@
 &namdom        !   space and time domain (bathymetry, mesh, timestep)
 !-----------------------------------------------------------------------
    ln_read_cfg = .false.
-   nn_bathy = 2
-                           !  or compute (2) from external bathymetry
+   nn_bathy = 3 
+                           ! = 1 read the bathymetry file
+                           ! = 2 compute from external bathymetry
+                           ! = 3 compute from parent (if "key_agrif")
    nn_interp = 1
-   cn_domcfg   = 'ORCA_R2_zps_domcfg_agrif.nc'                
+   cn_domcfg   =  'ORCA_R2_zps_domcfg.nc'                
    cn_topo = 'GEBCO_2020.nc'
    cn_bath = 'elevation'
    cn_lon = 'lon'
@@ -51,14 +53,16 @@
    !                       !      ===>>> will become the only possibility in v4.0
    !                       ! =F : e3 analytical derivative of depth function
    !                       !      only there for backward compatibility test with v3.6
+      !                      ! if ln_e3_dep = T
+      ln_dept_mid = .true.   ! =T : set T points in the middle of cells
    !                       !
    cp_cfg = 'dumb'
    jp_cfg      =       2   !  resolution of the configuration
-   jpidta = 134
-   jpjdta = 128
+   jpidta = 48
+   jpjdta = 50
    jpkdta      =      31   !  number of levels      ( >= jpk )
-   Ni0glo = 134
-   Nj0glo = 128
+   Ni0glo = 48
+   Nj0glo = 50
    jpkglo      =      31
    jperio = 0
    ln_use_jattr = .false.  !  use (T) the file attribute: open_ocean_jstart, if present
