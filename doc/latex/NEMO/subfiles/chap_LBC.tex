@@ -265,6 +265,13 @@ The data exchanges between processors are required at the very place where
 lateral domain boundary conditions are set in the mono-domain computation:
 the \rou{lbc\_lnk} routine (found in \mdl{lbclnk} module) which manages such conditions is interfaced with
 routines found in \mdl{lib\_mpp} module.
+From the NEMO4.2 release, a new communication strategy has been introduced to preserve performance efficiency
+by reducing communication time, namely the MPI3 neighborhood collective communications.
+It provides a way to have sub-communicators used to perform collective communications only among neighborhood.
+A single MPI message is needed to be built for all neighbours instead of 4 different messages before calling the collective.
+The new communication approach can be selected by setting the value of \np{nn_comm}{nn\_comm} parameter, defined in \nam{mpp}{mpp} namelist.
+\np{nn_comm}{nn\_comm}=1 activates the point to point communications.
+Any value other than 1 (usually \np{nn_comm}{nn\_comm}=2) can be used to select the collective communications.
 The output file \textit{communication\_report.txt} provides the list of which routines do how
 many communications during 1 time step of the model.\\
 
