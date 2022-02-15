@@ -9,28 +9,20 @@
 Welcome to NEMO home page!
 ==========================
 
-NEMO_ for *Nucleus for European Modelling of the Ocean* is a state-of-the-art modelling framework for
-research activities and forecasting services in ocean and climate sciences,
-developed in a sustainable way by the NEMO European consortium since 2008.
+NEMO (*Nucleus for European Modelling of the Ocean*) is a state-of-the-art modelling framework for research activities and forecasting services in ocean and climate sciences, developed in a sustainable way by the NEMO European consortium since 2008.
 
-This page intends to help to get started using NEMO platform and to orientate users to the different levels of information. 
-It starts here with NEMO release 4.2.0. 
+This page intends to help you to get started using the NEMO platform and to introduce you to the different levels of information available. It starts here with NEMO release 4.2.0.
 
-Reminder: [Former web platform forge](https://forge.ipsl.jussieu.fr/nemo) (SVN+Trac) contains previous documentation and releases since the beginning of the project up to of NEMO 4.0.
-
+Reminder: [Former web platform forge](https://forge.ipsl.jussieu.fr/nemo) (SVN+Trac) contains the previous documentation and releases made available from the beginning of the project up to of NEMO 4.0.
 
 Getting started
 ===============
-Getting hands on NEMO: first steps are described in detail in the "How to" NEMO users's guide.
-Download, build the environment create the executable, and make a first run are described here: https://sites.nemo-ocean.io/user-guide/. 
+Getting your hands on NEMO: the first steps are described in detail in the NEMO users' guide: https://sites.nemo-ocean.io/user-guide/. This explains how to download the code, build the environment, create the executable, and perform a first integration.
 
-If you are already using NEMO with a previous release, refer to the [Migration Guide] (https://sites.nemo-ocean.io/user-guide/migration.html) to help making the move to 4.2.0.
+If you are already using a previous release of NEMO, please refer to the [Migration Guide] (https://sites.nemo-ocean.io/user-guide/migration.html) which aims to help you to make the move to 4.2.0.
 
-The above users guides cover in detail what is available from gitlab and supported by NEMO System Team.
-Aside from this web platform, the tests cases are also available from https://github.com/NEMO-ocean/NEMO-examples. These tests cases can be useful for studentes, outreach, exploring some specific aspects of NEMO with light configurations... It is also set up in order to gather the tests cases you may have developped and want to share with the community. Feel free to contribute! 
+The above users guides cover in detail what is available from gitlab and supported by NEMO System Team. Aside from this web platform, a set of test cases is also available from https://github.com/NEMO-ocean/NEMO-examples. These test cases can be useful for students, outreach, and exploring specific aspects of NEMO with light configurations. The web page also allows you to submit test cases you have developed and want to share with the community. Feel free to contribute!
 
-A summary on  how to get code dependencies, compile and execute NEMO is also available here
-(:file:`./INSTALL.rst`).
 
 Project documentation
 =====================
@@ -47,14 +39,15 @@ are available from zenodo
 ============ ==============================================   =============================================== 
  Component    Reference Manual (from zenondo, DOI to quote)   Reference manual (pdf on line version on gitlab)  
 ============ ==============================================   ===============================================  
- |NEMO-OCE|   |https://zenodo.org/record/1464816|    
- |NEMO-ICE|   |https://zenodo.org/record/1471689|             *Updated version will be online since Mar 2022*
- |NEMO-MBG|   |https://zenodo.org/record/1471700|.            *Updated version will be online since Mar 2022*
+ |NEMO-OCE|   |https://zenodo.org/record/1464816|                 Final link to add 
+ |NEMO-ICE|   |https://zenodo.org/record/1471689|             *Updated version will be online in  March 2022*
+ |NEMO-MBG|   |https://zenodo.org/record/1471700|             *Updated version will be online in March 2022*
 ============ ==============================================   ===============================================  
 
 These reference manuals are the publications that should be cited in your own publications. Please visit [How to cite?](https://www.nemo-ocean.eu/bibliography/how-to-cite/) for details.
 
 New features of 4.2.0 release are described here (:file:`./CHANGES.md`)
+
 
 Asking questions, echange information
 =====================================
@@ -77,25 +70,6 @@ The main scope is to collect relevant manuscripts covering various topics and
 to provide a single portal to assess the model potential and evolution.
 
 
-More on NEMO's features
-=======================
-Not only does the NEMO framework model the ocean circulation,
-it offers various features to enable
-
-- Create :doc:`embedded zooms<zooms>` seamlessly thanks to 2-way nesting package AGRIF_.
-- Opportunity to integrate an :doc:`external biogeochemistry model<tracers>`
-- Versatile :doc:`data assimilation<da>`
-- Generation of :doc:`diagnostics<diags>` through effective XIOS_ system
-- Roll-out Earth system modeling with :doc:`coupling interface<cplg>` based on OASIS_
-
-Several :doc:`built-in configurations<cfgs>` are provided to
-evaluate the skills and performances of the model which
-can be used as templates for setting up a new configurations (:file:`./cfgs`).
-
-The user can also checkout available :doc:`idealized test cases<tests>` that
-address specific physical processes (:file:`./tests`).
-
-A set of :doc:`utilities <tools>` is also provided to {pre,post}process your data (:file:`./tools`).
 
 Contributing to NEMO development
 ================================
