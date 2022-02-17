@@ -1,4 +1,5 @@
 **Contents**
+
 .. contents::
    :local:
 
