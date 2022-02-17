@@ -5,6 +5,11 @@
 
 
 
+.. _`Former web platform forge`: https://forge.ipsl.jussieu.fr/nemo
+.. _`NEMO users' guide`: https://sites.nemo-ocean.io/user-guide
+.. _`Migration Guide`: https://sites.nemo-ocean.io/user-guide/migration.html
+.. _`Test case repository`: https://github.com/NEMO-ocean/NEMO-examples
+
 
 Welcome to NEMO home page!
 ==========================
@@ -13,15 +18,15 @@ NEMO (*Nucleus for European Modelling of the Ocean*) is a state-of-the-art model
 
 This page intends to help you to get started using the NEMO platform and to introduce you to the different levels of information available. It starts here with NEMO release 4.2.0.
 
-Reminder: [Former web platform forge](https://forge.ipsl.jussieu.fr/nemo) (SVN+Trac) contains the previous documentation and releases made available from the beginning of the project up to of NEMO 4.0.
+Reminder: `Former web platform forge`_ (SVN+Trac) contains the previous documentation and releases made available from the beginning of the project up to of NEMO 4.0.
 
 Getting started
 ===============
-Getting your hands on NEMO: the first steps are described in detail in the NEMO users' guide: https://sites.nemo-ocean.io/user-guide/. This explains how to download the code, build the environment, create the executable, and perform a first integration.
+Getting your hands on NEMO: the first steps are described in detail in the `NEMO users' guide`_ . This explains how to download the code, build the environment, create the executable, and perform a first integration.
 
-If you are already using a previous release of NEMO, please refer to the [Migration Guide] (https://sites.nemo-ocean.io/user-guide/migration.html) which aims to help you to make the move to 4.2.0.
+If you are already using a previous release of NEMO, please refer to the `Migration Guide`_ which aims to help you to make the move to 4.2.0.
 
-The above users guides cover in detail what is available from gitlab and supported by NEMO System Team. Aside from this web platform, a set of test cases is also available from https://github.com/NEMO-ocean/NEMO-examples. These test cases can be useful for students, outreach, and exploring specific aspects of NEMO with light configurations. The web page also allows you to submit test cases you have developed and want to share with the community. Feel free to contribute!
+The above users guides cover in detail what is available from gitlab and supported by NEMO System Team. Aside from this web platform, a set of test cases is also available from the `Test case repository`_ . These test cases can be useful for students, outreach, and exploring specific aspects of NEMO with light configurations. The web page also allows you to submit test cases you have developed and want to share with the community. Feel free to contribute!
 
 
 Project documentation
@@ -29,11 +34,11 @@ Project documentation
 
 Reference manuals fully describing NEMO  for the three main component
 
-* |OCE| models the ocean {thermo}dynamics and solves the primitive equations (:file:`./src/OCE`)
+* |OCE| models the ocean {thermo}dynamics and solves the primitive equations (`./src/OCE <./src/OCE>`_)
 
-* |ICE| simulates sea-ice {thermo}dynamics, brine inclusions and  subgrid-scale thickness variations (:file:`./src/ICE`)
+* |ICE| simulates sea-ice {thermo}dynamics, brine inclusions and  subgrid-scale thickness variations (`./src/ICE <./src/ICE>`_)
 
-* |MBG| models the {on,off}line oceanic tracers transport and biogeochemical processes  (:file:`./src/TOP`)
+* |MBG| models the {on,off}line oceanic tracers transport and biogeochemical processes  (`./src/TOP <./src/TOP>`_)
 are available from zenodo
 
 ============ ==============================================   =============================================== 
