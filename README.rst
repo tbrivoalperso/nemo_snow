@@ -1,4 +1,4 @@
-.. todo::
+**Contents**
 .. contents::
    :local:
 
@@ -19,8 +19,7 @@
 .. _`NEMO System Team wiki`: https://forge.nemo-ocean.eu/developers/home/-/wikis/Home
 
 
-Welcome to NEMO home page!
-==========================
+**Welcome to NEMO home page!**
 
 NEMO (*Nucleus for European Modelling of the Ocean*) is a state-of-the-art modelling
 framework for research activities and forecasting services in ocean and climate sciences,
@@ -78,13 +77,13 @@ publications. Please visit `How to cite`_? for details.
 New features of 4.2.0 release are described in the `Change list`_ section of the `NEMO users' guide`_
 
 
-Asking questions, and exchangsinge information
-==============================================
+Asking questions, and exchanging information
+============================================
 - Register once for all and use the `NEMO forums`_ on discourse to share and discuss with the NEMO community.
 
 - Register once for all and receive by mail the `NEMO newsletter`_ : recommended for all
-users to receive the major announcements from the project (new releases, open meetings and
-main informations). Low traffic: about ten messages a year.
+  users to receive the major announcements from the project (new releases, open meetings and
+  main informations). Low traffic: about ten messages a year.
 
 
 Contributing to NEMO visibility: projects and publications
@@ -105,12 +104,12 @@ to provide a single portal to assess the model potential and evolution.
 Contributing to NEMO development
 ================================
 
-NEMO intends to be written in a way allowing easy plug of developments.  You are also
-welcome to contribute to the development of the NEMO Shared reference.  NEMO development
-is driven by  NEMO Consortium planning and producing NEMO's sustainable development in
-order to keep a reliable evolving framework.  Development is organised and scheduled
-through a five years development strategy, Working groups and the activities of the
-development team (named NEMO System Team) in a yearly workplan. More information is
+NEMO strives to be written in a way which allows the easy incorporation of developments.
+You are welcome to contribute to the development of the NEMO Shared reference.  NEMO
+development is driven by  NEMO Consortium planning and producing NEMO's sustainable
+development in order to keep a reliable evolving framework.  Development is organised and
+scheduled through a five years development strategy, Working groups and the activities of
+the development team (named NEMO System Team) in a yearly workplan. More information is
 available on the `NEMO System Team wiki`_
 
 
@@ -118,7 +117,7 @@ Disclaimer
 ==========
 
 The NEMO source code is freely available and distributed under
-`CeCILL v2.0 license <./LICENSE>` (GNU GPL compatible).
+`CeCILL v2.0 license <./LICENSE>`_ (GNU GPL compatible).
 
 You can use, modify and/or redistribute the software under its terms,
 but users are provided only with a limited warranty and the software's authors and
