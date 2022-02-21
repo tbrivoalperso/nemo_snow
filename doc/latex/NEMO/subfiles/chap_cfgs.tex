@@ -237,10 +237,10 @@ It is determined such as, at each time step, the basin-integrated flux is zero.
 The basin is initialised at rest with vertical profiles of temperature and salinity uniformly applied to
 the whole domain.
 
-The GYRE configuration is set like an analytical configuration.
-Through \np[=.false.]{ln_read_cfg}{ln\_read\_cfg} in \nam{cfg}{cfg} namelist defined in
-the reference configuration \path{./cfgs/GYRE_PISCES/EXPREF/namelist_cfg}
-analytical definition of grid in GYRE is done in mdl{usrdef\_hrg}, \mdl{usrdef\_zgr} routines.
+The GYRE configuration is set like an analytical configuration by setting 
+ \np[=.false.]{ln_read_cfg}{ln\_read\_cfg} in \nam{cfg}{cfg} part of the reference configuration
+namelist \path{./cfgs/GYRE_PISCES/EXPREF/namelist_cfg}.
+The analytical definition of grid in GYRE is done in \mdl{usrdef\_hrg} and \mdl{usrdef\_zgr} routines.
 Its horizontal resolution (and thus the size of the domain) is determined by
 setting \np{nn_GYRE}{nn\_GYRE} in \nam{usr_def}{usr\_def}:
 
