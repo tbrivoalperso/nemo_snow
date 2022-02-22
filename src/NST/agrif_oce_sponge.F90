@@ -398,7 +398,7 @@ CONTAINS
       !
       IF( before ) THEN
          DO jn = 1, jpts
-            DO jk=k1,k2
+            DO jk=k1,k2-1
                DO jj=j1,j2
                   DO ji=i1,i2
                      ! JC: masking is mandatory here: before tracer field seems 
@@ -416,7 +416,7 @@ CONTAINS
             DO jj=j1,j2
                DO ji=i1,i2
                   tabres(ji,jj,k1,jpts+1) = 0.5_wp * tmask(ji,jj,k1) * e3w(ji,jj,k1,Kbb_a)
-                  DO jk=k1+1,k2
+                  DO jk=k1+1,k2-1
                      tabres(ji,jj,jk,jpts+1) = tmask(ji,jj,jk) * &
                         & ( tabres(ji,jj,jk-1,jpts+1) + e3w(ji,jj,jk,Kbb_a) )
                   END DO
@@ -627,7 +627,7 @@ CONTAINS
       !!---------------------------------------------    
       !
       IF( before ) THEN
-         DO jk=k1,k2
+         DO jk=k1,k2-1
             DO jj=j1,j2
                DO ji=i1,i2
                   tabres(ji,jj,jk,m1) = e2u(ji,jj) * e3u(ji,jj,jk,Kbb_a) * uu(ji,jj,jk,Kbb_a) * umask(ji,jj,jk)
@@ -672,7 +672,7 @@ CONTAINS
             END DO
          ENDIF
          !
-         ubdiff(i1:i2,j1:j2,1:jpk) = (uu(i1:i2,j1:j2,1:jpk,Kbb_a) - tabres_child(i1:i2,j1:j2,1:jpk))*umask(i1:i2,j1:j2,1:jpk)
+         ubdiff(i1:i2,j1:j2,1:jpkm1) = (uu(i1:i2,j1:j2,1:jpkm1,Kbb_a) - tabres_child(i1:i2,j1:j2,1:jpkm1))*umask(i1:i2,j1:j2,1:jpkm1)
          !
          DO jk = 1, jpkm1                                 ! Horizontal slab
             !                                             ! ===============
@@ -774,7 +774,7 @@ CONTAINS
       !!--------------------------------------------- 
       
       IF( before ) THEN 
-         DO jk=k1,k2
+         DO jk=k1,k2-1
             DO jj=j1,j2
                DO ji=i1,i2
                   tabres(ji,jj,jk,m1) = e1v(ji,jj) * e3v(ji,jj,jk,Kbb_a) * vv(ji,jj,jk,Kbb_a) * vmask(ji,jj,jk)
@@ -820,7 +820,7 @@ CONTAINS
             END DO
          ENDIF
          !
-         vbdiff(i1:i2,j1:j2,1:jpk) = (vv(i1:i2,j1:j2,1:jpk,Kbb_a) - tabres_child(i1:i2,j1:j2,1:jpk))*vmask(i1:i2,j1:j2,1:jpk)
+         vbdiff(i1:i2,j1:j2,1:jpkm1) = (vv(i1:i2,j1:j2,1:jpkm1,Kbb_a) - tabres_child(i1:i2,j1:j2,1:jpkm1))*vmask(i1:i2,j1:j2,1:jpkm1)
          !
          DO jk = 1, jpkm1                                 ! Horizontal slab
             !                                             ! ===============

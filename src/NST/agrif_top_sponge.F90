@@ -86,7 +86,7 @@ CONTAINS
       !
       IF( before ) THEN
          DO jn = 1, jptra
-            DO jk=k1,k2
+            DO jk=k1,k2-1
                DO jj=j1,j2
                   DO ji=i1,i2
                      tabres(ji,jj,jk,jn) = tr(ji,jj,jk,jn,Kbb_a) * tmask(ji,jj,jk) 
@@ -102,7 +102,7 @@ CONTAINS
             DO jj=j1,j2
                DO ji=i1,i2
                   tabres(ji,jj,k1,jptra+1) = 0.5_wp * tmask(ji,jj,k1) * e3w(ji,jj,k1,Kbb_a)
-                  DO jk=k1+1,k2
+                  DO jk=k1+1,k2-1
                      tabres(ji,jj,jk,jptra+1) = tmask(ji,jj,jk) * &
                         & ( tabres(ji,jj,jk-1,jptra+1) + e3w(ji,jj,jk,Kbb_a) )
                   END DO
