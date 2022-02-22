@@ -77,7 +77,7 @@ CONTAINS
          IF( l_ini_child )   Kmm_a = Kbb_a  
 
          DO jn = 1,jptra
-            DO jk=k1,k2
+            DO jk=k1,k2-1
                DO jj=j1,j2
                  DO ji=i1,i2
                        ptab(ji,jj,jk,jn) = tr(ji,jj,jk,jn,Kmm_a)
@@ -92,7 +92,7 @@ CONTAINS
             DO jj=j1,j2
                DO ji=i1,i2
                   ptab(ji,jj,k1,jptra+1) = 0.5_wp * tmask(ji,jj,k1) * e3w(ji,jj,k1,Kmm_a)
-                  DO jk=k1+1,k2
+                  DO jk=k1+1,k2-1
                      ptab(ji,jj,jk,jptra+1) = tmask(ji,jj,jk) * &
                         & ( ptab(ji,jj,jk-1,jptra+1) + e3w(ji,jj,jk,Kmm_a) )
                   END DO
@@ -206,7 +206,7 @@ CONTAINS
             ENDIF
 
             DO jn=1, jptra
-                tr(i1:i2,j1:j2,1:jpk,jn,Krhs_a)=ptab(i1:i2,j1:j2,1:jpk,jn)*tmask(i1:i2,j1:j2,1:jpk) 
+                tr(i1:i2,j1:j2,1:jpkm1,jn,Krhs_a)=ptab(i1:i2,j1:j2,1:jpkm1,jn)*tmask(i1:i2,j1:j2,1:jpkm1) 
             END DO
          ENDIF
 
