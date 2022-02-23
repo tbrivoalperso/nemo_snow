@@ -365,14 +365,34 @@ and the vertical grid (\autoref{subsec:DOM_zgr}).
 \subsection{Domain size}
 \label{subsec:DOM_size}
 
-The total size of the computational domain is set by the parameters \forcode{Ni0glo}, \forcode{NjOglo} and
-\forcode{jpkglo} for the $i$, $j$ and $k$ directions, respectively. Note that \forcode{Ni0glo} and \forcode{NjOglo} do not contain any additional MPI or boundary halos, see \autoref{sec:LBC_mpp}. The name of the configuration is set through the optional parameter \np{cn_cfg}{cn\_cfg}, and the nominal resolution through the optional parameter \np{nn_cfg}{nn\_cfg}.
-The way these variables are defined will differ accoring to the value of \np{ln_read_cfg}{ln\_read\_cfg} parameter in
-namelist \nam{cfg}{cfg}, which usage is detailed in \autoref{subsec:DOM_config}. If \np[=.false.]{ln_read_cfg}{ln\_read\_cfg} the user must define \forcode{cn_cfg, nn_cfg, Ni0glo, Nj0glo, jpkglo} trough the routine \mdl{usrdef\_nam}. If \np[=.true.]{ln_read_cfg}{ln\_read\_cfg} they will be defined from the NetCDF domain configuration file defined by \np{cn_domcfg}{cn\_domcfg} parameter in namelist \nam{cfg}{cfg}. \forcode{Ni0glo, Nj0glo, jpkglo} are defined with the size  \texttt{e3t\_0} dimensions. \forcode{cn_cfg, nn_cfg} are defined by the global attributes named \texttt{CfgName} and \texttt{CfgIndex}.
+The total size of the computational domain is set by the parameters \forcode{Ni0glo},
+\forcode{NjOglo} and \forcode{jpkglo} for the $i$, $j$ and $k$ directions,
+respectively. Note that \forcode{Ni0glo} and \forcode{NjOglo} do not contain any
+additional MPI or boundary halos, see \autoref{sec:LBC_mpp}. 
 
-The global lateral boundary condition type is selected by using parameters \forcode{l\_Iperio}, \forcode{l\_Jperio}, \forcode{l\_NFold} and \forcode{c\_NFtype}.
+The name of the configuration is set through the optional parameter \np{cn_cfg}{cn\_cfg},
+and the nominal resolution through the optional parameter \np{nn_cfg}{nn\_cfg}.
+The way all these variables are defined will differ accoring to the value of
+\np{ln_read_cfg}{ln\_read\_cfg} parameter in namelist \nam{cfg}{cfg}, whose usage is
+detailed in \autoref{subsec:DOM_config}.
+
+\begin{itemize}
+\item If \np[=.false.]{ln_read_cfg}{ln\_read\_cfg} the user must define 
+      \forcode{cn_cfg, nn_cfg, Ni0glo, Nj0glo, jpkglo} through the routine \mdl{usrdef\_nam}. 
+\item If \np[=.true.]{ln_read_cfg}{ln\_read\_cfg} they will be defined from the NetCDF domain 
+      configuration file defined by the value of the \np{cn_domcfg}{cn\_domcfg} parameter 
+      set in namelist \nam{cfg}{cfg}. 
+  \begin{itemize}
+   \item \forcode{Ni0glo, Nj0glo, jpkglo} do not need to be set explicitly but are, instead, 
+         inferred from the dimensions of the \texttt{e3t\_0} array.
+   \item \forcode{cn_cfg, nn_cfg} are defined by the global attributes named \texttt{CfgName} 
+         and \texttt{CfgIndex}.
+  \end{itemize}
+\end{itemize}
+
+The global lateral boundary condition type is selected by using parameters \forcode{l_Iperio}, \forcode{l_Jperio}, \forcode{l_NFold} and \forcode{c_NFtype}.
 See \autoref{sec:LBC_jperio} for details on the available options and
-the corresponding values for \forcode{l\_Iperio}, \forcode{l\_Jperio}, \forcode{l\_NFold} and \forcode{c\_NFtype}.
+the corresponding values for \forcode{l_Iperio}, \forcode{l_Jperio}, \forcode{l_NFold} and \forcode{c_NFtype}.
 
 %% =================================================================================================
 \subsection[Horizontal grid mesh (\textit{domhgr.F90}]{Horizontal grid mesh (\protect\mdl{domhgr})}
