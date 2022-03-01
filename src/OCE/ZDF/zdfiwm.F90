@@ -299,7 +299,7 @@ CONTAINS
          ENDIF
       ENDIF
 
-      IF(sn_cfctl%l_prtctl)   CALL prt_ctl(tab3d_1=zav_wave , clinfo1=' iwm - av_wave: ', tab3d_2=avt, clinfo2=' avt: ', kdim=jpk)
+      IF(sn_cfctl%l_prtctl)   CALL prt_ctl(tab3d_1=zav_wave , clinfo1=' iwm - av_wave: ', tab3d_2=avt, clinfo2=' avt: ')
       !
    END SUBROUTINE zdf_iwm
 
