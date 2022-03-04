@@ -18,10 +18,13 @@
 .. _`NEMO projects`: https://www.nemo-ocean.eu/projects/add
 .. _`Special Issue`: https://gmd.copernicus.org/articles/special_issue40.html
 .. _`NEMO System Team wiki`: https://forge.nemo-ocean.eu/developers/home/-/wikis/Home
+.. _`NEMO ocean engine`: https://zenodo.org/record/1464816
+.. _`NEMO Tracers engine` : https://zenodo.org/record/1471700
+.. _`NEMO Sea Ice engine`: https://zenodo.org/record/1471689
 
 
 **Welcome to NEMO home page!**
-
+`
 NEMO (*Nucleus for European Modelling of the Ocean*) is a state-of-the-art modelling
 framework for research activities and forecasting services in ocean and climate sciences,
 developed in a sustainable way by the NEMO European consortium since 2008.
@@ -65,11 +68,11 @@ Reference manuals fully describing NEMO  for the three main component
 are available from zenodo
 
 ============ ==============================================   =============================================== 
- Component    Reference Manual (from zenondo, DOI to quote)   Reference manual (pdf on line version on gitlab)  
+ Component    Reference Manual (from zenondo, DOI to quote)   Reference manual (pdf on line version)  
 ============ ==============================================   ===============================================  
- |NEMO-OCE|   |https://zenodo.org/record/1464816|                 Final link to add 
- |NEMO-ICE|   |https://zenodo.org/record/1471689|             *Updated version will be online in  March 2022*
- |NEMO-MBG|   |https://zenodo.org/record/1471700|             *Updated version will be online in March 2022*
+ |NEMO-OCE|   `NEMO ocean engine`_                               Final link to add 
+ |NEMO-ICE|   `NEMO Sea Ice engine`_                            *Updated version will be online in  March 2022*
+ |NEMO-MBG|   `NEMO Tracers engine`_                              Final link to add
 ============ ==============================================   ===============================================  
 
 These reference manuals are the publications that should be cited in your own
