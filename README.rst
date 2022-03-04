@@ -24,7 +24,7 @@
 
 
 **Welcome to NEMO home page!**
-`
+  
 NEMO (*Nucleus for European Modelling of the Ocean*) is a state-of-the-art modelling
 framework for research activities and forecasting services in ocean and climate sciences,
 developed in a sustainable way by the NEMO European consortium since 2008.
