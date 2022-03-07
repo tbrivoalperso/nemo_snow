@@ -65,15 +65,17 @@ Reference manuals fully describing NEMO  for the three main component
 
 * |MBG| models the {on,off}line oceanic tracers transport and biogeochemical processes 
   (`./src/TOP <./src/TOP>`_)
-are available from zenodo
+are available from Zenodo:
 
-============ ============================================== 
- Component    Reference Manual (from zenondo, DOI to quote) 
-============ ============================================== 
- |NEMO-OCE|   `NEMO ocean engine`_                          
- |NEMO-ICE|   `NEMO Sea Ice engine`_                        
- |NEMO-MBG|   `NEMO Tracers engine`_                        
-============ ============================================== 
+============ ======================== =====
+ Component    Reference Manual         DOI
+============ ======================== =====
+ |NEMO-OCE|   `NEMO ocean engine`_    .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.6334656.svg
+                                         :target: https://doi.org/10.5281/zenodo.6334656                        
+ |NEMO-ICE|   `NEMO Sea Ice engine`_  *not yet available*
+ |NEMO-MBG|   `NEMO Tracers engine`_  .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1471700.svg
+                                         :target: https://doi.org/10.5281/zenodo.1471700
+============ ======================== =====
 
 These reference manuals are the publications that should be cited in your own
 publications. Please visit `How to cite`_? for details.
