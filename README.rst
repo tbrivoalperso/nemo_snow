@@ -67,13 +67,13 @@ Reference manuals fully describing NEMO  for the three main component
   (`./src/TOP <./src/TOP>`_)
 are available from zenodo
 
-============ ==============================================   =============================================== 
- Component    Reference Manual (from zenondo, DOI to quote)   Reference manual (pdf on line version)  
-============ ==============================================   ===============================================  
- |NEMO-OCE|   `NEMO ocean engine`_                               Final link to add 
- |NEMO-ICE|   `NEMO Sea Ice engine`_                            *Updated version will be online in  March 2022*
- |NEMO-MBG|   `NEMO Tracers engine`_                              Final link to add
-============ ==============================================   ===============================================  
+============ ============================================== 
+ Component    Reference Manual (from zenondo, DOI to quote) 
+============ ============================================== 
+ |NEMO-OCE|   `NEMO ocean engine`_                          
+ |NEMO-ICE|   `NEMO Sea Ice engine`_                        
+ |NEMO-MBG|   `NEMO Tracers engine`_                        
+============ ============================================== 
 
 These reference manuals are the publications that should be cited in your own
 publications. Please visit `How to cite`_? for details.
