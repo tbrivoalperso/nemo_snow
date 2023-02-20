@@ -47,10 +47,14 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_bom_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_bog_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_dif_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_difs_1d   !: Heat flux for diffusion in snow (ln_snwext=T)
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_opw_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_snw_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_dyn_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_err_dif_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_err_difs_1d !: ln_snwext=T
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qt_oce_ai_1d
 
    ! heat flux associated with ice-atmosphere mass exchange
@@ -134,6 +138,7 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   e_i_1d      !:    Ice  enthalpy per unit volume
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   e_s_1d      !:    Snow enthalpy per unit volume
 
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   eh_i_old    !: ice heat content (q*h, J.m-2)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   h_i_old     !: ice thickness layer (m)
 
@@ -149,6 +154,13 @@ MODULE ice1D
    ! convergence check
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   tice_cvgerr_1d   !: convergence of ice/snow temp (dT)          [K]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   tice_cvgstp_1d   !: convergence of ice/snow temp (subtimestep) [-]
+   
+   ! Variables for snow external routines (ln_snwext=T)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qcn_snw_bot_1d
+   
+   ! Variables needed for ISBA-ES coupling
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rho_s_1d      !:    Snow density per unit volume   
+
    ! 
    !!----------------------
    !! * 2D Module variables
@@ -179,7 +191,7 @@ CONTAINS
       !!                ***  ROUTINE ice1D_alloc ***
       !!---------------------------------------------------------------------!
       INTEGER ::   ice1D_alloc   ! return value
-      INTEGER ::   ierr(8), ii
+      INTEGER ::   ierr(9), ii
       !!---------------------------------------------------------------------!
       ierr(:) = 0
 
@@ -189,11 +201,11 @@ CONTAINS
          &      qns_ice_1d(jpij) , qml_ice_1d    (jpij) , qcn_ice_1d(jpij) , qtr_ice_top_1d(jpij) , &
          &      cnd_ice_1d(jpij) , t1_ice_1d     (jpij) , t_bo_1d   (jpij) ,   &
          &      hfx_sum_1d(jpij) , hfx_bom_1d    (jpij) , hfx_bog_1d(jpij) ,   & 
-         &      hfx_dif_1d(jpij) , hfx_opw_1d    (jpij) , hfx_dyn_1d(jpij) ,   &
+         &      hfx_dif_1d(jpij) , hfx_difs_1d(jpij),  hfx_opw_1d    (jpij) , hfx_dyn_1d(jpij) ,   &
          &      rn_amax_1d(jpij) ,                                             &
          &      hfx_thd_1d(jpij) , hfx_spr_1d    (jpij) ,                      &
          &      hfx_snw_1d(jpij) , hfx_sub_1d    (jpij) ,                      &
-         &      hfx_res_1d(jpij) , hfx_err_dif_1d(jpij) , qt_oce_ai_1d(jpij), STAT=ierr(ii) )
+         &      hfx_res_1d(jpij) , hfx_err_dif_1d(jpij), hfx_err_difs_1d(jpij) , qt_oce_ai_1d(jpij), STAT=ierr(ii) )
       !
       ii = ii + 1
       ALLOCATE( sprecip_1d    (jpij) , at_i_1d       (jpij) , ato_i_1d      (jpij) ,                         &
@@ -218,7 +230,7 @@ CONTAINS
       !
       ii = ii + 1
       ALLOCATE( t_s_1d  (jpij,nlay_s)     , t_i_1d (jpij,nlay_i)     , sz_i_1d(jpij,nlay_i) ,  &            
-         &      e_i_1d  (jpij,nlay_i)     , e_s_1d (jpij,nlay_s)     ,                         &
+         &      e_i_1d  (jpij,nlay_i)     , e_s_1d (jpij,nlay_s)     , rho_s_1d(jpij,nlay_s),  &
          &      eh_i_old(jpij,0:nlay_i+1) , h_i_old(jpij,0:nlay_i+1) , STAT=ierr(ii) )
       !
       ii = ii + 1
@@ -235,6 +247,9 @@ CONTAINS
          &      v_i_2d (jpij,jpl) , v_s_2d (jpij,jpl) , oa_i_2d(jpij,jpl) , sv_i_2d(jpij,jpl) ,  &
          &      a_ip_2d(jpij,jpl) , v_ip_2d(jpij,jpl) , t_su_2d(jpij,jpl) , v_il_2d(jpij,jpl) ,  &
          &      STAT=ierr(ii) )
+
+       ii = ii + 1
+      ALLOCATE( qcn_snw_bot_1d(jpij) , STAT=ierr(ii) )
 
       ice1D_alloc = MAXVAL( ierr(:) )
       IF( ice1D_alloc /= 0 )   CALL ctl_stop( 'STOP',  'ice1D_alloc: failed to allocate arrays.'  )

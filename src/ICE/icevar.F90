@@ -748,11 +748,6 @@ CONTAINS
                &                   - rcp   * ztmelts )
          END DO
       END DO
-      DO jk = 1, nlay_s             ! Snow energy of melting
-         DO ji = 1, npti
-            e_s_1d(ji,jk) = rhos * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )
-         END DO
-      END DO
       !
    END SUBROUTINE ice_var_enthalpy
 

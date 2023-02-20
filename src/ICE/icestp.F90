@@ -428,7 +428,10 @@ CONTAINS
          hfx_bom(ji,jj) = 0._wp   ;   hfx_sum(ji,jj) = 0._wp
          hfx_res(ji,jj) = 0._wp   ;   hfx_sub(ji,jj) = 0._wp
          hfx_spr(ji,jj) = 0._wp   ;   hfx_dif(ji,jj) = 0._wp
+         hfx_difs(ji,jj) = 0._wp  
          hfx_err_dif(ji,jj) = 0._wp
+         hfx_err_difs(ji,jj) = 0._wp
+
          wfx_err_sub(ji,jj) = 0._wp
          !
          diag_heat(ji,jj) = 0._wp ;   diag_sice(ji,jj) = 0._wp
@@ -463,6 +466,9 @@ CONTAINS
             ! Melt pond surface melt diagnostics (mv - more efficient: grouped into one water volume flux)
             dh_i_sum_2d(ji,jj,jl) = 0._wp
             dh_s_mlt_2d(ji,jj,jl) = 0._wp
+
+            ! Diags to validate ln_snwext=T
+            qcn_snw_bot(ji,jj,jl) = 0._wp
          END_2D
       ENDDO
 

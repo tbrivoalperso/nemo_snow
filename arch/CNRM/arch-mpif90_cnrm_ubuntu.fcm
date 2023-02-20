@@ -1,0 +1,52 @@
+# generic gfortran compiler options for linux
+# NCDF_INC    netcdf include file
+# NCDF_LIB    netcdf library
+# FC          Fortran compiler command
+# FCFLAGS     Fortran compiler flags
+# FFLAGS      Fortran 77 compiler flags
+# LD          linker
+# LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+# FPPFLAGS    pre-processing flags
+# AR          assembler
+# ARFLAGS     assembler flags
+# MK          make
+# USER_INC    additional include files for the compiler,  e.g. -I<include dir>
+# USER_LIB    additional libraries to pass to the linker, e.g. -l<library>
+# Modif: add -ffree-line-length-180 option to override the default maximum line
+# length (132) - David Salas y Melia, 12/2014
+# N.B. Dans la ligne HDF5_LIB, libcurl.a n'a pas été incluse car non-trouvée sur le PC pxaster4 !
+#
+#
+%NCDF                /home/brivoalt/ext_libs
+%NCDF_INC            -I%NCDF/include
+%NCDF_LIB            -L%NCDF/lib -lnetcdff -lnetcdf
+
+
+%CPP                 cpp -Dkey_nosignedzero
+%FC	             mpif90 -Wall %NCDF_INC -Wl,-rpath,%NCDF/lib
+%FCFLAGS             -fdefault-real-8 -O3 -funroll-all-loops -fcray-pointer -ffree-line-length-none -fallow-argument-mismatch -fallow-invalid-boz 
+%HDF5_LIB            -L/home/brivoalt/ext_libs/lib -lhdf5_hl -lhdf5 -lz
+#%XIOS_ROOT           /home/voldoire/models/xios/XIOS-1442--prod-linux_cnrm
+#%XIOS_INC            -I%XIOS_ROOT/inc
+#%XIOS_LIB            -L%XIOS_ROOT/lib -lxios
+
+%OASIS_HOME           /home/brivoalt/SRC/CNRM-CM6-1D/oasis-mct-3.0/cnrm_ubuntu
+%OASIS_INC            -I%OASIS_HOME/build/lib/mct -I%OASIS_HOME/build/lib/psmile.MPI1
+%OASIS_LIB            -L%OASIS_HOME/lib -lpsmile.MPI1 -lmct -lmpeu -lscrip
+
+
+%FFLAGS              %FCFLAGS
+%LD                  %FC
+
+%FPPFLAGS            -P -traditional
+#%LDFLAGS             %NCDF_INC %NCDF_LIB
+%LDFLAGS             
+
+%AR                  ar
+%ARFLAGS             -rs
+%MK                  make
+#%USER_INC            %NCDF_INC
+%USER_INC            %OASIS_INC %NCDF_INC
+#%USER_LIB            %NCDF_LIB -lstdc++
+%USER_LIB            %OASIS_LIB %NCDF_LIB %HDF5_LIB -lstdc++
+#%USER_LIB            %XIOS_LIB %NCDF_LIB %HDF5_LIB -lstdc++
