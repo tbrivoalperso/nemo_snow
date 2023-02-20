@@ -120,8 +120,8 @@ CONTAINS
          vtrdmp(:,:,:) = 0._wp
          !
          !Read in mask from file
-         CALL iom_open ( cn_resto, imask)
-         CALL iom_get  ( imask, jpdom_auto, 'resto', resto)
+         CALL iom_open ( cn_resto, imask) 
+         CALL iom_get  ( imask, jpdom_auto, 'resto', resto_uv)
          CALL iom_close( imask )
       ENDIF
       !
