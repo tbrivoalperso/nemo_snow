@@ -20,6 +20,7 @@ MODULE icethd
    USE sbc_oce , ONLY : sss_m, sst_m, e3t_m, utau, vtau, ssu_m, ssv_m, frq_m, sprecip, ln_cpl
    USE sbc_ice , ONLY : qsr_oce, qns_oce, qemp_oce, qsr_ice, qns_ice, dqns_ice, evap_ice, qprec_ice, qevap_ice, &
       &                 qml_ice, qcn_ice, qtr_ice_top
+   USE snwthd        ! snow thermodynamics
    USE ice1D          ! sea-ice: thermodynamics variables
    USE icethd_zdf     ! sea-ice: vertical heat diffusion
    USE icethd_dh      ! sea-ice: ice-snow growth and melt
@@ -84,6 +85,15 @@ CONTAINS
       INTEGER, INTENT(in) :: kt    ! number of iteration
       !
       INTEGER  :: ji, jj, jk, jl   ! dummy loop indices
+
+      !!-------------------------------------------------------------------
+      ! Variables used if ln_snwext = true
+      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zradtr_s  ! Radiation transmited through the snow
+      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zradab_s  ! Radiation absorbed in the snow 
+      REAL(wp), DIMENSION(jpij) ::   za_s_fra    ! ice fraction covered by snow
+      REAL(wp), DIMENSION(jpij) ::   zq_rema     ! remaining hear
+      REAL(wp), DIMENSION(jpij) ::   zevap_rema  ! ice fraction covered by snow
+
       !!-------------------------------------------------------------------
       ! controls
       IF( ln_timing    )   CALL timing_start('icethd')                                                             ! timing
@@ -128,10 +138,17 @@ CONTAINS
             dh_i_sub  (1:npti) = 0._wp ; dh_i_bog(1:npti) = 0._wp
             dh_snowice(1:npti) = 0._wp ; dh_s_mlt(1:npti) = 0._wp
             !
-                              CALL ice_thd_zdf                      ! --- Ice-Snow temperature --- !
+            zradtr_s  (1:npti, :) = 0._wp ; zradab_s(1:npti, :) = 0._wp   ! Reset snow fluxes and area
+            za_s_fra  (1:npti)    = 0._wp ; zq_rema(1:npti)     = 0._wp
+            zevap_rema(1:npti)    = 0._wp ; 
             !
-            IF( ln_icedH ) THEN                                     ! --- Growing/Melting --- !
-                              CALL ice_thd_dh                           ! Ice-Snow thickness
+            IF( ln_snwext )  CALL snw_thd( zradtr_s, zradab_s, za_s_fra, zq_rema, zevap_rema )       ! Snow thermodynamics (detached mode)
+
+                              CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra )                      ! --- Ice-Snow temperature --- !
+            !
+            IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
+                              CALL ice_thd_dh( zq_rema, zevap_rema )    ! Ice-Snow thickness
+
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF
                               CALL ice_thd_sal( ln_icedS )          ! --- Ice salinity --- !
@@ -269,7 +286,7 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
          CALL tab_2d_1d( npti, nptidx(1:npti), h_i_1d (1:npti), h_i (:,:,kl)     )
-         CALL tab_2d_1d( npti, nptidx(1:npti), h_s_1d (1:npti), h_s (:,:,kl)     )
+         CALL tab_2d_1d( npti, nptidx(1:npti), h_s_1d (1:npti), h_s (:,:,kl)     ) 
          CALL tab_2d_1d( npti, nptidx(1:npti), t_su_1d(1:npti), t_su(:,:,kl)     )
          CALL tab_2d_1d( npti, nptidx(1:npti), s_i_1d (1:npti), s_i (:,:,kl)     )
          DO jk = 1, nlay_s
@@ -461,7 +478,7 @@ CONTAINS
       !!-------------------------------------------------------------------
       INTEGER  ::   ios   ! Local integer output status for namelist read
       !!
-      NAMELIST/namthd/ ln_icedH, ln_icedA, ln_icedO, ln_icedS, ln_leadhfx
+      NAMELIST/namthd/ ln_icedH, ln_icedA, ln_icedO, ln_icedS, ln_leadhfx, ln_snwext
       !!-------------------------------------------------------------------
       !
       READ  ( numnam_ice_ref, namthd, IOSTAT = ios, ERR = 901)
@@ -480,13 +497,16 @@ CONTAINS
          WRITE(numout,*) '      activate ice growth in open-water (T) or not (F)                     ln_icedO   = ', ln_icedO
          WRITE(numout,*) '      activate gravity drainage and flushing (T) or not (F)                ln_icedS   = ', ln_icedS
          WRITE(numout,*) '      heat in the leads is used to melt sea-ice before warming the ocean   ln_leadhfx = ', ln_leadhfx
-     ENDIF
+         WRITE(numout,*) '      Snow thermodynamics treated separately from sea-ice (T) or not (F)   ln_snwext =  ', ln_snwext
+
+ ENDIF
       !
                        CALL ice_thd_zdf_init   ! set ice heat diffusion parameters
       IF( ln_icedA )   CALL ice_thd_da_init    ! set ice lateral melting parameters
       IF( ln_icedO )   CALL ice_thd_do_init    ! set ice growth in open water parameters
                        CALL ice_thd_sal_init   ! set ice salinity parameters
                        CALL ice_thd_pnd_init   ! set melt ponds parameters
+                       CALL snw_thd_init       ! set snow parameters
       !
    END SUBROUTINE ice_thd_init
 

@@ -17,6 +17,7 @@ MODULE icethd_zdf
    USE phycst          ! physical constants (ocean directory) 
    USE ice             ! sea-ice: variables
    USE icethd_zdf_BL99 ! sea-ice: vertical diffusion (Bitz and Lipscomb, 1999) 
+   USE icethd_zdf_BL99_snwext ! sea-ice: vertical diffusion (Bitz and Lipscomb, 1999) (snow detached mode)
    !
    USE in_out_manager  ! I/O manager
    USE lib_mpp         ! MPP library
@@ -43,7 +44,7 @@ MODULE icethd_zdf
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE ice_thd_zdf
+   SUBROUTINE ice_thd_zdf( zradtr_s, zradab_s, za_s_fra )
       !!-------------------------------------------------------------------
       !!                ***  ROUTINE ice_thd_zdf  ***
       !!
@@ -51,19 +52,36 @@ CONTAINS
       !!              of vertical diffusion
       !!-------------------------------------------------------------------
       !
+      REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(in) ::   zradtr_s  ! Radiation transmited through the snow
+      REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(in) ::   zradab_s  ! Radiation absorbed in the snow 
+      REAL(wp), DIMENSION(jpij), INTENT(in) ::   za_s_fra    ! ice fraction covered by snow
+      !
       SELECT CASE ( nice_zdf )      ! Choose the vertical heat diffusion solver
       !
       !                             !-------------!      
       CASE( np_BL99 )               ! BL99 solver !
          !                          !-------------!
-         IF( .NOT.ln_cndflx ) THEN                           ! No conduction flux ==> default option
-            CALL ice_thd_zdf_BL99( np_cnd_OFF )
-         ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option
-            CALL ice_thd_zdf_BL99( np_cnd_ON  )
-         ELSEIF( ln_cndflx .AND.      ln_cndemulate ) THEN   ! Conduction flux is emulated 
-            CALL ice_thd_zdf_BL99( np_cnd_EMU )
-            CALL ice_thd_zdf_BL99( np_cnd_ON  )
+         IF( ln_snwext ) THEN ! snow in detached mode
+            IF( .NOT.ln_cndflx ) THEN                           ! No conduction flux ==> default option
+               CALL ice_thd_zdf_BL99_snwext( np_cnd_OFF, zradtr_s, zradab_s, za_s_fra )
+            ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option
+               CALL ice_thd_zdf_BL99_snwext( np_cnd_ON, zradtr_s, zradab_s, za_s_fra  )  
+            ELSEIF( ln_cndflx .AND.      ln_cndemulate ) THEN   ! Conduction flux is emulated 
+               CALL ice_thd_zdf_BL99_snwext( np_cnd_EMU, zradtr_s, zradab_s, za_s_fra )
+               CALL ice_thd_zdf_BL99_snwext( np_cnd_ON, zradtr_s, zradab_s, za_s_fra  )
+            ENDIF
+         ELSE
+         !
+            IF( .NOT.ln_cndflx ) THEN                           ! No conduction flux ==> default option
+               CALL ice_thd_zdf_BL99( np_cnd_OFF )
+            ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option
+               CALL ice_thd_zdf_BL99( np_cnd_ON  )
+            ELSEIF( ln_cndflx .AND.      ln_cndemulate ) THEN   ! Conduction flux is emulated 
+               CALL ice_thd_zdf_BL99( np_cnd_EMU )
+               CALL ice_thd_zdf_BL99( np_cnd_ON  )
+            ENDIF
          ENDIF
+
          !
       END SELECT
       !
@@ -84,8 +102,7 @@ CONTAINS
       !!-------------------------------------------------------------------
       INTEGER  ::   ios, ioptio   ! Local integer
       !!
-      NAMELIST/namthd_zdf/ ln_zdf_BL99, ln_cndi_U64, ln_cndi_P07, rn_cnd_s, &
-         &                 rn_kappa_i, rn_kappa_s, rn_kappa_smlt, rn_kappa_sdry, ln_zdf_chkcvg
+      NAMELIST/namthd_zdf/ ln_zdf_BL99, ln_cndi_U64, ln_cndi_P07, rn_kappa_i, ln_zdf_chkcvg
       !!-------------------------------------------------------------------
       !
       READ  ( numnam_ice_ref, namthd_zdf, IOSTAT = ios, ERR = 901)
@@ -102,11 +119,7 @@ CONTAINS
          WRITE(numout,*) '      Bitz and Lipscomb (1999) formulation                      ln_zdf_BL99   = ', ln_zdf_BL99
          WRITE(numout,*) '      thermal conductivity in the ice (Untersteiner 1964)       ln_cndi_U64   = ', ln_cndi_U64
          WRITE(numout,*) '      thermal conductivity in the ice (Pringle et al 2007)      ln_cndi_P07   = ', ln_cndi_P07
-         WRITE(numout,*) '      thermal conductivity in the snow                          rn_cnd_s      = ', rn_cnd_s
          WRITE(numout,*) '      extinction radiation parameter in sea ice                 rn_kappa_i    = ', rn_kappa_i
-         WRITE(numout,*) '      extinction radiation parameter in snw      (nn_qtrice=0)  rn_kappa_s    = ', rn_kappa_s
-         WRITE(numout,*) '      extinction radiation parameter in melt snw (nn_qtrice=1)  rn_kappa_smlt = ', rn_kappa_smlt
-         WRITE(numout,*) '      extinction radiation parameter in dry  snw (nn_qtrice=1)  rn_kappa_sdry = ', rn_kappa_sdry
          WRITE(numout,*) '      check convergence of heat diffusion scheme                ln_zdf_chkcvg = ', ln_zdf_chkcvg
       ENDIF
       !

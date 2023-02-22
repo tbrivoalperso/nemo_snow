@@ -202,6 +202,7 @@ MODULE ice
    LOGICAL , PUBLIC ::   ln_icedO         ! activate ice growth in open-water (T) or not (F)
    LOGICAL , PUBLIC ::   ln_icedS         ! activate gravity drainage and flushing (T) or not (F)
    LOGICAL , PUBLIC ::   ln_leadhfx       ! heat in the leads is used to melt sea-ice before warming the ocean
+   LOGICAL , PUBLIC ::   ln_snwext       ! heat in the leads is used to melt sea-ice before warming the ocean
    !
    !                                     !!** namelist (namthd_do) **
    REAL(wp), PUBLIC ::   rn_hinew         ! thickness for new ice formation (m)
