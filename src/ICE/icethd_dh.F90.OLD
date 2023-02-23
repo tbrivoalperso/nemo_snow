@@ -112,19 +112,6 @@ CONTAINS
          CASE( 2 )       ;   zswitch_sal = 1._wp   ! varying salinity profile
       END SELECT
 
-      ! Theo : snowfall / melt is now computed in snw_thd_dh 
-      !
-      !                       ! ============================================== !
-      !                       !               Snowfall / melt                  !
-      !                       ! ============================================== !
-      !
-
-      IF( .NOT. ln_snwext )  CALL snw_thd_dh( zq_rema, zevap_rema )
-      DO ji = 1, npti
-         zq_top(ji) = zq_rema(ji)
-      END DO
-      !
-
       ! initialize ice layer thicknesses and enthalpies
       eh_i_old(1:npti,0:nlay_i+1) = 0._wp
       h_i_old (1:npti,0:nlay_i+1) = 0._wp
@@ -146,6 +133,19 @@ CONTAINS
             ze_s(ji,jk) = e_s_1d(ji,jk)
          END DO
       END DO
+
+      ! Theo : snowfall / melt is now computed in snw_thd_dh 
+      !
+      !                       ! ============================================== !
+      !                       !               Snowfall / melt                  !
+      !                       ! ============================================== !
+      !
+
+      IF( .NOT. ln_snwext )  CALL snw_thd_dh( zq_rema, zevap_rema )      
+      DO ji = 1, npti
+         zq_top(ji) = zq_rema(ji)
+      END DO
+      !
       !
       !                       ! ============================================== !
       !                       ! Available heat for surface and bottom ablation !
@@ -483,7 +483,7 @@ CONTAINS
       !
       ! Remapping of snw enthalpy on a regular grid
       !--------------------------------------------
-      CALL snw_ent( zh_s, ze_s, e_s_1d_old )
+      CALL snw_ent( zh_s, ze_s, e_s_1d )
 
       ! recalculate t_s_1d from e_s_1d
       DO jk = 1, nlay_s

@@ -70,7 +70,8 @@ CONTAINS
       IF( ln_timing    )   CALL timing_start('snwthd')                                                             ! timing
       IF( ln_icediachk )   CALL ice_cons_hsm(0, 'snwthd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft) ! conservation
       IF( ln_icediachk )   CALL ice_cons2D  (0, 'snwthd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft) ! conservation
-      
+
+      e_s_1d_old(:,:) = e_s_1d(:,:)    
       !------------------
       ! 1) Thermodynamics 
       !------------------

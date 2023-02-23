@@ -169,12 +169,13 @@ CONTAINS
                zh_s    (ji,jk) = MAX( 0._wp , zh_s    (ji,jk) + zdum )
 !!$               IF( zh_s(ji,jk) == 0._wp )   ze_s(ji,jk) = 0._wp
 
-               zq_rema (ji) = zq_top (ji) ! remaining heat at the end of the routine in J.m-2 (used to melt ice later on)
                !
             ENDIF
          END DO
       END DO
-      
+      DO ji = 1, npti
+               zq_rema (ji) = zq_top (ji) ! remaining heat at the end of the routine in J.m-2 (used to melt ice later on)
+      END DO
       ! Snow sublimation
       !-----------------
       ! qla_ice is always >=0 (upwards), heat goes to the atmosphere, therefore snow sublimates
@@ -219,7 +220,6 @@ CONTAINS
             ENDIF
          END DO
       END DO
-
    END SUBROUTINE snw_thd_dh
 
    SUBROUTINE snw_ent( ph_old, pe_old, pe_new )

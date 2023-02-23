@@ -133,6 +133,7 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   sz_i_1d     !: profiled ice salinity
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   e_i_1d      !:    Ice  enthalpy per unit volume
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   e_s_1d      !:    Snow enthalpy per unit volume
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   e_s_1d_old  !:    used for ln_snwext
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   eh_i_old    !: ice heat content (q*h, J.m-2)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   h_i_old     !: ice thickness layer (m)
@@ -218,7 +219,7 @@ CONTAINS
       !
       ii = ii + 1
       ALLOCATE( t_s_1d  (jpij,nlay_s)     , t_i_1d (jpij,nlay_i)     , sz_i_1d(jpij,nlay_i) ,  &            
-         &      e_i_1d  (jpij,nlay_i)     , e_s_1d (jpij,nlay_s)     ,                         &
+         &      e_i_1d  (jpij,nlay_i)     , e_s_1d (jpij,nlay_s)     , e_s_1d_old (jpij,nlay_s),        &
          &      eh_i_old(jpij,0:nlay_i+1) , h_i_old(jpij,0:nlay_i+1) , STAT=ierr(ii) )
       !
       ii = ii + 1
