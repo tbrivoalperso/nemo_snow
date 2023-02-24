@@ -42,7 +42,8 @@ MODULE snwthd
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE snw_thd( zradtr_s, zradab_s, za_s_fra, zq_rema, zevap_rema ) 
+   SUBROUTINE snw_thd( zradtr_s, zradab_s, za_s_fra, zq_rema, zevap_rema, &
+                       zh_s, ze_s ) 
       !!-------------------------------------------------------------------
       !!                ***  ROUTINE snw_thd  ***
       !!
@@ -55,7 +56,9 @@ CONTAINS
       !!            
       !!             
       !!             
-      !!             
+      !! Note: This routine outputs zh_s, which is the thicknesses of the snow layer, 
+      !! which are all equal to the total snow thickness / nlay_s. We keep it that
+      !! way so that it is consistent with ISBA-ES coupling.     
       !!             
       !!-------------------------------------------------------------------
       !
@@ -64,6 +67,9 @@ CONTAINS
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   za_s_fra    ! ice fraction covered by snow
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)
+      REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(out) ::   zh_s  ! Thicknesses of the snow layers (m)
+      REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(out) ::   ze_s  ! Snow enthalpy per unit volume of the snow layers  
+
       !
       !!-------------------------------------------------------------------
       ! controls
@@ -71,18 +77,17 @@ CONTAINS
       IF( ln_icediachk )   CALL ice_cons_hsm(0, 'snwthd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft) ! conservation
       IF( ln_icediachk )   CALL ice_cons2D  (0, 'snwthd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft) ! conservation
 
-      e_s_1d_old(:,:) = e_s_1d(:,:)    
       !------------------
       ! 1) Thermodynamics 
       !------------------
 
-      CALL snw_thd_zdf( zradtr_s, zradab_s, za_s_fra )
+      CALL snw_thd_zdf( zradtr_s, zradab_s, za_s_fra)
 
       !------------------
       ! 2) Snowfall / melt 
       !------------------
 
-      IF( ln_icedH )   CALL snw_thd_dh( zq_rema, zevap_rema )
+      IF( ln_icedH )   CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
       !
       !
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'snwthd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)

@@ -40,7 +40,7 @@ MODULE icethd_dh
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE ice_thd_dh( zq_rema, zevap_rema )
+   SUBROUTINE ice_thd_dh( zq_rema, zevap_rema, zh_s, ze_s )
       !!------------------------------------------------------------------
       !!                ***  ROUTINE ice_thd_dh  ***
       !!
@@ -68,6 +68,8 @@ CONTAINS
       !!------------------------------------------------------------------
       REAL(wp), DIMENSION(jpij), INTENT(inout) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
       REAL(wp), DIMENSION(jpij), INTENT(inout) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)
+      REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(inout) ::   zh_s      ! snw layer thickness (m) 
+      REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(inout) ::   ze_s      ! snw layer enthalpy (J.m-3)
 
       INTEGER  ::   ji, jk       ! dummy loop indices
       INTEGER  ::   iter         ! local integer
@@ -96,8 +98,6 @@ CONTAINS
 
       INTEGER , DIMENSION(jpij,nlay_i)     ::   icount    ! number of layers vanishing by melting
       REAL(wp), DIMENSION(jpij,0:nlay_i+1) ::   zh_i      ! ice layer thickness (m)
-      REAL(wp), DIMENSION(jpij,0:nlay_s  ) ::   zh_s      ! snw layer thickness (m)
-      REAL(wp), DIMENSION(jpij,0:nlay_s  ) ::   ze_s      ! snw layer enthalpy (J.m-3)
 
       REAL(wp) ::   zswitch_sal
 
@@ -119,7 +119,7 @@ CONTAINS
       !                       ! ============================================== !
       !
 
-      IF( .NOT. ln_snwext )  CALL snw_thd_dh( zq_rema, zevap_rema )
+      IF( .NOT. ln_snwext )  CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
       DO ji = 1, npti
          zq_top(ji) = zq_rema(ji)
       END DO
@@ -138,14 +138,14 @@ CONTAINS
       END DO
       !
       ! initialize snw layer thicknesses and enthalpies
-      zh_s(1:npti,0) = 0._wp
-      ze_s(1:npti,0) = 0._wp
-      DO jk = 1, nlay_s
-         DO ji = 1, npti
-            zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
-            ze_s(ji,jk) = e_s_1d(ji,jk)
-         END DO
-      END DO
+!      zh_s(1:npti,0) = 0._wp
+!      ze_s(1:npti,0) = 0._wp
+!      DO jk = 1, nlay_s
+!         DO ji = 1, npti
+!            zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
+!            ze_s(ji,jk) = e_s_1d(ji,jk)
+!         END DO
+!      END DO
       !
       !                       ! ============================================== !
       !                       ! Available heat for surface and bottom ablation !
@@ -474,16 +474,16 @@ CONTAINS
       END DO
       !
       !
-!!$      ! --- Update snow diags --- !
-!!$      !!clem: this is wrong. dh_s_tot is not used anyway
-!!$      DO ji = 1, npti
-!!$         dh_s_tot(ji) = dh_s_tot(ji) + dh_s_mlt(ji) + zdeltah(ji) + zdh_s_sub(ji) - dh_snowice(ji)
-!!$      END DO
-      !
-      !
+!!!$      ! --- Update snow diags --- !
+!!!$      !!clem: this is wrong. dh_s_tot is not used anyway
+!!!$      DO ji = 1, npti
+!!!$         dh_s_tot(ji) = dh_s_tot(ji) + dh_s_mlt(ji) + zdeltah(ji) + zdh_s_sub(ji) - dh_snowice(ji)
+!!!$      END DO
+!      !
+!      !
       ! Remapping of snw enthalpy on a regular grid
       !--------------------------------------------
-      CALL snw_ent( zh_s, ze_s, e_s_1d_old )
+      CALL snw_ent( zh_s, ze_s, e_s_1d)
 
       ! recalculate t_s_1d from e_s_1d
       DO jk = 1, nlay_s

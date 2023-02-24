@@ -93,6 +93,8 @@ CONTAINS
       REAL(wp), DIMENSION(jpij) ::   za_s_fra    ! ice fraction covered by snow
       REAL(wp), DIMENSION(jpij) ::   zq_rema     ! remaining hear
       REAL(wp), DIMENSION(jpij) ::   zevap_rema  ! ice fraction covered by snow
+      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zh_s  ! Thicknesses of the snow layers (m) 
+      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   ze_s  ! Snow enthalpy per unit volume of the snow layers 
 
       !!-------------------------------------------------------------------
       ! controls
@@ -138,16 +140,19 @@ CONTAINS
             dh_i_sub  (1:npti) = 0._wp ; dh_i_bog(1:npti) = 0._wp
             dh_snowice(1:npti) = 0._wp ; dh_s_mlt(1:npti) = 0._wp
             !
-            zradtr_s  (1:npti, :) = 0._wp ; zradab_s(1:npti, :) = 0._wp   ! Reset snow fluxes and area
+            zradtr_s  (1:npti, 0:nlay_s) = 0._wp ; zradab_s(1:npti, 0:nlay_s) = 0._wp   ! Reset snow fluxes and area
             za_s_fra  (1:npti)    = 0._wp ; zq_rema(1:npti)     = 0._wp
-            zevap_rema(1:npti)    = 0._wp ; 
-            !
-            IF( ln_snwext )  CALL snw_thd( zradtr_s, zradab_s, za_s_fra, zq_rema, zevap_rema )       ! Snow thermodynamics (detached mode)
+            zevap_rema(1:npti)    = 0._wp ; zh_s(1:npti, 0:nlay_s) = 0._wp
+            ze_s(1:npti, 0:nlay_s) = 0._wp
 
-                              CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra )                      ! --- Ice-Snow temperature --- !
+            !
+            IF( ln_snwext )  CALL snw_thd( zradtr_s, zradab_s, za_s_fra, zq_rema, zevap_rema, &  
+                                           zh_s, ze_s )       ! Snow thermodynamics (detached mode)
+
+                             CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra )                      ! --- Ice-Snow temperature --- !
             !
             IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
-                              CALL ice_thd_dh( zq_rema, zevap_rema )    ! Ice-Snow thickness
+                              CALL ice_thd_dh( zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
 
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF

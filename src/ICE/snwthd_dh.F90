@@ -35,7 +35,7 @@ MODULE snwthd_dh
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE snw_thd_dh( zq_rema, zevap_rema )
+   SUBROUTINE snw_thd_dh( zq_rema, zevap_rema , zh_s, ze_s)
       !!------------------------------------------------------------------
       !!                ***  ROUTINE snw_thd_dh  ***
       !!
@@ -63,7 +63,10 @@ CONTAINS
       !!------------------------------------------------------------------
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)
-      !
+      REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(out) ::   zh_s      ! snw layer thickness (m) 
+      REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(out) ::   ze_s      ! snw layer enthalpy (J.m-3)
+
+!
       INTEGER  ::   ji, jk       ! dummy loop indices
       INTEGER  ::   iter         ! local integer
 
@@ -73,10 +76,10 @@ CONTAINS
       REAL(wp), DIMENSION(jpij) ::   zdeltah
       REAL(wp), DIMENSION(jpij) ::   zsnw        ! distribution of snow after wind blowing
 
-      REAL(wp), DIMENSION(jpij,0:nlay_s  ) ::   zh_s      ! snw layer thickness (m)
-      REAL(wp), DIMENSION(jpij,0:nlay_s  ) ::   ze_s      ! snw layer enthalpy (J.m-3)
-
       !!------------------------------------------------------------------
+      ! Initialise remaining heat and mass fluxes after melt and sublimation
+      zq_rema(1:npti)    = 0._wp
+      zevap_rema(1:npti) = 0._wp
 
       !
       ! initialize snw layer thicknesses and enthalpies
@@ -206,20 +209,6 @@ CONTAINS
 
       !
       !
-      ! Remapping of snw enthalpy on a regular grid
-      !--------------------------------------------
-      CALL snw_ent( zh_s, ze_s, e_s_1d )
-
-      ! recalculate t_s_1d from e_s_1d
-      DO jk = 1, nlay_s
-         DO ji = 1,npti
-            IF( h_s_1d(ji) > 0._wp ) THEN
-               t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
-            ELSE
-               t_s_1d(ji,jk) = rt0
-            ENDIF
-         END DO
-      END DO
    END SUBROUTINE snw_thd_dh
 
    SUBROUTINE snw_ent( ph_old, pe_old, pe_new )
