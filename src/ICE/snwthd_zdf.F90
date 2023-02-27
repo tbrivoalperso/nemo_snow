@@ -38,7 +38,7 @@ MODULE snwthd_zdf
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE snw_thd_zdf( zradtr_s, zradab_s, za_s_fra )
+   SUBROUTINE snw_thd_zdf(k_cnd, zradtr_s, zradab_s, za_s_fra )
       !!-------------------------------------------------------------------
       !!                ***  ROUTINE snw_thd  ***
       !!
@@ -58,6 +58,7 @@ CONTAINS
       !!             
       !!-------------------------------------------------------------------
       !
+      INTEGER, INTENT(in) ::   k_cnd     ! conduction flux (off, on, emulated)
       REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(out) ::   zradtr_s  ! Radiation transmited through the snow
       REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(out) ::   zradab_s  ! Radiation absorbed in the snow 
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   za_s_fra    ! ice fraction covered by snow

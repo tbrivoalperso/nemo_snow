@@ -81,7 +81,14 @@ CONTAINS
       ! 1) Thermodynamics 
       !------------------
 
-      CALL snw_thd_zdf( zradtr_s, zradab_s, za_s_fra)
+      IF( .NOT.ln_cndflx ) THEN                           ! No conduction flux ==> default option
+         CALL snw_thd_zdf( np_cnd_OFF, zradtr_s, zradab_s, za_s_fra )
+      ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option
+         CALL snw_thd_zdf( np_cnd_ON, zradtr_s, zradab_s, za_s_fra  )
+      ELSEIF( ln_cndflx .AND.      ln_cndemulate ) THEN   ! Conduction flux is emulated 
+         CALL snw_thd_zdf( np_cnd_EMU, zradtr_s, zradab_s, za_s_fra )
+         CALL snw_thd_zdf( np_cnd_ON, zradtr_s, zradab_s, za_s_fra  )
+      ENDIF
 
       !------------------
       ! 2) Snowfall / melt 

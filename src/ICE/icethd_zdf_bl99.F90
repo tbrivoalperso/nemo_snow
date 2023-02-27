@@ -18,6 +18,7 @@ MODULE icethd_zdf_BL99
    USE ice            ! sea-ice: variables
    USE ice1D          ! sea-ice: thermodynamics variables
    USE icevar         ! sea-ice: operations
+   USE snwvar         ! sea-ice: operations
    !
    USE in_out_manager ! I/O manager
    USE lib_mpp        ! MPP library
@@ -894,6 +895,7 @@ CONTAINS
       IF( k_cnd == np_cnd_OFF .OR. k_cnd == np_cnd_ON ) THEN
 
          CALL ice_var_enthalpy
+         CALL snw_var_enthalpy
 
          ! zhfx_err = correction on the diagnosed heat flux due to non-convergence of the algorithm used to solve heat equation
          DO ji = 1, npti
