@@ -154,6 +154,8 @@ CONTAINS
       ! 1) Initialization
       !------------------
       !
+!       t_s_1d(:,:) = 273.15 - 3._wp
+!      t_i_1d(:,:) = 273.15 - 3._wp
       ! extinction radiation in the snow
       IF    ( nn_qtrice == 0 ) THEN   ! constant
          zraext_s(1:npti) = rn_kappa_s
@@ -563,14 +565,16 @@ CONTAINS
                ! Variable used after iterations
                ! Value must be frozen after convergence for MPP independance reason
                IF ( .NOT. l_T_converged(ji) ) &
-                  t_i_1d(ji,nlay_i) = zindtbis(ji,jm_max(ji)) / zdiagbis(ji,jm_max(ji))
+!                  t_i_1d(ji,nlay_i) = 273.15 - 3._wp
+                  & t_i_1d(ji,nlay_i) = zindtbis(ji,jm_max(ji)) / zdiagbis(ji,jm_max(ji))
             END DO
 
             DO jm = nlay_i + nlay_s, nlay_s + 2, -1
                DO ji = 1, npti
                   jk = jm - nlay_s - 1
                   IF ( .NOT. l_T_converged(ji) ) &
-                     t_i_1d(ji,jk) = ( zindtbis(ji,jm) - ztrid(ji,jm,3) * t_i_1d(ji,jk+1) ) / zdiagbis(ji,jm)
+!                      t_i_1d(ji,jk) = 273.15 - 3._wp
+                    & t_i_1d(ji,jk) = ( zindtbis(ji,jm) - ztrid(ji,jm,3) * t_i_1d(ji,jk+1) ) / zdiagbis(ji,jm)
                END DO
             END DO
 
@@ -580,6 +584,8 @@ CONTAINS
                ! Value must be frozen after convergence for MPP independance reason
                IF ( .NOT. l_T_converged(ji) .AND. h_s_1d(ji) > 0._wp ) &
                   &   t_s_1d(ji,nlay_s) = ( zindtbis(ji,nlay_s+1) - ztrid(ji,nlay_s+1,3) * t_i_1d(ji,1) ) / zdiagbis(ji,nlay_s+1)
+                  !& t_s_1d(ji,jk) = 273.15 - 3._wp
+
             END DO
             !!clem SNWLAY
             DO jm = nlay_s, 2, -1
@@ -587,6 +593,8 @@ CONTAINS
                   jk = jm - 1
                   IF ( .NOT. l_T_converged(ji) .AND. h_s_1d(ji) > 0._wp ) &
                      &   t_s_1d(ji,jk) = ( zindtbis(ji,jm) - ztrid(ji,jm,3) * t_s_1d(ji,jk+1) ) / zdiagbis(ji,jm)
+!                     & t_s_1d(ji,jk) = 273.15 - 3._wp
+
                END DO
             END DO
 

@@ -133,7 +133,7 @@ CONTAINS
          !---------------------------------------------------
          IF( ln_icethd ) THEN
             qt_oce_ai(ji,jj) = qt_atm_oi(ji,jj) - hfx_sum(ji,jj) - hfx_bom(ji,jj) - hfx_bog(ji,jj) &
-               &                                - hfx_dif(ji,jj) - hfx_opw(ji,jj) - hfx_snw(ji,jj) &
+               &                                - hfx_dif(ji,jj) + hfx_difs(ji,jj) - hfx_opw(ji,jj) - hfx_snw(ji,jj) &
                &                                + hfx_thd(ji,jj) + hfx_dyn(ji,jj) + hfx_res(ji,jj) &
                &                                + hfx_sub(ji,jj) - SUM( qevap_ice(ji,jj,:) * a_i_b(ji,jj,:) ) + hfx_spr(ji,jj)
          ENDIF
@@ -222,6 +222,7 @@ CONTAINS
       ! --- mass fluxes [kg/m2/s] --- !
       CALL iom_put( 'emp_oce', emp_oce )   ! emp over ocean (taking into account the snow blown away from the ice)
       CALL iom_put( 'emp_ice', emp_ice )   ! emp over ice   (taking into account the snow blown away from the ice)
+      CALL iom_put( 'tn_ice', tn_ice )   ! surface T°
 
       !                           ! vfxice = vfxbog + vfxbom + vfxsum + vfxsni + vfxopw + vfxdyn + vfxres + vfxlam + vfxpnd
       CALL iom_put( 'vfxice'    , wfx_ice     )   ! mass flux from total ice growth/melt
@@ -276,6 +277,7 @@ CONTAINS
       CALL iom_put ('hfxsum'     , hfx_sum     )   ! heat flux used for ice surface melt
       CALL iom_put ('hfxopw'     , hfx_opw     )   ! heat flux used for ice formation in open water
       CALL iom_put ('hfxdif'     , hfx_dif     )   ! heat flux used for ice temperature change
+      CALL iom_put ('hfxdif'     , hfx_difs     )   ! heat flux used for snow temperature change
       CALL iom_put ('hfxsnw'     , hfx_snw     )   ! heat flux used for snow melt
       CALL iom_put ('hfxerr'     , hfx_err_dif )   ! heat flux error after heat diffusion
 

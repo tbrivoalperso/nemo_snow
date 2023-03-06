@@ -42,8 +42,8 @@ MODULE snwthd
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE snw_thd( zradtr_s, zradab_s, za_s_fra, zq_rema, zevap_rema, &
-                       zh_s, ze_s ) 
+   SUBROUTINE snw_thd( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, & 
+                       zq_rema, zevap_rema, zh_s, ze_s ) 
       !!-------------------------------------------------------------------
       !!                ***  ROUTINE snw_thd  ***
       !!
@@ -65,6 +65,8 @@ CONTAINS
       REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(out) ::   zradtr_s  ! Radiation transmited through the snow
       REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(out) ::   zradab_s  ! Radiation absorbed in the snow 
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   za_s_fra    ! ice fraction covered by snow
+      REAL(wp), DIMENSION(jpij), INTENT(out) ::   qcn_snw_bot_1d    ! ice fraction covered by snow
+      REAL(wp), DIMENSION(jpij), INTENT(out) ::   isnow       ! snow presence (1) or not (0)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)
       REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(out) ::   zh_s  ! Thicknesses of the snow layers (m)
@@ -80,14 +82,15 @@ CONTAINS
       !------------------
       ! 1) Thermodynamics 
       !------------------
+!      IF( ln_icedH )   CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
 
       IF( .NOT.ln_cndflx ) THEN                           ! No conduction flux ==> default option
-         CALL snw_thd_zdf( np_cnd_OFF, zradtr_s, zradab_s, za_s_fra )
+         CALL snw_thd_zdf( np_cnd_OFF, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
       ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option
-         CALL snw_thd_zdf( np_cnd_ON, zradtr_s, zradab_s, za_s_fra  )
+         CALL snw_thd_zdf( np_cnd_ON, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
       ELSEIF( ln_cndflx .AND.      ln_cndemulate ) THEN   ! Conduction flux is emulated 
-         CALL snw_thd_zdf( np_cnd_EMU, zradtr_s, zradab_s, za_s_fra )
-         CALL snw_thd_zdf( np_cnd_ON, zradtr_s, zradab_s, za_s_fra  )
+         CALL snw_thd_zdf( np_cnd_EMU, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
+         CALL snw_thd_zdf( np_cnd_ON, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow  )
       ENDIF
 
       !------------------
