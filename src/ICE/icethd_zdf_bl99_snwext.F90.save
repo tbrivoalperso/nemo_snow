@@ -1,4 +1,4 @@
-MODULE icethd_zdf_BL99
+MODULE icethd_zdf_BL99_snwext
    !!======================================================================
    !!                       ***  MODULE icethd_zdf_BL99 ***
    !!   sea-ice: vertical heat diffusion in sea ice (computation of temperatures)
@@ -11,14 +11,13 @@ MODULE icethd_zdf_BL99
    !!----------------------------------------------------------------------
    !!   'key_si3'                                       SI3 sea-ice model
    !!----------------------------------------------------------------------
-   !!  ice_thd_zdf_BL99 : vertical diffusion computation
+   !!  ice_thd_zdf_BL99_snwext : vertical diffusion computation
    !!----------------------------------------------------------------------
    USE dom_oce        ! ocean space and time domain
    USE phycst         ! physical constants (ocean directory)
    USE ice            ! sea-ice: variables
    USE ice1D          ! sea-ice: thermodynamics variables
    USE icevar         ! sea-ice: operations
-   USE snwvar         ! sea-ice: operations
    !
    USE in_out_manager ! I/O manager
    USE lib_mpp        ! MPP library
@@ -27,7 +26,7 @@ MODULE icethd_zdf_BL99
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   ice_thd_zdf_BL99   ! called by icethd_zdf
+   PUBLIC   ice_thd_zdf_BL99_snwext   ! called by icethd_zdf
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
@@ -36,9 +35,9 @@ MODULE icethd_zdf_BL99
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE ice_thd_zdf_BL99( k_cnd )
+   SUBROUTINE ice_thd_zdf_BL99_snwext( k_cnd, zradtr_s, zradab_s, za_s_fra)
       !!-------------------------------------------------------------------
-      !!                ***  ROUTINE ice_thd_zdf_BL99  ***
+      !!                ***  ROUTINE ice_thd_zdf_BL99_snwext  ***
       !!
       !! ** Purpose : computes the time evolution of snow and sea-ice temperature
       !!              profiles, using the original Bitz and Lipscomb (1999) algorithm
@@ -72,8 +71,14 @@ CONTAINS
       !!           ice salinities                   : sz_i_1d
       !!           number of layers in the ice/snow : nlay_i, nlay_s
       !!           total ice/snow thickness         : h_i_1d, h_s_1d
+      !!
+      !! ** NOTE : THIS ROUTINE WILL BE REMOVED WHEN THE SNOW IS FULLY EXTRACTED
+      !!           FROM SEA-ICE
       !!-------------------------------------------------------------------
       INTEGER, INTENT(in) ::   k_cnd     ! conduction flux (off, on, emulated)
+      REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(in) ::   zradtr_s  ! Radiation transmited through the snow
+      REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(in) ::   zradab_s  ! Radiation absorbed in the snow 
+      REAL(wp), DIMENSION(jpij), INTENT(in) ::   za_s_fra    ! ice fraction covered by snow
       !
       INTEGER ::   ji, jk         ! spatial loop index
       INTEGER ::   jm             ! current reference number of equation
@@ -85,7 +90,6 @@ CONTAINS
       INTEGER, DIMENSION(jpij) ::   jm_max    ! reference number of bottom equation
 
       LOGICAL, DIMENSION(jpij) ::   l_T_converged   ! true when T converges (per grid point)
-      LOGICAL                  ::   ln_out_fcond    ! To output fcond - will be removed in later versions 
       !
       REAL(wp) ::   zg1s      =  2._wp        ! for the tridiagonal system
       REAL(wp) ::   zg1       =  2._wp        !
@@ -121,23 +125,17 @@ CONTAINS
       REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zradab_i    ! Radiation absorbed in the ice
       REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zkappa_i    ! Kappa factor in the ice
       REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zeta_i      ! Eta factor in the ice
-      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zradtr_s    ! Radiation transmited through the snow
-      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zradab_s    ! Radiation absorbed in the snow
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zkappa_s    ! Kappa factor in the snow
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zeta_s      ! Eta factor in the snow
       REAL(wp), DIMENSION(jpij)          ::   zkappa_comb ! Combined snow and ice surface conductivity
       REAL(wp), DIMENSION(jpij)          ::   zq_ini      ! diag errors on heat
       REAL(wp), DIMENSION(jpij)          ::   zghe        ! G(he), th. conduct enhancement factor, mono-cat
-      REAL(wp), DIMENSION(jpij)          ::   za_s_fra    ! ice fraction covered by snow
       REAL(wp), DIMENSION(jpij)          ::   isnow       ! snow presence (1) or not (0)
       REAL(wp), DIMENSION(jpij)          ::   isnow_comb  ! snow presence for met-office
       REAL(wp), DIMENSION(jpij,nlay_i+nlay_s+1)   ::   zindterm    ! 'Ind'ependent term
       REAL(wp), DIMENSION(jpij,nlay_i+nlay_s+1)   ::   zindtbis    ! Temporary 'ind'ependent term
       REAL(wp), DIMENSION(jpij,nlay_i+nlay_s+1)   ::   zdiagbis    ! Temporary 'dia'gonal term
       REAL(wp), DIMENSION(jpij,nlay_i+nlay_s+1,3) ::   ztrid       ! Tridiagonal system terms
-
-      REAL(wp), DIMENSION(jpij) ::   cnd_m_si    ! Mean conductivity at snow / ice interface
-      
       !
       ! Mono-category
       REAL(wp) ::   zepsilon   ! determines thres. above which computation of G(h) is done
@@ -150,9 +148,6 @@ CONTAINS
          zq_ini(ji) = ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i +  &
             &           SUM( e_s_1d(ji,1:nlay_s) ) * h_s_1d(ji) * r1_nlay_s )
       END DO
-
-      ! calculate ice fraction covered by snow for radiation
-      CALL ice_var_snwfra( h_s_1d(1:npti), za_s_fra(1:npti) )
 
       !------------------
       ! 1) Initialization
@@ -214,15 +209,6 @@ CONTAINS
       ! 2) Radiation
       !-------------
       ! --- Transmission/absorption of solar radiation in the ice --- !
-      zradtr_s(1:npti,0) = qtr_ice_top_1d(1:npti)
-      DO jk = 1, nlay_s
-         DO ji = 1, npti
-            !                             ! radiation transmitted below the layer-th snow layer
-            zradtr_s(ji,jk) = zradtr_s(ji,0) * EXP( - zraext_s(ji) * MAX( 0._wp, zh_s(ji) * REAL(jk) - zhs_ssl ) )
-            !                             ! radiation absorbed by the layer-th snow layer
-            zradab_s(ji,jk) = zradtr_s(ji,jk-1) - zradtr_s(ji,jk)
-         END DO
-      END DO
       !
       zradtr_i(1:npti,0) = zradtr_s(1:npti,nlay_s) * za_s_fra(1:npti) + qtr_ice_top_1d(1:npti) * ( 1._wp - za_s_fra(1:npti) )
       DO jk = 1, nlay_i
@@ -364,15 +350,6 @@ CONTAINS
                zeta_s(ji,jk) = rDt_ice * r1_rhos * r1_rcpi * z1_h_s(ji)
             END DO
          END DO
-         ln_out_fcond = .true.
-         IF( ln_out_fcond ) THEN ! diagnose conduction flux to test devs. Will be removed later
-             DO ji = 1, npti
-                qcn_snw_bot_1d(ji) = 0._wp
-                cnd_m_si(ji) = isnow(ji) * rn_cnd_s * ztcond_i(ji,0) &
-                      &                            / ( 0.5_wp * ( ztcond_i(ji,0) * zh_s(ji) + rn_cnd_s * zh_i(ji) ) )
-                qcn_snw_bot_1d(ji) = - isnow(ji) * cnd_m_si(ji) * ( t_i_1d(ji, 1) - t_s_1d (ji,nlay_s) ) !/ (0.5 * (zh_i(ji) + zh_s(ji)) )
-             END DO
-         ENDIF
          !
          !----------------------------------------!
          !                                        !
@@ -583,7 +560,7 @@ CONTAINS
                DO ji = 1, npti
                   jk = jm - nlay_s - 1
                   IF ( .NOT. l_T_converged(ji) ) &
-                    & t_i_1d(ji,jk) = ( zindtbis(ji,jm) - ztrid(ji,jm,3) * t_i_1d(ji,jk+1) ) / zdiagbis(ji,jm)
+                     t_i_1d(ji,jk) = ( zindtbis(ji,jm) - ztrid(ji,jm,3) * t_i_1d(ji,jk+1) ) / zdiagbis(ji,jm)
                END DO
             END DO
 
@@ -908,7 +885,6 @@ CONTAINS
       IF( k_cnd == np_cnd_OFF .OR. k_cnd == np_cnd_ON ) THEN
 
          CALL ice_var_enthalpy
-         CALL snw_var_enthalpy
 
          ! zhfx_err = correction on the diagnosed heat flux due to non-convergence of the algorithm used to solve heat equation
          DO ji = 1, npti
@@ -978,7 +954,7 @@ CONTAINS
          ENDIF
       END DO
       !
-   END SUBROUTINE ice_thd_zdf_BL99
+   END SUBROUTINE ice_thd_zdf_BL99_snwext
 
 #else
    !!----------------------------------------------------------------------
@@ -987,4 +963,4 @@ CONTAINS
 #endif
 
    !!======================================================================
-END MODULE icethd_zdf_BL99
+END MODULE icethd_zdf_BL99_snwext

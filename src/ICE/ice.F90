@@ -203,6 +203,8 @@ MODULE ice
    LOGICAL , PUBLIC ::   ln_icedS         ! activate gravity drainage and flushing (T) or not (F)
    LOGICAL , PUBLIC ::   ln_leadhfx       ! heat in the leads is used to melt sea-ice before warming the ocean
    LOGICAL , PUBLIC ::   ln_snwext       ! heat in the leads is used to melt sea-ice before warming the ocean
+   LOGICAL , PUBLIC ::   ln_fcond       ! heat in the leads is used to melt sea-ice before warming the ocean
+   
    !
    !                                     !!** namelist (namthd_do) **
    REAL(wp), PUBLIC ::   rn_hinew         ! thickness for new ice formation (m)
@@ -318,8 +320,7 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_bom         !: total heat flux causing bottom ice melt             [W.m-2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_sum         !: total heat flux causing surface ice melt            [W.m-2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_opw         !: total heat flux causing open water ice formation    [W.m-2]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_dif         !: total heat flux causing Temp change in the ice /snow[W.m-2]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_difs         !: //  in the snow if ln_snwext=T      [W.m-2]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_dif         !: total heat flux causing Temp change in the ice      [W.m-2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_snw         !: heat flux for snow melt                             [W.m-2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_err_dif     !: heat flux remaining due to change in non-solar flux [W.m-2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qt_atm_oi       !: heat flux at the interface atm-[oce+ice]            [W.m-2]
@@ -452,6 +453,11 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   tm_si           !: mean temperature at the snow-ice interface (K)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_ice_bot     !: Bottom  conduction flux (W/m2)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_ice_top     !: Surface conduction flux (W/m2)
+
+   !!----------------------------------------------------------------------
+   !! * Extra diagnotics for external snow (ln_snwext=T)
+   !!----------------------------------------------------------------------
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_snw_bot   !: Conduction flux at snow / ice interface (W/m2)
    !
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
@@ -490,7 +496,6 @@ CONTAINS
          &      hfx_res    (jpi,jpj) , hfx_snw   (jpi,jpj) , hfx_sub(jpi,jpj) ,                        &
          &      qt_atm_oi  (jpi,jpj) , qt_oce_ai (jpi,jpj) , fhld   (jpi,jpj) ,                        &
          &      hfx_sum    (jpi,jpj) , hfx_bom   (jpi,jpj) , hfx_bog(jpi,jpj) , hfx_dif(jpi,jpj) ,     &
-         & hfx_difs(jpi,jpj) , &
          &      hfx_opw    (jpi,jpj) , hfx_thd   (jpi,jpj) , hfx_dyn(jpi,jpj) , hfx_spr(jpi,jpj) ,     &
          &      hfx_err_dif(jpi,jpj) , wfx_err_sub(jpi,jpj)                   , STAT=ierr(ii) )
 
@@ -553,6 +558,9 @@ CONTAINS
       ii = ii + 1
       ALLOCATE( t_si(jpi,jpj,jpl) , tm_si(jpi,jpj) , qcn_ice_bot(jpi,jpj,jpl) , qcn_ice_top(jpi,jpj,jpl) , STAT = ierr(ii) )
 
+      ! * Extra diagnotics for external snow (ln_snwext=T)
+      ii = ii + 1 
+      ALLOCATE( qcn_snw_bot(jpi,jpj,jpl), STAT = ierr(ii) ) 
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )
       !

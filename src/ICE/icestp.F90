@@ -184,9 +184,7 @@ CONTAINS
          !    qemp_oce, qemp_ice,  = sensible heat (associated with evap & precip) [W/m2]
          !    qprec_ice, qevap_ice
          !------------------------------------------------------!
-         !t_i(:,:,:,:) = 273.15 - 3._wp
                                         CALL ice_sbc_flx( kt, ksbc )
-         !t_i(:,:,:,:) = 273.15 - 3._wp
          !----------------------------!
          ! --- ice thermodynamics --- !
          !----------------------------!
@@ -430,7 +428,6 @@ CONTAINS
          hfx_bom(ji,jj) = 0._wp   ;   hfx_sum(ji,jj) = 0._wp
          hfx_res(ji,jj) = 0._wp   ;   hfx_sub(ji,jj) = 0._wp
          hfx_spr(ji,jj) = 0._wp   ;   hfx_dif(ji,jj) = 0._wp
-         hfx_difs(ji,jj) = 0._wp
          hfx_err_dif(ji,jj) = 0._wp
          wfx_err_sub(ji,jj) = 0._wp
          !
@@ -466,6 +463,9 @@ CONTAINS
             ! Melt pond surface melt diagnostics (mv - more efficient: grouped into one water volume flux)
             dh_i_sum_2d(ji,jj,jl) = 0._wp
             dh_s_mlt_2d(ji,jj,jl) = 0._wp
+
+            ! Diags to validate ln_snwext=T
+            qcn_snw_bot(ji,jj,jl) = 0._wp
          END_2D
       ENDDO
 

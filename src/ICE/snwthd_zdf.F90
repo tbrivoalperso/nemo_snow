@@ -114,7 +114,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpij) ::   cnd_m_si    ! Mean conductivity at snow / ice interface
 
       REAL(wp), DIMENSION(jpij)          ::   zkappa_comb ! Combined snow and ice surface conductivity
-      REAL(wp), DIMENSION(jpij)          ::   zq_ini      ! diag errors on heat
+      !REAL(wp), DIMENSION(jpij)          ::   zq_ini      ! diag errors on heat
       REAL(wp), DIMENSION(jpij)          ::   zghe        ! G(he), th. conduct enhancement factor, mono-cat
       
       ! Ice variables (1st layer only)
@@ -135,12 +135,6 @@ CONTAINS
       REAL(wp) ::   zcnd_i     ! mean sea ice thermal conductivity
       !!------------------------------------------------------------------
 
-     ! --- diag error on heat diffusion - PART 1 --- !
-      DO ji = 1, npti
-         zq_ini(ji) = ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i +  &
-            &           SUM( e_s_1d(ji,1:nlay_s) ) * h_s_1d(ji) * r1_nlay_s )
-      END DO
-
       ! calculate ice fraction covered by snow for radiation
       CALL ice_var_snwfra( h_s_1d(1:npti), za_s_fra(1:npti) )
 
@@ -148,8 +142,6 @@ CONTAINS
       ! 1) Initialization
       !------------------
       !
-      !t_i_1d(:,:) = 273.15 - 3._wp
-       !t_s_1d(:,:) = 273.15 - 3._wp
       ! extinction radiation in the snow
       IF    ( nn_qtrice == 0 ) THEN   ! constant
          zraext_s(1:npti) = rn_kappa_s
@@ -380,15 +372,6 @@ CONTAINS
                      zindterm(ji,jm)   = ztsold(ji,jk) + zeta_s(ji,jk) * zradab_s(ji,jk)
                   END DO
 
-!                  jm =  nlay_s + 1
-!                  ! snow bottom term => The same form as the ice one
-!                  ! THEO : shouldn't we use the ice surface T° instead of the T° of the 1st ice level ???????
-!                  ztrid   (ji,jm,1) =       - zeta_s(ji,nlay_s) *   zkappa_s(ji,nlay_s-1)
-!                  ztrid   (ji,jm,2) = 1._wp + zeta_s(ji,nlay_s) * ( zkappa_s(ji,nlay_s-1) + zkappa_s(ji,nlay_s) * zg1s )
-!                  ztrid   (ji,jm,3) = 0._wp
-!                  zindterm(ji,jm)   = ztsold(ji,nlay_s) + zeta_s(ji,nlay_s) *  &
-!                     &              ( zradab_s(ji,nlay_s) + zkappa_s(ji,nlay_s) * zg1s * t_si_1d(ji) )
-!
                   IF( t_su_1d(ji) < rt0 ) THEN   !--  case 1 : no surface melting
 
                      jm_min(ji) = 1
@@ -418,15 +401,6 @@ CONTAINS
                      zindterm(ji,2)   = ztsold(ji,1) + zeta_s(ji,1) * ( zradab_s(ji,1) + zkappa_s(ji,0) * zg1s * t_su_1d(ji) )
                   ENDIF
 
-!                  jm =  nlay_s + 1
-!                  ! snow bottom term => The same form as the ice one
-!                  ! THEO : shouldn't we use the ice surface T° instead of the T° of the 1st ice level ???????
-!                  ztrid   (ji,jm,1) =       - zeta_s(ji,nlay_s) *   zkappa_s(ji,nlay_s-1)
-!                  ztrid   (ji,jm,2) = 1._wp + zeta_s(ji,nlay_s) * ( zkappa_s(ji,nlay_s-1) + zkappa_s(ji,nlay_s) * zg1s )
-!                  ztrid   (ji,jm,3) = 0._wp
-!                  zindterm(ji,jm)   = ztsold(ji,nlay_s) + zeta_s(ji,nlay_s) *  &
-!                     &              ( zradab_s(ji,nlay_s) + zkappa_s(ji,nlay_s) * zg1s * t_si_1d(ji) )
-!
                   !
                   zindtbis(ji,jm_min(ji)) = zindterm(ji,jm_min(ji))
                   zdiagbis(ji,jm_min(ji)) = ztrid   (ji,jm_min(ji),2)
@@ -453,7 +427,6 @@ CONTAINS
                      ! Value must be frozen after convergence for MPP independance reason
                      IF ( .NOT. l_T_converged(ji) .AND. h_s_1d(ji) > 0._wp ) &
                         &   t_s_1d(ji,nlay_s) = ( zindtbis(ji,nlay_s+1) - ztrid(ji,nlay_s+1,3) * t_i_1d(ji,1) ) / zdiagbis(ji,nlay_s+1)
-!                        &  t_s_1d(ji,jk) = 273.15 - 3._wp
 
                 END DO
 
@@ -463,7 +436,6 @@ CONTAINS
                         jk = jm - 1
                         IF ( .NOT. l_T_converged(ji) .AND. h_s_1d(ji) > 0._wp ) &
                            &   t_s_1d(ji,jk) = ( zindtbis(ji,jm) - ztrid(ji,jm,3) * t_s_1d(ji,jk+1) ) / zdiagbis(ji,jm)
-!                            & t_s_1d(ji,jk) = 273.15 - 3._wp
 
                      END DO
                   END DO
@@ -535,60 +507,24 @@ CONTAINS
       !-----------------------------
       ! 10) Fluxes at the interfaces
       !-----------------------------
-      !
-      ! --- calculate conduction fluxes (positive downward)
-      !     bottom ice conduction flux
 
+      !
+      ! --- calculate conduction fluxes at the snow / ice interface 
+      !     
       DO ji = 1, npti
          qcn_snw_bot_1d(ji) = 0._wp
-         ! Same formulae as bottom ice conduction flux in icethd
-         !qcn_snw_bot_1d(ji) = isnow(ji) * zkappa_s(ji,nlay_s) * zg1s * ( t_i_1d(ji,1) - t_s_1d (ji,nlay_s) )
-         !qcn_snw_bot_1d(ji) = 300
-         !qcn_snw_bot_1d(ji) =  - isnow(ji) * zkappa_s(ji,nlay_s) * zg1s * ( t_si_1d(ji) - t_s_1d (ji,nlay_s) )
-         cnd_m_si(ji) = ( zh_s(ji) * rn_cnd_s  +  zh_i(ji) * ztcond_i(ji,0) ) / (zh_i(ji) + zh_s(ji))
-         qcn_snw_bot_1d(ji) = - isnow(ji) * cnd_m_si(ji) * ( t_i_1d(ji, 1) - t_s_1d (ji,nlay_s) ) / (0.5 * (zh_i(ji) + zh_s(ji)) ) 
-!         qcn_snw_bot_1d(ji) = - isnow(ji) * cnd_m_si(ji) * ( t_s_1d (ji,nlay_s) - t_i_1d(ji,1) ) / (0.5 * (zh_i(ji) + zh_s(ji)) )
+         cnd_m_si(ji) = isnow(ji) * rn_cnd_s * ztcond_i(ji,0) &
+                  &                            / ( 0.5_wp * ( ztcond_i(ji,0) * zh_s(ji) + rn_cnd_s * zh_i(ji) ) )
+         qcn_snw_bot_1d(ji) = - isnow(ji) * cnd_m_si(ji) * ( t_i_1d(ji, 1) - t_s_1d (ji,nlay_s) ) !/ (0.5 * (zh_i(ji) + zh_s(ji)) )
       END DO
-
       !     surface ice conduction flux
       !
       ! --- Diagnose the heat loss due to non-fully converged temperature solution (should not be above 10-4 W-m2) --- !
       !
       IF( k_cnd == np_cnd_OFF .OR. k_cnd == np_cnd_ON ) THEN
          CALL snw_var_enthalpy
-
-         ! zhfx_err = correction on the diagnosed heat flux due to non-convergence of the algorithm used to solve heat equation
-         DO ji = 1, npti
-            zdq = - zq_ini(ji) + ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i +  &
-               &                   SUM( e_s_1d(ji,1:nlay_s) ) * h_s_1d(ji) * r1_nlay_s )
-
-            !IF( k_cnd == np_cnd_OFF ) THEN
-
-            !   IF( t_su_1d(ji) < rt0 ) THEN  ! case T_su < 0degC
-            !      zhfx_err = ( qns_ice_1d(ji)     + qsr_ice_1d(ji)     - zradtr_i(ji,nlay_i) - qcn_ice_bot_1d(ji)  &
-            !         &       + zdq * r1_Dt_ice ) * a_i_1d(ji)
-            !   ELSE                          ! case T_su = 0degC
-            !      zhfx_err = ( qcn_ice_top_1d(ji) + qtr_ice_top_1d(ji) - zradtr_i(ji,nlay_i) - qcn_ice_bot_1d(ji)  &
-            !         &       + zdq * r1_Dt_ice ) * a_i_1d(ji)
-            !   ENDIF
-
-            !ELSEIF( k_cnd == np_cnd_ON ) THEN
-
-            !   zhfx_err    = ( qcn_ice_top_1d(ji) + qtr_ice_top_1d(ji) - zradtr_i(ji,nlay_i) - qcn_ice_bot_1d(ji)  &
-            !      &          + zdq * r1_Dt_ice ) * a_i_1d(ji)
-            !
-            !ENDIF
-            !
-            ! total heat sink to be sent to the ocean
-            !hfx_err_dif_1d(ji) = hfx_err_dif_1d(ji) + zhfx_err
-            !
-            ! hfx_difs = Heat flux diagnostic of sensible heat used to warm/cool ice in W.m-2
-            hfx_difs_1d(ji) = hfx_difs_1d(ji) - zdq * r1_Dt_ice * a_i_1d(ji)
-            !
-         END DO
-         !
       ENDIF
-      t_su_1d_bef(:) = t_su_1d(:)
+
       !
       !--------------------------------------------------------------------
       ! 11) reset inner snow and ice temperatures, update conduction fluxes
