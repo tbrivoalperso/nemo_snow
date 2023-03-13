@@ -47,10 +47,14 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_bom_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_bog_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_dif_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_difs_1d   !: Heat flux for diffusion in snow (ln_snwext=T)
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_opw_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_snw_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_dyn_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_err_dif_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hfx_err_difs_1d !: ln_snwext=T
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qt_oce_ai_1d
 
    ! heat flux associated with ice-atmosphere mass exchange
@@ -192,11 +196,11 @@ CONTAINS
          &      qns_ice_1d(jpij) , qml_ice_1d    (jpij) , qcn_ice_1d(jpij) , qtr_ice_top_1d(jpij) , &
          &      cnd_ice_1d(jpij) , t1_ice_1d     (jpij) , t_bo_1d   (jpij) ,   &
          &      hfx_sum_1d(jpij) , hfx_bom_1d    (jpij) , hfx_bog_1d(jpij) ,   & 
-         &      hfx_dif_1d(jpij) , hfx_opw_1d    (jpij) , hfx_dyn_1d(jpij) ,   &
+         &      hfx_dif_1d(jpij) , hfx_difs_1d(jpij),  hfx_opw_1d    (jpij) , hfx_dyn_1d(jpij) ,   &
          &      rn_amax_1d(jpij) ,                                             &
          &      hfx_thd_1d(jpij) , hfx_spr_1d    (jpij) ,                      &
          &      hfx_snw_1d(jpij) , hfx_sub_1d    (jpij) ,                      &
-         &      hfx_res_1d(jpij) , hfx_err_dif_1d(jpij) , qt_oce_ai_1d(jpij), STAT=ierr(ii) )
+         &      hfx_res_1d(jpij) , hfx_err_dif_1d(jpij), hfx_err_difs_1d(jpij) , qt_oce_ai_1d(jpij), STAT=ierr(ii) )
       !
       ii = ii + 1
       ALLOCATE( sprecip_1d    (jpij) , at_i_1d       (jpij) , ato_i_1d      (jpij) ,                         &

@@ -133,7 +133,7 @@ CONTAINS
          !---------------------------------------------------
          IF( ln_icethd ) THEN
             qt_oce_ai(ji,jj) = qt_atm_oi(ji,jj) - hfx_sum(ji,jj) - hfx_bom(ji,jj) - hfx_bog(ji,jj) &
-               &                                - hfx_dif(ji,jj) - hfx_opw(ji,jj) - hfx_snw(ji,jj) &
+               &                                - hfx_dif(ji,jj) - hfx_difs(ji,jj) - hfx_opw(ji,jj) - hfx_snw(ji,jj) &
                &                                + hfx_thd(ji,jj) + hfx_dyn(ji,jj) + hfx_res(ji,jj) &
                &                                + hfx_sub(ji,jj) - SUM( qevap_ice(ji,jj,:) * a_i_b(ji,jj,:) ) + hfx_spr(ji,jj)
          ENDIF

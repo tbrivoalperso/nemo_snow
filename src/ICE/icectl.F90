@@ -100,7 +100,7 @@ CONTAINS
          &          + wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr ) * e1e2t
       ztmp3(:,:,5) = ( sfx_bri + sfx_bog + sfx_bom + sfx_sum + sfx_sni + sfx_opw &                                ! salt
          &          + sfx_res + sfx_dyn + sfx_sub + sfx_lam ) * e1e2t
-      ztmp3(:,:,6) = ( hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_opw + hfx_snw &                                ! heat
+      ztmp3(:,:,6) = ( hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_difs + hfx_opw + hfx_snw &                                ! heat
          &          - hfx_thd - hfx_dyn - hfx_res - hfx_sub - hfx_spr ) * e1e2t
       !
       ! -- global sum -- !
@@ -249,7 +249,7 @@ CONTAINS
          ! salt flux
          pdiag_fs = sfx_bri + sfx_bog + sfx_bom + sfx_sum + sfx_sni + sfx_opw + sfx_res + sfx_dyn + sfx_sub + sfx_lam
          ! heat flux
-         pdiag_ft =   hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_opw + hfx_snw  &
+         pdiag_ft =   hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_difs + hfx_opw + hfx_snw  &
             &       - hfx_thd - hfx_dyn - hfx_res - hfx_sub - hfx_spr
 
       ELSEIF( icount == 1 ) THEN
@@ -269,7 +269,7 @@ CONTAINS
          !
          ! -- heat diag -- !
          zdiag_heat =   ( SUM( SUM( e_i, dim=4 ), dim=3 ) + SUM( SUM( e_s, dim=4 ), dim=3 ) - pdiag_t ) * r1_Dt_ice &
-            &         + (  hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_opw + hfx_snw                                &
+            &         + (  hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_difs + hfx_opw + hfx_snw                                &
             &            - hfx_thd - hfx_dyn - hfx_res - hfx_sub - hfx_spr )                                        &
             &         - pdiag_ft
          IF( MAXVAL( ABS(zdiag_heat) ) > rchk_t * rn_icechk_cel )   ll_stop_t = .TRUE.

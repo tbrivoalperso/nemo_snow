@@ -181,23 +181,13 @@ CONTAINS
             !
 
             IF( ln_snwext )  THEN 
-               ! --- diag error on heat diffusion - PART 1 --- !
-               ! Theo : We compute it here because it is easier to compute it only once for snow + ice
-                DO ji = 1, npti
-                   zq_ini(ji) = ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i +  &
-                      &           SUM( e_s_1d(ji,1:nlay_s) ) * h_s_1d(ji) * r1_nlay_s )
-                END DO
-
                 CALL snw_thd( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, &
                                           zq_rema, zevap_rema, zh_s, ze_s )       ! Snow thermodynamics (detached mode)
-            ELSE
-                   zq_ini(:) = 0._wp ! Not used, this is just to avoid having empty variables 
             ENDIF
-
 
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
-                             CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, zq_ini )      ! --- Ice-Snow temperature --- !
+                             CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
             !
             IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
                               CALL ice_thd_dh( zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
@@ -398,11 +388,13 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_bom_1d    (1:npti), hfx_bom       )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_bog_1d    (1:npti), hfx_bog       )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_dif_1d    (1:npti), hfx_dif       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), hfx_difs_1d    (1:npti), hfx_difs       )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_opw_1d    (1:npti), hfx_opw       )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_snw_1d    (1:npti), hfx_snw       )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_sub_1d    (1:npti), hfx_sub       )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_res_1d    (1:npti), hfx_res       )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_err_dif_1d(1:npti), hfx_err_dif   )
+         CALL tab_2d_1d( npti, nptidx(1:npti), hfx_err_difs_1d(1:npti), hfx_err_difs   )
          CALL tab_2d_1d( npti, nptidx(1:npti), qcn_snw_bot_1d(1:npti), qcn_snw_bot(:,:,kl) )
 
          !
@@ -486,11 +478,14 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_bom_1d    (1:npti), hfx_bom     )
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_bog_1d    (1:npti), hfx_bog     )
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_dif_1d    (1:npti), hfx_dif     )
+         CALL tab_1d_2d( npti, nptidx(1:npti), hfx_difs_1d    (1:npti), hfx_difs     )
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_opw_1d    (1:npti), hfx_opw     )
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_snw_1d    (1:npti), hfx_snw     )
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_sub_1d    (1:npti), hfx_sub     )
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_res_1d    (1:npti), hfx_res     )
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_err_dif_1d(1:npti), hfx_err_dif )
+         CALL tab_1d_2d( npti, nptidx(1:npti), hfx_err_difs_1d(1:npti), hfx_err_difs )
+
          !
          CALL tab_1d_2d( npti, nptidx(1:npti), qns_ice_1d    (1:npti), qns_ice    (:,:,kl) )
          CALL tab_1d_2d( npti, nptidx(1:npti), qtr_ice_bot_1d(1:npti), qtr_ice_bot(:,:,kl) )

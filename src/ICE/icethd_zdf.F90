@@ -44,7 +44,7 @@ MODULE icethd_zdf
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, zq_ini )
+   SUBROUTINE ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
       !!-------------------------------------------------------------------
       !!                ***  ROUTINE ice_thd_zdf  ***
       !!
@@ -57,7 +57,6 @@ CONTAINS
       REAL(wp), DIMENSION(jpij), INTENT(in) ::   za_s_fra    ! ice fraction covered by snow
       REAL(wp), DIMENSION(jpij), INTENT(in) ::   qcn_snw_bot_1d ! Conduction flux at snow / ice interface
       REAL(wp), DIMENSION(jpij), INTENT(in) ::   isnow       ! snow presence (1) or not (0)
-      REAL(wp), DIMENSION(jpij), INTENT(in) ::   zq_ini      ! diag errors on heat
       !
       SELECT CASE ( nice_zdf )      ! Choose the vertical heat diffusion solver
       !
@@ -66,12 +65,12 @@ CONTAINS
          !                          !-------------!
          IF( ln_snwext ) THEN ! snow in detached mode
             IF( .NOT.ln_cndflx ) THEN                           ! No conduction flux ==> default option
-               CALL ice_thd_zdf_BL99_snwext( np_cnd_OFF, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, zq_ini )
+               CALL ice_thd_zdf_BL99_snwext( np_cnd_OFF, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
             ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option
-               CALL ice_thd_zdf_BL99_snwext( np_cnd_ON, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, zq_ini )  
+               CALL ice_thd_zdf_BL99_snwext( np_cnd_ON, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )  
             ELSEIF( ln_cndflx .AND.      ln_cndemulate ) THEN   ! Conduction flux is emulated 
-               CALL ice_thd_zdf_BL99_snwext( np_cnd_EMU, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, zq_ini )
-               CALL ice_thd_zdf_BL99_snwext( np_cnd_ON, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, zq_ini )
+               CALL ice_thd_zdf_BL99_snwext( np_cnd_EMU, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
+               CALL ice_thd_zdf_BL99_snwext( np_cnd_ON, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
             ENDIF
          ELSE
          !

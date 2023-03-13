@@ -428,7 +428,10 @@ CONTAINS
          hfx_bom(ji,jj) = 0._wp   ;   hfx_sum(ji,jj) = 0._wp
          hfx_res(ji,jj) = 0._wp   ;   hfx_sub(ji,jj) = 0._wp
          hfx_spr(ji,jj) = 0._wp   ;   hfx_dif(ji,jj) = 0._wp
+         hfx_difs(ji,jj) = 0._wp  
          hfx_err_dif(ji,jj) = 0._wp
+         hfx_err_difs(ji,jj) = 0._wp
+
          wfx_err_sub(ji,jj) = 0._wp
          !
          diag_heat(ji,jj) = 0._wp ;   diag_sice(ji,jj) = 0._wp

@@ -36,7 +36,7 @@ MODULE icethd_zdf_BL99_snwext
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE ice_thd_zdf_BL99_snwext( k_cnd, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, zq_ini)
+   SUBROUTINE ice_thd_zdf_BL99_snwext( k_cnd, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow)
       !!-------------------------------------------------------------------
       !!                ***  ROUTINE ice_thd_zdf_BL99_snwext  ***
       !!
@@ -82,7 +82,6 @@ CONTAINS
       REAL(wp), DIMENSION(jpij), INTENT(in) ::   za_s_fra    ! ice fraction covered by snow
       REAL(wp), DIMENSION(jpij), INTENT(in) ::   qcn_snw_bot_1d ! Conduction flux at snow / ice interface
       REAL(wp), DIMENSION(jpij), INTENT(in) ::   isnow       ! snow presence (1) or not (0)
-      REAL(wp), DIMENSION(jpij), INTENT(in) ::   zq_ini      ! diag errors on heat
       !
       INTEGER ::   ji, jk         ! spatial loop index
       INTEGER ::   jm             ! current reference number of equation
@@ -133,7 +132,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zeta_s      ! Eta factor in the snow
       REAL(wp), DIMENSION(jpij)          ::   zkappa_comb ! Combined snow and ice surface conductivity
 
-      !REAL(wp), DIMENSION(jpij)          ::   zq_ini      ! diag errors on heat
+      REAL(wp), DIMENSION(jpij)          ::   zq_ini      ! diag errors on heat
       REAL(wp), DIMENSION(jpij)          ::   zghe        ! G(he), th. conduct enhancement factor, mono-cat
       !REAL(wp), DIMENSION(jpij)          ::   isnow       ! snow presence (1) or not (0)
       REAL(wp), DIMENSION(jpij)          ::   isnow_comb  ! snow presence for met-office
@@ -149,12 +148,11 @@ CONTAINS
       REAL(wp) ::   zcnd_i     ! mean sea ice thermal conductivity
       !!------------------------------------------------------------------
 
-   !   ! --- diag error on heat diffusion - PART 1 --- !
-   !   DO ji = 1, npti
-   !   !   zq_ini(ji) = ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i  +  &
-   !   !      &           SUM( e_s_1d(ji,1:nlay_s) ) * h_s_1d(ji) * r1_nlay_s )
-   !      zq_ini(ji) = SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i  
-   !   END DO
+      ! --- diag error on heat diffusion - PART 1 --- !
+      DO ji = 1, npti
+         zq_ini(ji) = ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i  +  &
+            &           SUM( e_s_1d(ji,1:nlay_s) ) * h_s_1d(ji) * r1_nlay_s )
+      END DO
       !------------------
       ! 1) Initialization
       !------------------
