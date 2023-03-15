@@ -49,23 +49,34 @@ CONTAINS
       !!
       !! ** Purpose : This routine manages snow thermodynamics in detached mode
       !!
-      !! ** Action : 
-      !!             
+      !! ** Action : - call snw_thd_zdf ( vertical diffusion of heat in snow)
+      !!             - call snw_thd_dh ( changes in heat and snow thickness with 
+      !!               snowfall / melt / sublimation 
+      !! ** Returns  - The radiative fluxes transmitted and absorbed through snow
+      !!               (zradtr_s & zradab_s)
+      !!             - The ice fraction covered by snow (za_s_fra)
+      !!             - The conduction flux at snow / ice interface (qcn_snw_bot_1d)
+      !!             - The snow presence (1) or not (0) at the beggining of the 
+      !!               procedure (isnow)
+      !!             - the remaining heat and mass fluxes after changes in snow 
+      !!               height due to snowfall/melt/sublimation (zq_rema & zevap_rema)
+      !!             - New thicknesses and enthalpy profiles to be remapped later on
+      !!               in icethd_dh (zh_s & ze_s)
       !!             
       !!             
       !!            
       !!             
       !!             
-      !! Note: This routine outputs zh_s, which is the thicknesses of the snow layer, 
-      !! which are all equal to the total snow thickness / nlay_s. We keep it that
-      !! way so that it is consistent with ISBA-ES coupling.     
+      !! ** Note:    This routine outputs zh_s, which is the thicknesses of the snow layer, 
+      !!              which are all equal to the total snow thickness / nlay_s. We keep it 
+      !!              that way so that it is consistent with ISBA-ES coupling.     
       !!             
       !!-------------------------------------------------------------------
       !
       REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(out) ::   zradtr_s  ! Radiation transmited through the snow
       REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(out) ::   zradab_s  ! Radiation absorbed in the snow 
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   za_s_fra    ! ice fraction covered by snow
-      REAL(wp), DIMENSION(jpij), INTENT(out) ::   qcn_snw_bot_1d    ! ice fraction covered by snow
+      REAL(wp), DIMENSION(jpij), INTENT(out) ::   qcn_snw_bot_1d    ! Conduction flux at snow / ice interface
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   isnow       ! snow presence (1) or not (0)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)

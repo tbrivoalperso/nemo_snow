@@ -40,10 +40,17 @@ CONTAINS
       !!-------------------------------------------------------------------
       !!                ***  ROUTINE ice_thd_zdf_BL99_snwext  ***
       !!
-      !! ** Purpose : computes the time evolution of snow and sea-ice temperature
-      !!              profiles, using the original Bitz and Lipscomb (1999) algorithm
+      !! ** Purpose : This routine is a copy of ice_thd_zdf_bl99 routine which is called
+      !!              only when ln_snwext=.true. It computesi the time evolution of snow 
+      !!              and sea-ice temperature profiles, using the original Bitz and 
+      !!              Lipscomb (1999) algorithm. 
       !!
-      !! ** Method  : solves the heat equation diffusion with a Neumann boundary
+      !! ** Method  : - The main difference with ice_the_zdf_bl99 is that the T° equation
+      !!               is solved only in sea-ice (snow is treated in snwthd_zdf routine)
+      !!              - Snow-free cells are treated exactly as in ice_thd_zdf_bl99
+      !!              - For snow-covered cells, the conduction flux (qcn_snw_bot_1d) at 
+      !!              the snow / ice interface is used as forcing term  
+      !!              - solves the heat equation diffusion with a Neumann boundary
       !!              condition at the surface and a Dirichlet one at the bottom.
       !!              Solar radiation is partially absorbed into the ice.
       !!              The specific heat and thermal conductivities depend on ice
@@ -73,8 +80,6 @@ CONTAINS
       !!           number of layers in the ice/snow : nlay_i, nlay_s
       !!           total ice/snow thickness         : h_i_1d, h_s_1d
       !!
-      !! ** NOTE : THIS ROUTINE WILL BE REMOVED WHEN THE SNOW IS FULLY EXTRACTED
-      !!           FROM SEA-ICE
       !!-------------------------------------------------------------------
       INTEGER, INTENT(in) ::   k_cnd     ! conduction flux (off, on, emulated)
       REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(in) ::   zradtr_s  ! Radiation transmited through the snow

@@ -46,17 +46,20 @@ CONTAINS
       !! ** Purpose : computes the time evolution of snow temperature profiles,
       !!              using the original Bitz and Lipscomb (1999) algorithm
       !!
-      !! ** Method : solves the heat equation diffusion in the snow with a Neumann
-      !!             boundary condition. The numerical scheme is an iterative Crank-
+      !! ** Method : - solves the heat equation diffusion in the snow with a Neumann
+      !!             boundary condition at the top. The numerical scheme is an iterative Crank-
       !!             Nicolson on a non-uniform multilayer grid in the snow system. 
+      !!             - the method is similar as the one used in icethd_zdf_bl99.F90 when
+      !!             ln_snwext=false. The only difference is that the heat diffusion is computed
+      !!             using the T° of the first ice level at time=t instead of t+1. 
       !!             
-      !! ** Action : Not finished yet            
-      !!             
+      !! ** Action : - uses a similar method as in icethd_zdf_bl99.F90 to resolve the heat eq.
+      !!             in the snow
+      !!             - returns the radiation transmitted and absorbed through the snow, the
+      !!             ice fraction covered by snow and the conduction flux at snow / ice 
+      !!             interface: Fc,si = - Kappa_int * (T_i1 - T_s) (see eq. 3.61 in LIM3 book 
+      !!             as an example)
       !!            
-      !!             
-      !!             
-      !!             
-      !!             
       !!-------------------------------------------------------------------
       !
       INTEGER, INTENT(in) ::   k_cnd     ! conduction flux (off, on, emulated)

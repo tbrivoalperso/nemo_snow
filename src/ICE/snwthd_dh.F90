@@ -30,7 +30,7 @@ MODULE snwthd_dh
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: snwthd_dh.F90 14686 2021-04-08 15:36:01Z clem $
+   !! $Id: snwthd_dh.F90 Theo $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -39,23 +39,23 @@ CONTAINS
       !!------------------------------------------------------------------
       !!                ***  ROUTINE snw_thd_dh  ***
       !!
-      !! ** Purpose :   compute ice and snow thickness changes due to growth/melting
+      !! ** Purpose :   Snow thickness changes due to growth/melting
       !!
-      !! ** Method  :   Ice/Snow surface melting arises from imbalance in surface fluxes
-      !!                Bottom accretion/ablation arises from flux budget
+      !! ** Method  :   Snow surface melting arises from imbalance in surface fluxes
       !!                Snow thickness can increase by precipitation and decrease by sublimation
-      !!                If snow load excesses Archmiede limit, snow-ice is formed by
-      !!                the flooding of sea-water in the snow
       !!
       !!                - Compute available flux of heat for surface ablation
       !!                - Compute snow and sea ice enthalpies
       !!                - Surface ablation and sublimation
-      !!                - Bottom accretion/ablation
-      !!                - Snow ice formation
-      !!
-      !! ** Note     :  h=max(0,h+dh) are often used to ensure positivity of h.
+      !!                - Returns the remaining heat and mass fluxes after snow melting 
+      !!                  / sublimation, and the snow enthalpy and thicknesses profiles
+      !!                - Enthalpy is NOT REMAPPED in this routine, but later in icethd_dh
+      !!                - ice / snow conversion is not computed here, but later in icethd_dh too
+      !! 
+      !! ** Notes     : - h=max(0,h+dh) are often used to ensure positivity of h.
       !!                very small negative values can occur otherwise (e.g. -1.e-20)
-      !!
+      !!                - The routine is simply an extraction of snow in the previous 
+      !!                  icethd_dh.F90 (from v4.2-stable) routine
       !! References : Bitz and Lipscomb, 1999, J. Geophys. Res.
       !!              Fichefet T. and M. Maqueda 1997, J. Geophys. Res., 102(C6), 12609-12646
       !!              Vancoppenolle, Fichefet and Bitz, 2005, Geophys. Res. Let.
@@ -207,6 +207,7 @@ CONTAINS
          END DO
       END DO
 
+! THEO Nb: remapping of the snow enthalpy is done in icethd_dh      
 !     IF( ln_snwext ) THEN
 !   
 !        ! Remapping of snw enthalpy on a regular grid
