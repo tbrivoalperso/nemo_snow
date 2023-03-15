@@ -277,7 +277,7 @@ CONTAINS
       CALL iom_put ('hfxbom'     , hfx_bom     )   ! heat flux used for ice bottom melt
       CALL iom_put ('hfxsum'     , hfx_sum     )   ! heat flux used for ice surface melt
       CALL iom_put ('hfxopw'     , hfx_opw     )   ! heat flux used for ice formation in open water
-      CALL iom_put ('hfxdif'     , hfx_dif     )   ! heat flux used for ice temperature change
+      CALL iom_put ('hfxdif'     , hfx_dif   + hfx_difs  )   ! heat flux used for ice / snow temperature change
       CALL iom_put ('hfxsnw'     , hfx_snw     )   ! heat flux used for snow melt
       CALL iom_put ('hfxerr'     , hfx_err_dif )   ! heat flux error after heat diffusion
 

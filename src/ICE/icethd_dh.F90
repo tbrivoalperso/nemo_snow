@@ -137,15 +137,18 @@ CONTAINS
          END DO
       END DO
       !
-      ! initialize snw layer thicknesses and enthalpies
-!      zh_s(1:npti,0) = 0._wp
-!      ze_s(1:npti,0) = 0._wp
-!      DO jk = 1, nlay_s
-!         DO ji = 1, npti
-!            zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
-!            ze_s(ji,jk) = e_s_1d(ji,jk)
+!      IF( ln_snwext) THEN
+!              
+!         ! initialize snw layer thicknesses and enthalpies
+!         zh_s(1:npti,0) = 0._wp
+!         ze_s(1:npti,0) = 0._wp
+!         DO jk = 1, nlay_s
+!            DO ji = 1, npti
+!               zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
+!               ze_s(ji,jk) = e_s_1d(ji,jk)
+!            END DO
 !         END DO
-!      END DO
+!      ENDIF
       !
       !                       ! ============================================== !
       !                       ! Available heat for surface and bottom ablation !
