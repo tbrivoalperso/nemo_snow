@@ -378,6 +378,8 @@ CONTAINS
                   t_s(ji,jj,jk,jl) = zts_3d(ji,jj,jl)
                   e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
                      &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
+                  ! Initialise rho_s (not used yet, but will be for ISBA-ES)
+                  rho_s(ji,jj,jk,jl) = rhos 
                END_3D
             END DO
             !

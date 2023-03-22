@@ -153,7 +153,6 @@ CONTAINS
          WRITE(numout,*) '      extinction radiation parameter in dry  snw (nn_qtrice=1)  rn_kappa_sdry = ', rn_kappa_sdry
       ENDIF
 
-
       !
       !
    END SUBROUTINE snw_thd_init

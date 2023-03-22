@@ -138,6 +138,7 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   e_i_1d      !:    Ice  enthalpy per unit volume
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   e_s_1d      !:    Snow enthalpy per unit volume
 
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   eh_i_old    !: ice heat content (q*h, J.m-2)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   h_i_old     !: ice thickness layer (m)
 
@@ -156,6 +157,10 @@ MODULE ice1D
    
    ! Variables for snow external routines (ln_snwext=T)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qcn_snw_bot_1d
+   
+   ! Variables needed for ISBA-ES coupling
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rho_s_1d      !:    Snow density per unit volume   
+
    ! 
    !!----------------------
    !! * 2D Module variables
@@ -186,7 +191,7 @@ CONTAINS
       !!                ***  ROUTINE ice1D_alloc ***
       !!---------------------------------------------------------------------!
       INTEGER ::   ice1D_alloc   ! return value
-      INTEGER ::   ierr(8), ii
+      INTEGER ::   ierr(9), ii
       !!---------------------------------------------------------------------!
       ierr(:) = 0
 
@@ -225,7 +230,7 @@ CONTAINS
       !
       ii = ii + 1
       ALLOCATE( t_s_1d  (jpij,nlay_s)     , t_i_1d (jpij,nlay_i)     , sz_i_1d(jpij,nlay_i) ,  &            
-         &      e_i_1d  (jpij,nlay_i)     , e_s_1d (jpij,nlay_s)     ,                         &
+         &      e_i_1d  (jpij,nlay_i)     , e_s_1d (jpij,nlay_s)     , rho_s_1d(jpij,nlay_s),  &
          &      eh_i_old(jpij,0:nlay_i+1) , h_i_old(jpij,0:nlay_i+1) , STAT=ierr(ii) )
       !
       ii = ii + 1

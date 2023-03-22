@@ -380,6 +380,7 @@ MODULE ice
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   t_s           !: Snow temperatures     [K]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_s           !: Snow enthalpy         [J/m2]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   rho_s           !: Snow density         [kg/m3]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   t_i           !: ice temperatures      [K]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_i           !: ice enthalpy          [J/m2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   sz_i          !: ice salinity          [PSS]
@@ -565,7 +566,13 @@ CONTAINS
 
       ! * Extra diagnotics for external snow (ln_snwext=T)
       ii = ii + 1 
-      ALLOCATE( qcn_snw_bot(jpi,jpj,jpl), STAT = ierr(ii) ) 
+      ALLOCATE( qcn_snw_bot(jpi,jpj,jpl), STAT = ierr(ii) )
+
+
+      ! Variables needed for ISBA-ES coupling
+      ii = ii + 1
+      ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) , STAT=ierr(ii) )
+ 
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )
       !
