@@ -289,8 +289,6 @@ CONTAINS
             END DO
             !
          ENDIF
-
-
          !
          !-----------------
          ! 4) kappa factors
@@ -309,13 +307,6 @@ CONTAINS
                zkappa_s(ji,nlay_s) = isnow(ji) * zghe(ji) * rn_cnd_s * ztcond_i(ji,0) &
                   &                            / ( 0.5_wp * ( ztcond_i(ji,0) * zh_s(ji) + rn_cnd_s * zh_i(ji) ) )
          END DO
-         !         DO jk = 0, nlay_s
-!            DO ji = 1, npti
-!               IF ( .NOT. l_T_converged(ji) ) &
-!                  zkappa_s(ji,jk) = zghe(ji) * rn_cnd_s * z1_h_s(ji)
-!            END DO
-!         END DO
-!
          !
          !--------------------------------------
          ! 5) Sea ice specific heat, eta factors
@@ -463,9 +454,6 @@ CONTAINS
                      ENDIF
                   ENDIF
                END DO
-               DO jk = 1, nlay_s
-
-               END DO
 !               ! --- SIMIP diagnostics => Theo : I don't think we need to
 !               compute it here as it is done in icethd_zdf_bl99 already
 !               !
@@ -543,8 +531,6 @@ CONTAINS
          END DO
          !
       ENDIF
-
-
       !
       ! --- Diagnose the heat loss due to non-fully converged temperature solution (should not be above 10-4 W-m2) --- !
       !
