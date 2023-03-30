@@ -114,7 +114,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpij,nlay_s)   ::   ztsb        ! Temporary temperature in the snow to check the convergence
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zkappa_s    ! Kappa factor in the snow
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zeta_s      ! Eta factor in the snow
-      REAL(wp), DIMENSION(jpij) ::   cnd_m_si    ! Mean conductivity at snow / ice interface
+      REAL(wp), DIMENSION(jpij) ::   zkappa_si    ! Kappa factor at snow / ice interface
 
       REAL(wp), DIMENSION(jpij)          ::   zkappa_comb ! Combined snow and ice surface conductivity
       REAL(wp), DIMENSION(jpij)          ::   zq_ini      ! diag errors on heat
@@ -448,27 +448,13 @@ CONTAINS
                   IF( .NOT. l_T_converged(ji) ) THEN
                      ztsub(ji) = t_su_1d(ji)
                      IF( t_su_1d(ji) < rt0 ) THEN
-                        ! recompute t_su_1d only if isnow = 1
+                        ! recompute t_su_1d only if isnow = 1. Without the presence of snow, t_su_1d is computed in
+                        !  ice_thd_zdf_bl99_snwext routine
                         IF( h_s_1d(ji) > 0._wp ) t_su_1d(ji) = ( zindtbis(ji,jm_min(ji)) - ztrid(ji,jm_min(ji),3) *  &
                            &          ( isnow(ji) * t_s_1d(ji,1) ) ) / zdiagbis(ji,jm_min(ji))
                      ENDIF
                   ENDIF
                END DO
-!               ! --- SIMIP diagnostics => Theo : I don't think we need to
-!               compute it here as it is done in icethd_zdf_bl99 already
-!               !
-!               DO ji = 1, npti
-!                  !--- Snow-ice interfacial temperature (diagnostic SIMIP)
-!                  IF( h_s_1d(ji) >= zhs_ssl ) THEN
-!                     t_si_1d(ji) = (   rn_cnd_s       * h_i_1d(ji) * r1_nlay_i * t_s_1d(ji,nlay_s)   &
-!                        &            + ztcond_i(ji,1) * h_s_1d(ji) * r1_nlay_s * t_i_1d(ji,1)      ) &
-!                        &          / ( rn_cnd_s       * h_i_1d(ji) * r1_nlay_i &
-!                        &            + ztcond_i(ji,1) * h_s_1d(ji) * r1_nlay_s )
-!                  ELSE
-!                     t_si_1d(ji) = t_su_1d(ji)
-!                  ENDIF
-!               END DO
-
                !
                !--------------------------------------------------------------
                ! 9) Has the scheme converged?, end of the iterative procedure
@@ -481,11 +467,11 @@ CONTAINS
                   zdti_max = 0._wp
 
                   IF ( .NOT. l_T_converged(ji) ) THEN
-
-                     IF( isnow(ji) == 1._wp )  t_su_1d(ji) = MAX( MIN( t_su_1d(ji) , rt0 ) , rt0 - 100._wp )
-                     IF( isnow(ji) == 1._wp )  zdti_max    = MAX( zdti_max, ABS( t_su_1d(ji) - ztsub(ji) ) )
+                     ! Check convergence on surface T° only in the presence of snow. 
 
                      IF( h_s_1d(ji) > 0._wp ) THEN
+                        t_su_1d(ji) = MAX( MIN( t_su_1d(ji) , rt0 ) , rt0 - 100._wp ) 
+                        zdti_max    = MAX( zdti_max, ABS( t_su_1d(ji) - ztsub(ji) ) )    
                         DO jk = 1, nlay_s
                            t_s_1d(ji,jk) = MAX( MIN( t_s_1d(ji,jk), rt0 ), rt0 - 100._wp )
                            zdti_max      = MAX ( zdti_max , ABS( t_s_1d(ji,jk) - ztsb(ji,jk) ) )
@@ -497,7 +483,8 @@ CONTAINS
                         tice_cvgerr_1d(ji) = zdti_max
                         tice_cvgstp_1d(ji) = REAL(iconv)
                      ENDIF
-
+                     
+                     ! if there is no snow, l_T_converged will automatically be T
                      IF( zdti_max < zdti_bnd )   l_T_converged(ji) = .TRUE.
 
                   ENDIF
@@ -516,9 +503,13 @@ CONTAINS
       !     
       DO ji = 1, npti
          qcn_snw_bot_1d(ji) = 0._wp
-         cnd_m_si(ji) = isnow(ji) * rn_cnd_s * ztcond_i(ji,0) &
+         ! The kappa factor is obtained as in eq. 3.61 in LIM3 book by equalling the lowermost heat
+         ! conductive flux in the snow and the uppermost one in the sea ice
+         zkappa_si(ji) = isnow(ji) * rn_cnd_s * ztcond_i(ji,0) &
                   &                            / ( 0.5_wp * ( ztcond_i(ji,0) * zh_s(ji) + rn_cnd_s * zh_i(ji) ) )
-         qcn_snw_bot_1d(ji) = - isnow(ji) * cnd_m_si(ji) * ( t_i_1d(ji, 1) - t_s_1d (ji,nlay_s) ) !/ (0.5 * (zh_i(ji) + zh_s(ji)) )
+
+         ! Conduction flux at snow ice - interval : Fc,si = - Kappa_int * (T_i1 - T_s)
+         qcn_snw_bot_1d(ji) = - isnow(ji) * zkappa_si(ji) * ( t_i_1d(ji, 1) - t_s_1d (ji,nlay_s) ) 
          IF(isnow(ji) == 1) qcn_ice_top_1d(ji) = qcn_snw_bot_1d(ji)  
       END DO
 
@@ -545,7 +536,7 @@ CONTAINS
            IF( isnow(ji) == 1._wp ) THEN
 
               ! Nb: this part does not pass in debug mode (floating overflow)
-
+              ! Diagnostics are only computed in snow here
               IF( k_cnd == np_cnd_OFF ) THEN
 
                  IF( t_su_1d(ji) < rt0 ) THEN  ! case T_su < 0degC
@@ -577,10 +568,8 @@ CONTAINS
 
       !
       !--------------------------------------------------------------------
-      ! 11) reset inner snow and ice temperatures, update conduction fluxes
+      ! 11) reset inner snow temperature
       !--------------------------------------------------------------------
-      ! effective conductivity and 1st layer temperature (needed by Met Office)
-      ! this is a conductivity at mid-layer, hence the factor 2
       !
       IF( k_cnd == np_cnd_EMU ) THEN
          ! Restore temperatures to their initial values

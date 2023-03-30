@@ -179,6 +179,7 @@ CONTAINS
       DO ji = 1, npti
                zq_rema (ji) = zq_top (ji) ! remaining heat at the end of the routine in J.m-2 (used to melt ice later on)
       END DO
+
       ! Snow sublimation
       !-----------------
       ! qla_ice is always >=0 (upwards), heat goes to the atmosphere, therefore snow sublimates
@@ -207,7 +208,7 @@ CONTAINS
          END DO
       END DO
 
-! THEO Nb: remapping of the snow enthalpy is done in icethd_dh      
+! THEO Nb: remapping of the snow enthalpy is done later on in icethd_dh      
 !     IF( ln_snwext ) THEN
 !   
 !        ! Remapping of snw enthalpy on a regular grid

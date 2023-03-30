@@ -62,9 +62,16 @@ CONTAINS
       !!               height due to snowfall/melt/sublimation (zq_rema & zevap_rema)
       !!             - New thicknesses and enthalpy profiles to be remapped later on
       !!               in icethd_dh (zh_s & ze_s)
+      !!                          
+      !! ** Global variables altered after this routine (but not passed as arguments):
+      !!             - e_s_1d, t_s_1d, h_s_1d, t_su_1d (surface T°), t_si_1d (snw / SI interfacial T°)     
+      !!             - Heat & mass fluxes:  qml_ice_1d (heat remaining for melting the surface), 
+      !!               hfx_res_1d (HF to the ocean after snow internal melting), wfx_snw_sum_1d (mass
+      !!               flux to the ocean after melt), hfx_spr_1d (HF from precip), wfx_spr_1d (MF from
+      !!               precip), hfx_snw_1d (HF from surface melting), wfx_snw_sum_1d (MF from surface 
+      !!               melting), hfx_sub_1d (HF from snw sublimation), wfx_snw_sub_1d (MF from sub.)
+      !!                             
       !!             
-      !!             
-      !!            
       !!             
       !!             
       !! ** Note:    This routine outputs zh_s, which is the thicknesses of the snow layer, 

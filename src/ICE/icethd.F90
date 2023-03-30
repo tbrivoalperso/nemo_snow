@@ -128,7 +128,7 @@ CONTAINS
       !
 
       ! This part is just here to test snow devs - it will be removed later
-      ln_fcond=.false. ! To test sea ice
+      ln_fcond=.false. ! To test snow devs
       IF( ln_fcond ) THEN
 
          !Read in convection flux from file (to test code modifications)
@@ -179,10 +179,19 @@ CONTAINS
             qcn_snw_bot_1d(1:npti)     = 0._wp
 
             !
-
+            ! Theo : Here We call the new snow_thd routine which compute: 
+            ! - The T° equation in the snow (snw_thd_zdf)
+            ! - Snowfall / melt and associated mass and heat changes (snw_thd_dh)
             IF( ln_snwext )  THEN 
                 CALL snw_thd( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, &
                                           zq_rema, zevap_rema, zh_s, ze_s )       ! Snow thermodynamics (detached mode)
+                ! returns:
+                ! - zradtr_s, zradab_s => transmitted & absorbed radiative fluxes in the snow
+                ! - za_s_fra => fraction of sea ice covered by snow
+                ! - qcn_snw_bot_1d => conduction flux at the snow/ice interface (computed at the end of snw_thd_zdf)
+                ! - isnow => presence of snow (1) or not (0) at time=t
+                ! - zq_rema, zevap_rema => remaining heat and mass fluxes after snowfall / melt
+                ! - zh_s, ze_s => non-remapped thickness and enthalpy profiles after snowfall / melt                
             ENDIF
 
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      

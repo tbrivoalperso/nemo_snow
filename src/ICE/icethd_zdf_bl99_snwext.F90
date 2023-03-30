@@ -428,7 +428,10 @@ CONTAINS
                !                               !---------------------!
                IF( isnow(ji) > 0._wp ) THEN   !  snow-covered cells !
                   !                            !---------------------!
-                  ! Snow covered cells are forced by qcn_snw_bot_1d from snwthd
+                  ! The thermodynamic equation is altered:
+                  ! - Snow covered cells are forced by qcn_snw_bot_1d (computed in snw_thd_zdf)
+                  ! - The T° equation has the same form as in k_cnd_ON case in original ice_thd_zdf_bl99
+                  ! ( as we force the T° equations by a conduction flux )
                   jm_min(ji) =  2
                   jm_max(ji) = nlay_i + 1
 
@@ -451,6 +454,7 @@ CONTAINS
                ELSE                            ! cells without snow  !
                   !                            !---------------------!
                   !
+                  ! For cells without snow, the T° equation is solved as in the original snw_thd_zdf_bl99 routine
                   IF( t_su_1d(ji) < rt0 ) THEN   !--  case 1 : no surface melting
                      !
                      jm_min(ji) = 1
@@ -559,7 +563,7 @@ CONTAINS
                IF( .NOT. l_T_converged(ji) ) THEN
                   ztsub(ji) = t_su_1d(ji)
                   IF( t_su_1d(ji) < rt0 ) THEN
-                     ! recompute t_su_1d only if isnow = 1
+                        ! recompute t_su_1d only if isnow = 0. If not, it is already computed in snw_thd_zdf
                         IF( isnow(ji) == 0._wp ) t_su_1d(ji) = ( zindtbis(ji,jm_min(ji)) - ztrid(ji,jm_min(ji),3) *  &
                         &          ( ( 1._wp - isnow(ji) ) * t_i_1d(ji,1) ) ) / zdiagbis(ji,jm_min(ji)) 
                   ENDIF
