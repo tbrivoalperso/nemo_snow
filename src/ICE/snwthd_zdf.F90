@@ -1,7 +1,7 @@
 MODULE snwthd_zdf
    !!======================================================================
-   !!                  ***  MODULE icethd   ***
-   !!   sea-ice : master routine for thermodynamics
+   !!                  ***  MODULE snwthd_zdf   ***
+   !!   sea-ice: vertical heat diffusion in snow (computation of temperatures)
    !!======================================================================
    !! History :  1.0  !  2000-01  (M.A. Morales Maqueda, H. Goosse, T. Fichefet) original code 1D
    !!            4.0  !  2018     (many people)       SI3 [aka Sea Ice cube]
@@ -266,7 +266,6 @@ CONTAINS
             END DO
             !
          ENDIF
-
          ! Variable used after iterations
          ! Value must be frozen after convergence for MPP independance reason
          DO ji = 1, npti

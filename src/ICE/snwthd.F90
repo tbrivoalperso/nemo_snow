@@ -1,7 +1,7 @@
 MODULE snwthd
    !!======================================================================
    !!                  ***  MODULE icethd   ***
-   !!   sea-ice : master routine for thermodynamics
+   !!   sea-ice : master routine for snow thermodynamics
    !!======================================================================
    !! History :  1.0  !  2000-01  (M.A. Morales Maqueda, H. Goosse, T. Fichefet) original code 1D
    !!            4.0  !  2018     (many people)       SI3 [aka Sea Ice cube]
@@ -20,7 +20,9 @@ MODULE snwthd
    USE icectl         ! sea-ice: control print
 
    USE snwthd_zdf      ! snow: vertical diffusion 
-   USE snwthd_dh       ! snow: growing / melting 
+   USE snwthd_dh       ! snow: melting 
+   USE snwthd_snwfl      ! snowfall
+
    !
    USE in_out_manager  ! I/O manager
    USE lib_mpp         ! MPP library
@@ -94,42 +96,39 @@ CONTAINS
       !!-------------------------------------------------------------------
       ! controls
       IF( ln_timing    )   CALL timing_start('snwthd')                                                             ! timing
-      !IF( ln_icediachk )   CALL ice_cons_hsm(0, 'snwthd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft) ! conservation
-      !IF( ln_icediachk )   CALL ice_cons2D  (0, 'snwthd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft) ! conservation
 
       !------------------
-      ! 1) Thermodynamics 
-      !------------------
-!      IF( ln_icedH )   CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
-
-      !IF( .NOT.ln_cndflx ) THEN                           ! No conduction flux ==> default option
-      !   CALL snw_thd_zdf( np_cnd_OFF, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow)
-      !ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option
-      !   CALL snw_thd_zdf( np_cnd_ON, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
-      !ELSEIF( ln_cndflx .AND.      ln_cndemulate ) THEN   ! Conduction flux is emulated 
-      !   CALL snw_thd_zdf( np_cnd_EMU, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
-      !   CALL snw_thd_zdf( np_cnd_ON, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
-      !ENDIF
-
-      !------------------
-      ! 2) Snowfall / melt 
+      ! 1) Snowfall 
       !------------------
 
-      IF( ln_icedH )   CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
+      ! We compute the changes in snow thickness due to snowfall first. This
+      ! avoid unconsistencies between the surface temperature used to compute
+      ! the available heat for surface melt (in snwthd_dh). This way the
+      ! available heat for surface melting (computed in snwthd_dh) is always
+      ! computed from the surface ice or snow T° at time=t+1, regardless of the
+      ! presence of snow or not at time=t.
+      ! 
+      IF( ln_icedH )   CALL snw_thd_snwfl ! Change in snow thickness and enthalpy due to snowfall 
+
+      !------------------
+      ! 2) Thermodynamics 
+      !------------------
 
       IF( .NOT.ln_cndflx ) THEN                           ! No conduction flux ==> default option
          CALL snw_thd_zdf( np_cnd_OFF, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow)
-      ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option 
+      ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option
          CALL snw_thd_zdf( np_cnd_ON, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
       ELSEIF( ln_cndflx .AND.      ln_cndemulate ) THEN   ! Conduction flux is emulated 
          CALL snw_thd_zdf( np_cnd_EMU, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
          CALL snw_thd_zdf( np_cnd_ON, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
       ENDIF
 
+      !------------------
+      ! 3) Snow melt & sublimation 
+      !------------------
+
+      IF( ln_icedH )   CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
       !
-      !
-      !IF( ln_icediachk )   CALL ice_cons_hsm(1, 'snwthd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
-      !IF( ln_icediachk )   CALL ice_cons2D  (1, 'snwthd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
       !
       IF( ln_timing )   CALL timing_stop('snwthd')                                        ! timing
       !

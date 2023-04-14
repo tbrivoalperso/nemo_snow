@@ -1,7 +1,7 @@
 MODULE snwthd_dh
    !!======================================================================
    !!                       ***  MODULE snwthd_dh ***
-   !!   seaice : thermodynamic growth and melt
+   !!   seaice : snow thermodynamic growth and melt
    !!======================================================================
    !! History :       !  2003-05  (M. Vancoppenolle) Original code in 1D
    !!                 !  2005-06  (M. Vancoppenolle) 3D version
@@ -18,6 +18,7 @@ MODULE snwthd_dh
    USE ice            ! sea-ice: variables
    USE ice1D          ! sea-ice: thermodynamics variables
    USE icevar         ! for CALL ice_var_snwblow
+   USE snwent         ! snow enthalpy remapping
    !
    USE in_out_manager ! I/O manager
    USE lib_mpp        ! MPP library
@@ -133,23 +134,24 @@ CONTAINS
          END DO
       END DO
 
-      ! Snow precipitation
-      !-------------------
-      CALL ice_var_snwblow( 1._wp - at_i_1d(1:npti), zsnw(1:npti) )   ! snow distribution over ice after wind blowing
+     IF( .NOT. ln_snwext ) THEN ! Nb: this part of the code is the same as in the snwthd_snwfl routine. We keep it here to be consistent with 4.2.stable version
+         ! Snow precipitation
+         !-------------------
+         CALL ice_var_snwblow( 1._wp - at_i_1d(1:npti), zsnw(1:npti) )   ! snow distribution over ice after wind blowing
 
-      DO ji = 1, npti
-         IF( sprecip_1d(ji) > 0._wp ) THEN
-            zh_s(ji,0) = zsnw(ji) * sprecip_1d(ji) * rDt_ice * r1_rhos / at_i_1d(ji)   ! thickness of precip
-            ze_s(ji,0) = MAX( 0._wp, - qprec_ice_1d(ji) )                              ! enthalpy of the precip (>0, J.m-3)
-            !
-            hfx_spr_1d(ji) = hfx_spr_1d(ji) + ze_s(ji,0) * zh_s(ji,0) * a_i_1d(ji) * r1_Dt_ice   ! heat flux from snow precip (>0, W.m-2)
-            wfx_spr_1d(ji) = wfx_spr_1d(ji) - rhos       * zh_s(ji,0) * a_i_1d(ji) * r1_Dt_ice   ! mass flux, <0
-            !
-            ! update thickness
-            h_s_1d(ji) = h_s_1d(ji) + zh_s(ji,0)
-         ENDIF
-      END DO
-
+         DO ji = 1, npti
+            IF( sprecip_1d(ji) > 0._wp ) THEN
+               zh_s(ji,0) = zsnw(ji) * sprecip_1d(ji) * rDt_ice * r1_rhos / at_i_1d(ji)   ! thickness of precip
+               ze_s(ji,0) = MAX( 0._wp, - qprec_ice_1d(ji) )                              ! enthalpy of the precip (>0, J.m-3)
+               !
+               hfx_spr_1d(ji) = hfx_spr_1d(ji) + ze_s(ji,0) * zh_s(ji,0) * a_i_1d(ji) * r1_Dt_ice   ! heat flux from snow precip (>0, W.m-2)
+               wfx_spr_1d(ji) = wfx_spr_1d(ji) - rhos       * zh_s(ji,0) * a_i_1d(ji) * r1_Dt_ice   ! mass flux, <0
+               !
+               ! update thickness
+               h_s_1d(ji) = h_s_1d(ji) + zh_s(ji,0)
+            ENDIF
+         END DO
+      ENDIF
       ! Snow melting
       ! ------------
       ! If heat still available (zq_top > 0)
@@ -208,7 +210,6 @@ CONTAINS
          END DO
       END DO
 
-! THEO Nb: remapping of the snow enthalpy is done later on in icethd_dh      
      IF( ln_snwext ) THEN
    
         ! Remapping of snw enthalpy on a regular grid
@@ -231,98 +232,6 @@ CONTAINS
       !
       !
    END SUBROUTINE snw_thd_dh
-
-   SUBROUTINE snw_ent( ph_old, pe_old, pe_new )
-      !!-------------------------------------------------------------------
-      !!               ***   ROUTINE snw_ent  ***
-      !!
-      !! ** Purpose :
-      !!           This routine computes new vertical grids in the snow,
-      !!           and consistently redistributes temperatures.
-      !!           Redistribution is made so as to ensure to energy conservation
-      !!
-      !!
-      !! ** Method  : linear conservative remapping
-      !!
-      !! ** Steps : 1) cumulative integrals of old enthalpies/thicknesses
-      !!            2) linear remapping on the new layers
-      !!
-      !! ------------ cum0(0)                        ------------- cum1(0)
-      !!                                    NEW      -------------
-      !! ------------ cum0(1)               ==>      -------------
-      !!     ...                                     -------------
-      !! ------------                                -------------
-      !! ------------ cum0(nlay_s+1)                 ------------- cum1(nlay_s)
-      !!
-      !!
-      !! References : Bitz & Lipscomb, JGR 99; Vancoppenolle et al., GRL, 2005
-      !!-------------------------------------------------------------------
-      REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(in   ) ::   ph_old             ! old thicknesses (m)
-      REAL(wp), DIMENSION(jpij,0:nlay_s), INTENT(in   ) ::   pe_old             ! old enthlapies (J.m-3)
-      REAL(wp), DIMENSION(jpij,1:nlay_s), INTENT(inout) ::   pe_new             ! new enthlapies (J.m-3, remapped)
-      !
-      INTEGER  :: ji         !  dummy loop indices
-      INTEGER  :: jk0, jk1   !  old/new layer indices
-      !
-      REAL(wp), DIMENSION(jpij,0:nlay_s+1) ::   zeh_cum0, zh_cum0   ! old cumulative enthlapies and layers interfaces
-      REAL(wp), DIMENSION(jpij,0:nlay_s)   ::   zeh_cum1, zh_cum1   ! new cumulative enthlapies and layers interfaces
-      REAL(wp), DIMENSION(jpij)            ::   zhnew               ! new layers thicknesses
-      !!-------------------------------------------------------------------
-
-      !--------------------------------------------------------------------------
-      !  1) Cumulative integral of old enthalpy * thickness and layers interfaces
-      !--------------------------------------------------------------------------
-      zeh_cum0(1:npti,0) = 0._wp
-      zh_cum0 (1:npti,0) = 0._wp
-      DO jk0 = 1, nlay_s+1
-         DO ji = 1, npti
-            zeh_cum0(ji,jk0) = zeh_cum0(ji,jk0-1) + pe_old(ji,jk0-1) * ph_old(ji,jk0-1)
-            zh_cum0 (ji,jk0) = zh_cum0 (ji,jk0-1) + ph_old(ji,jk0-1)
-         END DO
-      END DO
-
-      !------------------------------------
-      !  2) Interpolation on the new layers
-      !------------------------------------
-      ! new layer thickesses
-      DO ji = 1, npti
-         zhnew(ji) = SUM( ph_old(ji,0:nlay_s) ) * r1_nlay_s
-      END DO
-
-      ! new layers interfaces
-      zh_cum1(1:npti,0) = 0._wp
-      DO jk1 = 1, nlay_s
-         DO ji = 1, npti
-            zh_cum1(ji,jk1) = zh_cum1(ji,jk1-1) + zhnew(ji)
-         END DO
-      END DO
-
-      zeh_cum1(1:npti,0:nlay_s) = 0._wp
-      ! new cumulative q*h => linear interpolation
-      DO jk0 = 1, nlay_s+1
-         DO jk1 = 1, nlay_s-1
-            DO ji = 1, npti
-               IF( zh_cum1(ji,jk1) <= zh_cum0(ji,jk0) .AND. zh_cum1(ji,jk1) > zh_cum0(ji,jk0-1) ) THEN
-                  zeh_cum1(ji,jk1) = ( zeh_cum0(ji,jk0-1) * ( zh_cum0(ji,jk0) - zh_cum1(ji,jk1  ) ) +  &
-                     &                 zeh_cum0(ji,jk0  ) * ( zh_cum1(ji,jk1) - zh_cum0(ji,jk0-1) ) )  &
-                     &             / ( zh_cum0(ji,jk0) - zh_cum0(ji,jk0-1) )
-               ENDIF
-            END DO
-         END DO
-      END DO
-      ! to ensure that total heat content is strictly conserved, set:
-      zeh_cum1(1:npti,nlay_s) = zeh_cum0(1:npti,nlay_s+1)
-
-      ! new enthalpies
-      DO jk1 = 1, nlay_s
-         DO ji = 1, npti
-            rswitch      = MAX( 0._wp , SIGN( 1._wp , zhnew(ji) - epsi20 ) )
-            pe_new(ji,jk1) = rswitch * ( zeh_cum1(ji,jk1) - zeh_cum1(ji,jk1-1) ) / MAX( zhnew(ji), epsi20 )
-         END DO
-      END DO
-
-   END SUBROUTINE snw_ent
-
 
 #else
    !!----------------------------------------------------------------------
