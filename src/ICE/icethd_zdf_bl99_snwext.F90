@@ -622,7 +622,7 @@ CONTAINS
       IF( k_cnd == np_cnd_OFF .OR. k_cnd == np_cnd_EMU ) THEN
          !
          DO ji = 1, npti
-            qcn_ice_top_1d(ji) = -           isnow(ji)   * zkappa_s(ji,0) * zg1s * ( t_s_1d(ji,1) - t_su_1d(ji) ) &
+            IF(isnow(ji) == 0._wp) qcn_ice_top_1d(ji) = -           isnow(ji)   * zkappa_s(ji,0) * zg1s * ( t_s_1d(ji,1) - t_su_1d(ji) ) &
                &                 - ( 1._wp - isnow(ji) ) * zkappa_i(ji,0) * zg1  * ( t_i_1d(ji,1) - t_su_1d(ji) )
          END DO
          !
@@ -633,7 +633,7 @@ CONTAINS
          END DO
          !
       ENDIF
-      !
+!      !
       ! --- Diagnose the heat loss due to changing non-solar / conduction flux --- !
       !
       IF( k_cnd == np_cnd_OFF .OR. k_cnd == np_cnd_EMU ) THEN

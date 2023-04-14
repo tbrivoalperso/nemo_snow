@@ -364,6 +364,8 @@ CONTAINS
                zeta_s(ji,jk) = rDt_ice * r1_rhos * r1_rcpi * z1_h_s(ji)
             END DO
          END DO
+
+         ! Theo : This part here is just for an extra diagnostic (conduction flux when ln_snwext=F)
          ln_out_fcond = .true.
          IF( ln_out_fcond ) THEN ! diagnose conduction flux to test devs. Will be removed later
              DO ji = 1, npti

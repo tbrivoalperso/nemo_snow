@@ -209,24 +209,24 @@ CONTAINS
       END DO
 
 ! THEO Nb: remapping of the snow enthalpy is done later on in icethd_dh      
-!     IF( ln_snwext ) THEN
-!   
-!        ! Remapping of snw enthalpy on a regular grid
-!        !--------------------------------------------
-!         CALL snw_ent( zh_s, ze_s, e_s_1d)
-!   
-!         ! recalculate t_s_1d from e_s_1d
-!         DO jk = 1, nlay_s
-!            DO ji = 1,npti
-!               IF( h_s_1d(ji) > 0._wp ) THEN
-!                  t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
-!               ELSE
-!                  t_s_1d(ji,jk) = rt0
-!               ENDIF
-!            END DO
-!         END DO
-!   
-!      ENDIF
+     IF( ln_snwext ) THEN
+   
+        ! Remapping of snw enthalpy on a regular grid
+        !--------------------------------------------
+         CALL snw_ent( zh_s, ze_s, e_s_1d)
+   
+         ! recalculate t_s_1d from e_s_1d
+         DO jk = 1, nlay_s
+            DO ji = 1,npti
+               IF( h_s_1d(ji) > 0._wp ) THEN
+                  t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
+               ELSE
+                  t_s_1d(ji,jk) = rt0
+               ENDIF
+            END DO
+         END DO
+   
+      ENDIF
 
       !
       !

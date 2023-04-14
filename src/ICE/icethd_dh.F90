@@ -103,8 +103,8 @@ CONTAINS
 
       INTEGER  ::   num_iter_max      ! Heat conservation
       !!------------------------------------------------------------------
-      IF( ln_icediachk )   CALL ice_cons_hsm(0, 'icethd_dh', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft) ! conservation
-      IF( ln_icediachk )   CALL ice_cons2D  (0, 'icethd_dh',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft) ! conservation
+!      IF( ln_icediachk )   CALL ice_cons_hsm(0, 'icethd_dh', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft) ! conservation
+!      IF( ln_icediachk )   CALL ice_cons2D  (0, 'icethd_dh',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft) ! conservation
 
       ! Discriminate between time varying salinity and constant
       SELECT CASE( nn_icesal )                  ! varying salinity or not
@@ -137,18 +137,18 @@ CONTAINS
          END DO
       END DO
       !
-!      IF( ln_snwext) THEN
-!              
-!         ! initialize snw layer thicknesses and enthalpies
-!         zh_s(1:npti,0) = 0._wp
-!         ze_s(1:npti,0) = 0._wp
-!         DO jk = 1, nlay_s
-!            DO ji = 1, npti
-!               zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
-!               ze_s(ji,jk) = e_s_1d(ji,jk)
-!            END DO
-!         END DO
-!      ENDIF
+      IF( ln_snwext) THEN
+              
+         ! initialize snw layer thicknesses and enthalpies
+         zh_s(1:npti,0) = 0._wp
+         ze_s(1:npti,0) = 0._wp
+         DO jk = 1, nlay_s
+            DO ji = 1, npti
+               zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
+               ze_s(ji,jk) = e_s_1d(ji,jk)
+            END DO
+         END DO
+      ENDIF
       !
       !                       ! ============================================== !
       !                       ! Available heat for surface and bottom ablation !
@@ -507,8 +507,8 @@ CONTAINS
          h_s_1d (1:npti) = 0._wp
          t_su_1d(1:npti) = rt0
       END WHERE
-      IF( ln_icediachk )   CALL ice_cons_hsm(1, 'icethd_dh', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
-      IF( ln_icediachk )   CALL ice_cons2D  (1, 'icethd_dh',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
+!      IF( ln_icediachk )   CALL ice_cons_hsm(1, 'icethd_dh', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
+!      IF( ln_icediachk )   CALL ice_cons2D  (1, 'icethd_dh',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
 
    END SUBROUTINE ice_thd_dh
 

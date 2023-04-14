@@ -85,6 +85,7 @@ CONTAINS
 
       !
       REAL(wp) ::   zg1s      =  2._wp        ! for the tridiagonal system
+      REAL(wp) ::   zg1      =  2._wp        ! for the tridiagonal system
 
       REAL(wp) ::   zgamma    =  18009._wp    ! for specific heat
       REAL(wp) ::   zbeta     =  0.117_wp     ! for thermal conductivity (could be 0.13)
@@ -113,6 +114,8 @@ CONTAINS
       REAL(wp), DIMENSION(jpij,nlay_s)   ::   ztsold      ! Old temperature in the snow
       REAL(wp), DIMENSION(jpij,nlay_s)   ::   ztsb        ! Temporary temperature in the snow to check the convergence
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zkappa_s    ! Kappa factor in the snow
+      REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zkappa_i    ! Kappa factor in the ice
+
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zeta_s      ! Eta factor in the snow
       REAL(wp), DIMENSION(jpij) ::   zkappa_si    ! Kappa factor at snow / ice interface
 
@@ -307,6 +310,22 @@ CONTAINS
                zkappa_s(ji,nlay_s) = isnow(ji) * zghe(ji) * rn_cnd_s * ztcond_i(ji,0) &
                   &                            / ( 0.5_wp * ( ztcond_i(ji,0) * zh_s(ji) + rn_cnd_s * zh_i(ji) ) )
          END DO
+        !--- Ice
+         ! Variable used after iterations
+         ! Value must be frozen after convergence for MPP independance reason
+         DO jk = 0, nlay_i
+            DO ji = 1, npti
+               IF ( .NOT. l_T_converged(ji) ) &
+                  zkappa_i(ji,jk) = zghe(ji) * ztcond_i(ji,jk) * z1_h_i(ji)
+            END DO
+         END DO
+         DO ji = 1, npti   ! Snow-ice interface
+            IF ( .NOT. l_T_converged(ji) ) THEN
+               ! If there is snow then use the same snow-ice interface conductivity for the top layer of ice
+               IF( h_s_1d(ji) > 0._wp )   zkappa_i(ji,0) = zkappa_s(ji,nlay_s)
+           ENDIF
+         END DO
+
          !
          !--------------------------------------
          ! 5) Sea ice specific heat, eta factors
@@ -510,8 +529,26 @@ CONTAINS
 
          ! Conduction flux at snow ice - interval : Fc,si = - Kappa_int * (T_i1 - T_s)
          qcn_snw_bot_1d(ji) = - isnow(ji) * zkappa_si(ji) * ( t_i_1d(ji, 1) - t_s_1d (ji,nlay_s) ) 
-         IF(isnow(ji) == 1) qcn_ice_top_1d(ji) = qcn_snw_bot_1d(ji)  
+         !IF(isnow(ji) == 1) qcn_ice_top_1d(ji) = qcn_snw_bot_1d(ji)  
       END DO
+
+      ! We compute the conduction flux at the snow / ice surface here because it
+      ! is used later on in snwthd_dh even when isnow=0.
+      IF( k_cnd == np_cnd_OFF .OR. k_cnd == np_cnd_EMU ) THEN
+         !
+         DO ji = 1, npti
+            IF(isnow(ji) == 0._wp) qcn_ice_top_1d(ji) = -           isnow(ji)   * zkappa_s(ji,0) * zg1s * ( t_s_1d(ji,1) - t_su_1d(ji) ) &
+               &                 - ( 1._wp - isnow(ji) ) * zkappa_i(ji,0) * zg1 * ( t_i_1d(ji,1) - t_su_1d(ji) )
+         END DO
+         !
+      ELSEIF( k_cnd == np_cnd_ON ) THEN
+         !
+         DO ji = 1, npti
+            qcn_ice_top_1d(ji) = qcn_ice_1d(ji)
+         END DO
+         !
+      ENDIF
+      !
 
       ! --- Diagnose the heat loss due to changing non-solar / conduction flux --- !
       !
