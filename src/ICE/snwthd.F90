@@ -51,9 +51,11 @@ CONTAINS
       !!
       !! ** Purpose : This routine manages snow thermodynamics in detached mode
       !!
-      !! ** Action : - call snw_thd_zdf ( vertical diffusion of heat in snow)
+      !! ** Action : - call snw_thd_snwfl (changes in height & enthalpy due to 
+      !!               snowfall)
+      !!             - call snw_thd_zdf ( vertical diffusion of heat in snow)
       !!             - call snw_thd_dh ( changes in heat and snow thickness with 
-      !!               snowfall / melt / sublimation 
+      !!               melt / sublimation 
       !! ** Returns  - The radiative fluxes transmitted and absorbed through snow
       !!               (zradtr_s & zradab_s)
       !!             - The ice fraction covered by snow (za_s_fra)
