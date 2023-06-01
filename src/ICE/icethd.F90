@@ -19,7 +19,8 @@ MODULE icethd
 !!gm list trop longue ==>>> why not passage en argument d'appel ?
    USE sbc_oce , ONLY : sss_m, sst_m, e3t_m, utau, vtau, ssu_m, ssv_m, frq_m, sprecip, ln_cpl
    USE sbc_ice , ONLY : qsr_oce, qns_oce, qemp_oce, qsr_ice, qns_ice, dqns_ice, evap_ice, qprec_ice, qevap_ice, &
-      &                 qml_ice, qcn_ice, qtr_ice_top
+      &                 qml_ice, qcn_ice, qtr_ice_top, slp_isbaes, tair_isbaes, qair_isbaes, wndm_isbaes, rain_isbaes, &
+      &                 snow_isbaes, qsr_ice_isbaes, qns_ice_isbaes, qlw_ice_isbaes, qsb_ice_isbaes, rho_air_isbaes
    USE snwthd        ! snow thermodynamics
    USE ice1D          ! sea-ice: thermodynamics variables
    USE icethd_zdf     ! sea-ice: vertical heat diffusion
@@ -43,7 +44,6 @@ MODULE icethd
    USE timing         ! Timing
 
    USE fldread         ! read input fields
-   
    IMPLICIT NONE
    PRIVATE
 
@@ -92,6 +92,8 @@ CONTAINS
       ! Variables used if ln_snwext = true
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zradtr_s  ! Radiation transmited through the snow
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zradab_s  ! Radiation absorbed in the snow 
+      REAL(wp), DIMENSION(jpij)          ::   ZP_RADXS    ! Radiation transmited through the snow (bottom layer only)
+
       REAL(wp), DIMENSION(jpij) ::   za_s_fra    ! ice fraction covered by snow
 !      REAL(wp), DIMENSION(jpij) ::   qcn_snw_bot_1d    ! Conduction flux at snow / ice interface
       REAL(wp), DIMENSION(jpij) ::   isnow       ! snow presence (1) or not (0)
@@ -192,6 +194,13 @@ CONTAINS
                 ! - isnow => presence of snow (1) or not (0) at time=t
                 ! - zq_rema, zevap_rema => remaining heat and mass fluxes after snowfall / melt
                 ! - zh_s, ze_s => non-remapped thickness and enthalpy profiles after snowfall / melt                
+
+#if defined key_isbaes
+            ELSEIF( ln_isbaes ) THEN
+               CALL ice_var_snwfra( h_s_1d(1:npti), za_s_fra(1:npti) )
+               CALL SNOW3L_SI3(npti,nlay_s,1, rn_Dt, za_s_fra(1:npti), isnow, ZP_RADXS, zq_rema, zevap_rema)
+               zradtr_s(:,nlay_s) = ZP_RADXS(:) 
+#endif
             ENDIF
 
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
@@ -415,6 +424,33 @@ CONTAINS
          ! to update ice age
          CALL tab_2d_1d( npti, nptidx(1:npti), o_i_1d (1:npti), o_i (:,:,kl) )
          CALL tab_2d_1d( npti, nptidx(1:npti), oa_i_1d(1:npti), oa_i(:,:,kl) )
+
+         ! ISBA-ES variables
+         DO jk = 1, nlay_s
+            CALL tab_2d_1d( npti, nptidx(1:npti), rho_s_1d(1:npti,jk), rho_s(:,:,jk,kl)    )
+            CALL tab_2d_1d( npti, nptidx(1:npti), o_s_1d (1:npti,jk), o_s (:,:,jk,kl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), lwc_s_1d (1:npti,jk), lwc_s (:,:,jk,kl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), dh_s_1d (1:npti,jk), dh_s (:,:,jk,kl) )
+         END DO
+   
+         CALL tab_2d_1d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti), slp_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), tair_isbaes_1d    (1:npti), tair_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qair_isbaes_1d    (1:npti), qair_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), wndm_isbaes_1d    (1:npti), wndm_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), rain_isbaes_1d    (1:npti), rain_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), snow_isbaes_1d    (1:npti), snow_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), albi_isbaes_1d    (1:npti), albi_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), albs_isbaes_1d    (1:npti), albs_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), cnd_i_isbaes_1d    (1:npti), cnd_i_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), glamt_1d    (1:npti), glamt       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), gphit_1d    (1:npti), gphit       )
+
+         CALL tab_2d_1d( npti, nptidx(1:npti), rho_air_isbaes_1d    (1:npti), rho_air_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qsr_ice_isbaes_1d    (1:npti), qsr_ice_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qns_ice_isbaes_1d    (1:npti), qns_ice_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qlw_ice_isbaes_1d    (1:npti), qlw_ice_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qsb_ice_isbaes_1d (1:npti), qsb_ice_isbaes (:,:,kl) )
+
          !
          ! --- Change units of e_i, e_s from J/m2 to J/m3 --- !
          DO jk = 1, nlay_i
@@ -440,6 +476,7 @@ CONTAINS
          v_s_1d (1:npti) = h_s_1d (1:npti) * a_i_1d (1:npti)
          sv_i_1d(1:npti) = s_i_1d (1:npti) * v_i_1d (1:npti)
          oa_i_1d(1:npti) = o_i_1d (1:npti) * a_i_1d (1:npti)
+
 
          CALL tab_1d_2d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_1d_2d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
@@ -518,6 +555,34 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), v_s_1d (1:npti), v_s (:,:,kl) )
          CALL tab_1d_2d( npti, nptidx(1:npti), sv_i_1d(1:npti), sv_i(:,:,kl) )
          CALL tab_1d_2d( npti, nptidx(1:npti), oa_i_1d(1:npti), oa_i(:,:,kl) )
+         
+         ! ISBA-ES variables
+         DO jk = 1, nlay_s
+            CALL tab_1d_2d( npti, nptidx(1:npti), rho_s_1d(1:npti,jk), rho_s(:,:,jk,kl)    )
+            CALL tab_1d_2d( npti, nptidx(1:npti), o_s_1d(1:npti,jk), o_s(:,:,jk,kl)    )
+            CALL tab_1d_2d( npti, nptidx(1:npti), lwc_s_1d(1:npti,jk), lwc_s(:,:,jk,kl)    )
+            CALL tab_1d_2d( npti, nptidx(1:npti), dh_s_1d(1:npti,jk), dh_s(:,:,jk,kl)    )
+         END DO
+
+         CALL tab_1d_2d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti), slp_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), tair_isbaes_1d    (1:npti), tair_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qair_isbaes_1d    (1:npti), qair_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), wndm_isbaes_1d    (1:npti), wndm_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), rain_isbaes_1d    (1:npti), rain_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), snow_isbaes_1d    (1:npti), snow_isbaes       )
+
+         CALL tab_1d_2d( npti, nptidx(1:npti), albi_isbaes_1d    (1:npti), albi_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), albs_isbaes_1d    (1:npti), albs_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), cnd_i_isbaes_1d    (1:npti), cnd_i_isbaes       )
+
+         CALL tab_1d_2d( npti, nptidx(1:npti), rho_air_isbaes_1d    (1:npti), rho_air_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qsr_ice_isbaes_1d    (1:npti), qsr_ice_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qns_ice_isbaes_1d    (1:npti), qns_ice_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qlw_ice_isbaes_1d    (1:npti), qlw_ice_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qsb_ice_isbaes_1d(1:npti), qsb_ice_isbaes(:,:,kl)    )
+
+         !
+
          ! check convergence of heat diffusion scheme
          IF( ln_zdf_chkcvg ) THEN
             CALL tab_1d_2d( npti, nptidx(1:npti), tice_cvgerr_1d(1:npti), ztice_cvgerr(:,:,kl) )
@@ -543,7 +608,7 @@ CONTAINS
       !!-------------------------------------------------------------------
       INTEGER  ::   ios   ! Local integer output status for namelist read
       !!
-      NAMELIST/namthd/ ln_icedH, ln_icedA, ln_icedO, ln_icedS, ln_leadhfx, ln_snwext
+      NAMELIST/namthd/ ln_icedH, ln_icedA, ln_icedO, ln_icedS, ln_leadhfx, ln_snwext, ln_isbaes
 
       !!-------------------------------------------------------------------
       !
@@ -564,6 +629,7 @@ CONTAINS
          WRITE(numout,*) '      activate gravity drainage and flushing (T) or not (F)                ln_icedS   = ', ln_icedS
          WRITE(numout,*) '      heat in the leads is used to melt sea-ice before warming the ocean   ln_leadhfx = ', ln_leadhfx
          WRITE(numout,*) '      Snow thermodynamics treated separately from sea-ice (T) or not (F)   ln_snwext =  ', ln_snwext
+         WRITE(numout,*) '      Use isba-es for snow (T) or not (F)                                  ln_isbaes =  ', ln_isbaes
 
  ENDIF
       !

@@ -117,7 +117,7 @@ CONTAINS
       !                       ! ============================================== !
       !
 
-      IF( .NOT. ln_snwext )  CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
+      IF( .NOT. (ln_snwext .OR. ln_isbaes) )  CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
       DO ji = 1, npti
          zq_top(ji) = zq_rema(ji)
       END DO

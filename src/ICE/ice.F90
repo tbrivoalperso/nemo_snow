@@ -202,7 +202,9 @@ MODULE ice
    LOGICAL , PUBLIC ::   ln_icedO         ! activate ice growth in open-water (T) or not (F)
    LOGICAL , PUBLIC ::   ln_icedS         ! activate gravity drainage and flushing (T) or not (F)
    LOGICAL , PUBLIC ::   ln_leadhfx       ! heat in the leads is used to melt sea-ice before warming the ocean
-   LOGICAL , PUBLIC ::   ln_snwext       ! heat in the leads is used to melt sea-ice before warming the ocean
+   LOGICAL , PUBLIC ::   ln_snwext       ! flag to activate external snow routines 
+   LOGICAL , PUBLIC ::   ln_isbaes       ! flag to activate isba-es coupling
+
    LOGICAL , PUBLIC ::   ln_fcond       ! heat in the leads is used to melt sea-ice before warming the ocean
    
    !
@@ -358,6 +360,7 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sv_i          !: Sea-Ice Bulk salinity * volume per area (pss.m)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   o_i           !: Sea-Ice Age                             (s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   oa_i          !: Sea-Ice Age times ice area              (s)
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   bv_i          !: brine volume
 
    !! Variables summed over all categories, or associated to all the ice in a single grid cell
@@ -380,7 +383,6 @@ MODULE ice
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   t_s           !: Snow temperatures     [K]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_s           !: Snow enthalpy         [J/m2]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   rho_s           !: Snow density         [kg/m3]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   t_i           !: ice temperatures      [K]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_i           !: ice enthalpy          [J/m2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   sz_i          !: ice salinity          [PSS]
@@ -463,6 +465,19 @@ MODULE ice
    !! * Extra diagnotics for external snow (ln_snwext=T)
    !!----------------------------------------------------------------------
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_snw_bot   !: Conduction flux at snow / ice interface (W/m2)
+   !!----------------------------------------------------------------------
+   !! * Extra variables for ISBA-ES coupling
+   !!----------------------------------------------------------------------
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   albs_isbaes   !: snow albedo computed by isba-es
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   albi_isbaes   !: ice albedo read by isba-es 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   cnd_i_isbaes   !: Conductivity of the first ice layer
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   rho_s           !: Snow density         [kg/m3]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   swe_s           !: Snow layer(s) liquid Water Equivalent (SWE:kg m-2) 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   o_s           !: Snow Age                             (s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   lwc_s        !: Snow liquid water content   (m)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   oa_s          !: Snow Age times ice area              (s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   dh_s           !: Snow layer thickness                          (m)
+
    !
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
@@ -571,7 +586,8 @@ CONTAINS
 
       ! Variables needed for ISBA-ES coupling
       ii = ii + 1
-      ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) , STAT=ierr(ii) )
+      ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) ,swe_s(jpi,jpj,nlay_s,jpl) , o_s(jpi,jpj,nlay_s,jpl), lwc_s(jpi,jpj,nlay_s,jpl), oa_s(jpi,jpj,jpl), albs_isbaes(jpi,jpj,jpl), & 
+                & albi_isbaes(jpi,jpj,jpl),cnd_i_isbaes(jpi,jpj,jpl), dh_s(jpi,jpj,nlay_s,jpl), STAT=ierr(ii) )
  
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )

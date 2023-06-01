@@ -165,11 +165,17 @@ CONTAINS
       v_s (:,:,:) = 0._wp
       sv_i(:,:,:) = 0._wp
       oa_i(:,:,:) = 0._wp
+      oa_s(:,:,:) = 0._wp
       !
       h_i (:,:,:) = 0._wp
       h_s (:,:,:) = 0._wp
       s_i (:,:,:) = 0._wp
       o_i (:,:,:) = 0._wp
+      o_s (:,:,:,:) = 0._wp
+      lwc_s(:,:,:,:) = 0._wp
+      albs_isbaes(:,:,:) = 0._wp
+      albi_isbaes(:,:,:) = 0._wp
+      cnd_i_isbaes(:,:,:) = rcnd_i 
       !
       ! melt ponds
       a_ip     (:,:,:) = 0._wp
@@ -362,6 +368,10 @@ CONTAINS
             ! deallocate temporary arrays
             DEALLOCATE( zhi_2d, zhs_2d, zai_2d , &
                &        zti_2d, zts_2d, ztsu_2d, zsi_2d, zaip_2d, zhip_2d, zhil_2d )
+            ! For ISBA-ES
+            DO jk = 1, nlay_s
+               dh_s(:,:,jk,:) = h_s(:,:,:) * r1_nlay_s
+            END DO
 
             ! calculate extensive and intensive variables
             CALL ice_var_salprof ! for sz_i
@@ -379,7 +389,8 @@ CONTAINS
                   e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
                      &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
                   ! Initialise rho_s (not used yet, but will be for ISBA-ES)
-                  rho_s(ji,jj,jk,jl) = rhos 
+                  rho_s(ji,jj,jk,jl) = rhos
+                  swe_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dh_s(ji,jj,jk,jl)  
                END_3D
             END DO
             !

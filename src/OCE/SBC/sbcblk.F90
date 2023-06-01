@@ -44,7 +44,7 @@ MODULE sbcblk
    !
 #if defined key_si3
    USE sbc_ice        ! Surface boundary condition: ice fields #LB? ok to be in 'key_si3' ???
-   USE ice     , ONLY :   u_ice, v_ice, jpl, a_i_b, at_i_b, t_su, rn_cnd_s, hfx_err_dif, nn_qtrice
+   USE ice     , ONLY :   u_ice, v_ice, jpl, a_i_b, at_i_b, t_su, rn_cnd_s, hfx_err_dif, nn_qtrice, ln_isbaes
    USE icevar         ! for CALL ice_var_snwblow
    USE sbcblk_algo_ice_an05
    USE sbcblk_algo_ice_lu12
@@ -564,6 +564,24 @@ CONTAINS
             theta_air_zt(:,:) = theta_exner( sf(jp_tair)%fnow(:,:,1), zpre(:,:) )
          ENDIF
          !
+         IF(ln_isbaes) THEN ! Save atmospheric variables for isbaes use
+            qsr_ice_isbaes(:,:) = sf(jp_qsr  )%fnow(:,:,1)
+            IF( MOD( kt - 1, nn_fsbc ) == 0 )   THEN
+               qlw_ice_isbaes(:,:)   = sf(jp_qlw )%fnow(:,:,1)
+               IF( ln_dm2dc ) THEN
+                  qsr_ice_isbaes(:,:) = sbc_dcy( sf(jp_qsr)%fnow(:,:,1) )
+               ELSE
+                  qsr_ice_isbaes(:,:) =          sf(jp_qsr)%fnow(:,:,1)
+               ENDIF
+               tair_isbaes(:,:) = sf(jp_tair)%fnow(:,:,1)    !#LB: should it be POTENTIAL temperature (theta_air_zt) instead ????
+               qair_isbaes(:,:) = q_air_zt(:,:)
+               rain_isbaes(:,:)  = sf(jp_prec)%fnow(:,:,1) * rn_pfac
+               snow_isbaes(:,:)  = sf(jp_snow)%fnow(:,:,1) * rn_pfac
+               wndm_isbaes(:,:) = SQRT(sf(jp_wndi)%fnow(:,:,1) **2 + sf(jp_wndj)%fnow(:,:,1)**2)
+               slp_isbaes(:,:)  = sf(jp_slp )%fnow(:,:,1)
+            ENDIF
+
+         ENDIF
          CALL blk_oce_1( kt, sf(jp_wndi )%fnow(:,:,1), sf(jp_wndj )%fnow(:,:,1),   &   !   <<= in
             &                theta_air_zt(:,:), q_air_zt(:,:),                     &   !   <<= in
             &                sf(jp_slp  )%fnow(:,:,1), sst_m, ssu_m, ssv_m,        &   !   <<= in
@@ -1200,7 +1218,10 @@ CONTAINS
             !qla_ice( ji,jj,jl) = zztmp1 * (zsq - q_zu_i(ji,jj))
             !dqla_ice(ji,jj,jl) = zztmp1 * dq_sat_dt_ice(zst, pslp(ji,jj)) ! ==> Qlat sensitivity  (dQlat/dT)
 
-
+            IF(ln_isbaes) THEN
+               qsb_ice_isbaes(ji,jj,jl) = z_qsb (ji,jj,jl)
+               rho_air_isbaes(ji,jj) = rhoa(ji,jj)
+            ENDIF
             ! ----------------------------!
             !     III    Total FLUXES     !
             ! ----------------------------!
