@@ -37,7 +37,10 @@ MODULE iceistate
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
    USE fldread        ! read input fields
-
+   
+   USE MODI_SNOW3L
+   USE MODE_SNOW3L   ! For isba-es
+   USE MODD_CSTS
 # if defined key_agrif
    USE agrif_oce
    USE agrif_ice_interp 
@@ -107,6 +110,8 @@ CONTAINS
       !! ** Notes   : o_i, t_su, t_s, t_i, sz_i must be filled everywhere, even
       !!              where there is no ice
       !!--------------------------------------------------------------------
+      USE MODE_SNOW3L
+
       INTEGER, INTENT(in) :: kt            ! time step 
       INTEGER, INTENT(in) :: Kbb, Kmm, Kaa ! ocean time level indices
       !
@@ -119,6 +124,12 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj)     ::   zt_su_ini, zht_s_ini, zsm_i_ini, ztm_i_ini !data from namelist or nc file
       REAL(wp), DIMENSION(jpi,jpj)     ::   zapnd_ini, zhpnd_ini, zhlid_ini            !data from namelist or nc file
       REAL(wp), DIMENSION(jpi,jpj,jpl) ::   zti_3d , zts_3d                            !temporary arrays
+
+      ! Isba-es parameters (should be put in another routine)
+      REAL(wp), PARAMETER       :: XLMTT=333700.0
+      REAL(wp), PARAMETER       :: XRHOLW=1000.
+      REAL(wp), PARAMETER       :: XCI=2.106E+3
+      REAL(wp) ::  ZSCAP
       !!
       REAL(wp), DIMENSION(:,:), ALLOCATABLE ::   zhi_2d, zhs_2d, zai_2d, zti_2d, zts_2d, ztsu_2d, zsi_2d, zaip_2d, zhip_2d, zhil_2d
       !--------------------------------------------------------------------
@@ -172,7 +183,6 @@ CONTAINS
       s_i (:,:,:) = 0._wp
       o_i (:,:,:) = 0._wp
       o_s (:,:,:,:) = 0._wp
-      lwc_s(:,:,:,:) = 0._wp
       albs_isbaes(:,:,:) = 0._wp
       albi_isbaes(:,:,:) = 0._wp
       cnd_i_isbaes(:,:,:) = rcnd_i 
@@ -386,13 +396,31 @@ CONTAINS
             DO jl = 1, jpl
                DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
                   t_s(ji,jj,jk,jl) = zts_3d(ji,jj,jl)
-                  e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
-                     &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
-                  ! Initialise rho_s (not used yet, but will be for ISBA-ES)
+
                   rho_s(ji,jj,jk,jl) = rhos
-                  swe_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dh_s(ji,jj,jk,jl)  
+                   
+                  IF(ln_isbaes) THEN
+                          ZSCAP     = rho_s(ji,jj,jk,jl) * XCI  ! In isba-es, capacity = rho x cst, with cst=XCI
+                          swe_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dh_s(ji,jj,jk,jl)
+                          lwc_s(ji,jj,jk,jl) = MAX(0.0,t_s(ji,jj,jk,jl)-rt0)*ZSCAP*dh_s(ji,jj,jk,jl)/(XLMTT*XRHOLW)
+                          !e_s(ji,jj,jk,jl) =  dh_s(ji,jj,jk,jl)*( ZSCAP*(t_s(ji,jj,jk,jl)-rt0)- XLMTT*rho_s(ji,jj,jk,jl)) + &
+                          !& XLMTT*XRHOLW*lwc_s(ji,jj,jk,jl) ! En J / m2
+                          e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+                     &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
+                  ELSE
+                          lwc_s(ji,jj,jk,jl) = 0.
+                          swe_s(ji,jj,jk,jl) = 0. 
+                          e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+                     &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
+ 
+                  ENDIF
+
                END_3D
             END DO
+            PRINT*,'e_s',e_s
+            PRINT*,'lwc',lwc_s
+            PRINT*,'rho_s',rho_s
+            PRINT*,'t_s',t_s
             !
             DO jl = 1, jpl
                DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_i )

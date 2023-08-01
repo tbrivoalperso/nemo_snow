@@ -91,7 +91,11 @@ CONTAINS
       !!-------------------------------------------------------------------
       !
       ! -- quantities -- !
-      ztmp3(:,:,1) = SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
+      IF(ln_isbaes) THEN
+          ztmp3(:,:,1) = SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
+      ELSE
+          ztmp3(:,:,1) = SUM( v_i * rhoi + SUM(rho_s * dh_s ,dim=3) * a_i + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
+      ENDIF
       ztmp3(:,:,2) = SUM( sv_i * rhoi, dim=3 ) * e1e2t                                             ! salt
       ztmp3(:,:,3) = ( SUM( SUM( e_i, dim=4 ), dim=3 ) + SUM( SUM( e_s, dim=4 ), dim=3 ) ) * e1e2t ! heat
       !
@@ -100,9 +104,24 @@ CONTAINS
          &          + wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr ) * e1e2t
       ztmp3(:,:,5) = ( sfx_bri + sfx_bog + sfx_bom + sfx_sum + sfx_sni + sfx_opw &                                ! salt
          &          + sfx_res + sfx_dyn + sfx_sub + sfx_lam ) * e1e2t
-      ztmp3(:,:,6) = ( hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_difs + hfx_opw + hfx_snw &                                ! heat
+      ztmp3(:,:,6) = ( hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_difs + hfx_opw + hfx_snw &                     ! heat
          &          - hfx_thd - hfx_dyn - hfx_res - hfx_sub - hfx_spr ) * e1e2t
       !
+      PRINT*,hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_difs + hfx_opw + hfx_snw &                               ! heat
+         &          - hfx_thd - hfx_dyn - hfx_res - hfx_sub - hfx_spr
+
+      PRINT*,'vfx_sum',hfx_sum
+      PRINT*,'vfx_bom',hfx_bom
+      PRINT*,'vfx_bog',hfx_bog
+      PRINT*,'vfx_dif',hfx_dif
+      PRINT*,'vfx_difs',hfx_difs
+      PRINT*,'vfx_opw',hfx_opw
+      PRINT*,'vfx_snw',hfx_snw
+      PRINT*,'vfx_thd',hfx_thd
+      PRINT*,'vfx_dyn',hfx_dyn
+      PRINT*,'vfx_res',hfx_res
+      PRINT*,'vfx_sub',hfx_sub
+      PRINT*,'vfx_spr',hfx_spr
       ! -- global sum -- !
       zchk3(1:6) = glob_sum_vec( 'icectl', ztmp3(:,:,1:6) )
 
@@ -122,6 +141,8 @@ CONTAINS
          zdiag_salt = ( zchk3(2) - pdiag_s ) * r1_Dt_ice + ( zchk3(5) - pdiag_fs )
          zdiag_heat = ( zchk3(3) - pdiag_t ) * r1_Dt_ice + ( zchk3(6) - pdiag_ft )
 
+         PRINT*,'Diag flux',( zchk3(1) - pdiag_v ) * r1_Dt_ice
+         PRINT*,'Diag flux 2',( zchk3(4) - pdiag_fv )
          ! -- max concentration diag -- !
          ztmp3(:,:,7) = SUM( a_i, dim=3 )
          zchk3(7)     = glob_max( 'icectl', ztmp3(:,:,7) )
@@ -131,7 +152,8 @@ CONTAINS
          ztmp3(:,:,9 ) = diag_adv_heat * e1e2t 
          ztmp3(:,:,10) = SUM( a_i + epsi10, dim=3 ) * e1e2t ! ice area (+epsi10 to set a threshold > 0 when there is no ice)
          zchk3(8:10)   = glob_sum_vec( 'icectl', ztmp3(:,:,8:10) )
-         
+         PRINT*,'rchk_m * rn_icechk_glo * zchk3(10)',rchk_m * rn_icechk_glo * zchk3(10)
+     
          ! -- min diags -- !
          ztmp4(:,:,:,1) = v_i
          ztmp4(:,:,:,2) = v_s
@@ -238,8 +260,12 @@ CONTAINS
       !!-------------------------------------------------------------------
       !
       IF( icount == 0 ) THEN
-
-         pdiag_v = SUM( v_i  * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 )
+         
+         IF(.NOT. ln_isbaes) THEN
+             pdiag_v = SUM( v_i  * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 )
+         ELSE
+             pdiag_v = SUM( v_i  * rhoi + SUM(rho_s * dh_s ,dim=3) * a_i + ( v_ip + v_il ) * rhow, dim=3 )
+         ENDIF
          pdiag_s = SUM( sv_i * rhoi , dim=3 )
          pdiag_t = SUM( SUM( e_i, dim=4 ), dim=3 ) + SUM( SUM( e_s, dim=4 ), dim=3 )
 
@@ -253,12 +279,18 @@ CONTAINS
             &       - hfx_thd - hfx_dyn - hfx_res - hfx_sub - hfx_spr
 
       ELSEIF( icount == 1 ) THEN
-
+         IF(.NOT. ln_isbaes) THEN
          ! -- mass diag -- !
-         zdiag_mass =   ( SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
-            &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
-            &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
-            &         - pdiag_fv
+            zdiag_mass =   ( SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
+               &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
+               &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
+               &         - pdiag_fv
+         ELSE
+            zdiag_mass =   ( SUM( v_i * rhoi + SUM(rho_s * dh_s, dim=3) * a_i  + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
+               &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
+               &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
+               &         - pdiag_fv
+         ENDIF
          IF( MAXVAL( ABS(zdiag_mass) ) > rchk_m * rn_icechk_cel )   ll_stop_m = .TRUE.
          !
          ! -- salt diag -- !

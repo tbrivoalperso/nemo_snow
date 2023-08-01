@@ -227,7 +227,7 @@ REAL, DIMENSION(:), INTENT(INOUT)   :: PUSTAR, PCDSNOW, PCHSNOW, PRI
 !                                      PCDSNOW    = drag coefficient for momentum over snow (-)
 !                                      PUSTAR     = friction velocity over snow (m/s)
 !                                      PCHSNOW    = drag coefficient for heat over snow (-)
-!                                      PRI        = Richardson number (-)
+!                                      PRI  in:inbox       = Richardson number (-)
 !
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PSNOWTEMP
 REAL, DIMENSION(:,:), INTENT(OUT)   :: PSNOWLIQ, PSNOWDZ
@@ -353,8 +353,27 @@ REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZSNOWHEAT0
 ! and it is updated at the end of this routine.
 !
 !
-
 PSNOWDZ(:,:) = PSNOWSWE(:,:)/PSNOWRHO(:,:)
+!!!!!!PRINT*,'DZ',PSNOWDZ
+!!!!!!PRINT*,'Temp bef',PSNOWTEMP
+!!!! Added By THEO
+!ZSCAP(:,:)     = SNOW3LSCAP(PSNOWRHO)
+!!!!!!PRINT*,'SNOWLIQ',PSNOWLIQ
+!PSNOWHEAT(:,:) = PSNOWDZ(:,:)*( ZSCAP(:,:)*(PSNOWTEMP(:,:)-XTT)        &
+!                   - XLMTT*PSNOWRHO(:,:) ) + XLMTT*XRHOLW*PSNOWLIQ(:,:)
+!!!!! / Added by theo
+!!!!!!!PRINT*,'HERE2',PSNOWHEAT
+!!ZWORK2D(:,:)   = MIN(1.0, PSNOWDZ(:,:)/XSNOWDMIN)
+!!!!!!!!PRINT*,'WORK',XSNOWDMIN
+!ZSNOWTEMP(:,:) = XTT + ZWORK2D(:,:)*( ((PSNOWHEAT(:,:)/MAX(XSNOWDMIN,PSNOWDZ(:,:)))  &
+!                   + XLMTT*PSNOWRHO(:,:))/ZSCAP(:,:) )
+!!!!!!PRINT*,'TMP',PSNOWHEAT(:,:)/MAX(XSNOWDMIN,PSNOWDZ(:,:))
+!!!!!!PRINT*,'TMP2',XLMTT*PSNOWRHO(:,:)
+!!!!!!PRINT*,'Temp aft',ZSNOWTEMP
+!
+           
+           !! / Added by theo
+
 !
 INI          = SIZE(PSNOWSWE(:,:),1)
 INLVLS       = SIZE(PSNOWSWE(:,:),2)    ! total snow layers
@@ -452,7 +471,8 @@ ZSNOWTEMP(:,:) = MIN(XTT,ZSNOWTEMP(:,:))
 ! Calculate snow density: compaction/aging: density increases
 !
  CALL SNOW3LCOMPACTN(PTSTEP,XSNOWDZMIN,PSNOWRHO,PSNOWDZ,ZSNOWTEMP,ZSNOW,PSNOWLIQ)
-!
+
+ !
 ! Snow compaction and metamorphism due to drift
 !
 PSNDRIFT(:) = 0.0
@@ -500,10 +520,10 @@ PHPSNOW(:) = 0.0
 ! Surface Energy Budget calculations using ISBA linearized form
 ! and standard ISBA turbulent transfer formulation
 !
+
 IF(OMEB)THEN 
 
 ! - surface fluxes prescribed:
-
    CALL SNOW3LEBUDMEB(PTSTEP,XSNOWDZMIN,                                     &                
                 ZSNOWTEMP(:,1),PSNOWDZ(:,1),PSNOWDZ(:,2),                    & 
                 ZSCOND(:,1),ZSCOND(:,2),ZSCAP(:,1),                          &
@@ -543,6 +563,16 @@ ZSNOWTEMPO1(:) = ZSNOWTEMP(:,1) ! save surface snow temperature before update
 !
 ZGRNDFLUXI(:)  = ZGRNDFLUX(:)
 !
+!   CALL SNOW3LFLUX(ZSNOWTEMP(:,1),PSNOWDZ(:,1),PEXNS,PEXNA,           &
+!                  ZUSTAR2_IC,                                         &
+!                  PTSTEP,PSNOWALB,PSW_RAD,                            &
+!                  PEMISNOW,ZLWUPSNOW,PLW_RAD,PLWNETSNOW,              &
+!                  ZTA_IC,ZSFCFRZ,ZQA_IC,PHPSNOW,                      &
+!                  ZSNOWTEMPO1,PSNOWFLUX,ZCT,ZRADSINK(:,1),            &
+!                  ZQSAT,ZDQSAT,ZRSRA,                                 &
+!                  PRNSNOW,PHSNOW,PGFLUXSNOW,PLES3L,PLEL3L,PEVAP,      &
+!                  PUSTAR,GSFCMELT      )
+
 CALL SNOW3LSOLVT(OMEB,OSI3, PTSTEP,XSNOWDZMIN,PSNOWDZ,ZSCOND,ZSCAP,PTG,              &
                    PSOILCOND,PD_G,ZRADSINK,ZCT,ZTSTERM1,ZTSTERM2,              &
                    ZPET_A_COEF_T,ZPEQ_A_COEF_T,ZPET_B_COEF_T,ZPEQ_B_COEF_T,    &
@@ -568,6 +598,8 @@ IF(.NOT.OMEB)THEN
                   PUSTAR,GSFCMELT                                     )
 !
 ENDIF                  
+!STOP
+
 !
 !
 !*       9.     Snow melt
@@ -1251,10 +1283,26 @@ REAL, DIMENSION(SIZE(PTS))        :: ZAC, ZRI, ZCOND1, ZCOND2,          &
 ! ---------------------------------------------------
 !
 !
+
+!PRINT*,'PSNOWDZ1',PSNOWDZ1 
+!PRINT*,'PSNOWDZ2',PSNOWDZ2
+!PRINT*,'PRADSINK',PRADSINK
+!PRINT*,'PSNOWRHO',PSNOWRHO
+!PRINT*,'PSNOWLIQ',PSNOWLIQ
+!PRINT*,'PSCAP',PSCAP
+!PRINT*,'PSCOND1',PSCOND1
+!PRINT*,'PSCOND2',PSCOND2
+!PRINT*,'PHPSNOW',PHPSNOW
+!PRINT*,'PSW_RAD',PSW_RAD
+!PRINT*,'PLW_RAD',PLW_RAD
+!PRINT*,'PTA',PTA
+!PRINT*,'PQA',PQA
+!PRINT*,'PRHOA',PRHOA
 ZRI   (:) = XUNDEF
 !
 PQSAT (:) =  QSATI(PTS(:),PPS(:))
 PDQSAT(:) = DQSATI(PTS(:),PPS(:),PQSAT(:))
+
 !
 !
 ! 2. Surface properties:
@@ -1276,6 +1324,16 @@ PEMIST(:) = XEMISSN
 ! by defining a maximum Richarson number for stable
 ! conditions:
 !
+!!!!PRINT*,'PEXNS',PEXNS
+!!!!PRINT*,'PEXNA',PEXNA
+!!!!PRINT*,'PTA',PTA
+!!!!PRINT*,'PQA', PQA
+!!!!PRINT*,'PZREF',PZREF
+!!!!PRINT*,'PUREF',PUREF
+!!!!PRINT*,'PDIRCOSZ',PDIRCOSZW
+!!!!PRINT*,'VMOD', PVMOD
+!!!!PRINT*,'ZRI',ZRI
+
 IF(HSNOWRES=='RIL') THEN
   DO JJ = 1,SIZE(ZRI)
     ZRI(JJ) = MIN(X_RI_MAX,ZRI(JJ))
@@ -1292,6 +1350,8 @@ PRI(:)=ZRI(:)
 !
  CALL SURFACE_CD(ZRI, PZREF, PUREF, PZ0EFF, PZ0H, PCDSNOW, ZCDN)
 !
+!!!!PRINT*,'RHOA',PRHOA
+!!!!PRINT*,'PRA',PRA
 PRSRA(:) = PRHOA(:) / PRA(:)
 !
 !
@@ -1346,6 +1406,7 @@ ZCOND1 (:) = ZSNOWDZM1(:)/((ZSNOWDZM1(:)+ZSNOWDZM2(:))*PSCOND1(:))
 ZCOND2 (:) = ZSNOWDZM2(:)/((ZSNOWDZM1(:)+ZSNOWDZM2(:))*PSCOND2(:))
 !
 ZSCONDA(:) = 1.0/(ZCOND1(:)+ZCOND2(:))
+!!!!!!PRINT*,'ZSCONDA',ZSCONDA
 !
 ! Transform implicit coupling coefficients: 
 ! Note, surface humidity is 100% over snow.
@@ -1358,6 +1419,7 @@ PPEQ_A_COEF_T(:) = - PPEQ_A_COEF(:)*PRSRA(:)*PDQSAT(:)/Z_CCOEF(:)
 !
 PPEQ_B_COEF_T(:) = ( PPEQ_B_COEF(:) - PPEQ_A_COEF(:)*PRSRA(:)*(PQSAT(:) - &
                        PDQSAT(:)*PTS(:)) )/Z_CCOEF(:)  
+
 !
 ! - air temperature:
 !   (assumes A and B correspond to potential T):
@@ -1366,6 +1428,7 @@ Z_CCOEF(:)       = (1.0 - PPET_A_COEF(:)*PRSRA(:))/PEXNA(:)
 !
 PPET_A_COEF_T(:) = - PPET_A_COEF(:)*PRSRA(:)/(PEXNS(:)*Z_CCOEF(:))
 !
+
 PPET_B_COEF_T(:) = PPET_B_COEF(:)/Z_CCOEF(:)
 !
 !
@@ -1388,6 +1451,30 @@ ZC(:)   = PCT(:) * (PRSRA(:) * XCPD * PPET_B_COEF_T(:)/PEXNA(:) + PSW_RAD(:) * &
             + PHPSNOW(:) + PRADSINK(:) )  
 !
 !
+!!!!PRINT*,'PTS',PTS
+!!!!PRINT*,'PRSRA(:) X XCPD',PRSRA(:) * XCPD
+!!!!PRINT*,'XCPD',XCPD
+!!!!PRINT*,'PPET_B_COEF_T(:)/PEXNA(:)',PPET_B_COEF_T(:)/PEXNA(:)
+!!!!PRINT*,'(2.*ZSCONDA(:)/(ZSNOWDZM2(:)+ZSNOWDZM1(:)))',(2.*ZSCONDA(:)/(ZSNOWDZM2(:)+ZSNOWDZM1(:)))
+!!!!PRINT*,'FLX1',PRSRA(:) * XCPD * PPET_B_COEF_T(:)/PEXNA(:)
+!!!!PRINT*,'FLX2',PSW_RAD(:) * (1. - PALBT(:))
+!!!!PRINT*,'FLX3',PEMIST(:)*PLW_RAD(:) 
+!!!!PRINT*,'FLX4',- PRSRA(:) * ZLVT(:)*  (PQSAT(:)-PPEQ_B_COEF_T(:))
+!!!!PRINT*,'PQSAT',PQSAT
+!!!!PRINT*,'PPEQ_B_COEF_T',PPEQ_B_COEF_T
+!!!!PRINT*,'FLX5',PHPSNOW(:) + PRADSINK(:)
+!!!!PRINT*,'PPET_B_COEF_T(:)/PEXNA(:)',PPET_B_COEF_T(:)/PEXNA(:)
+!!!!PRINT*,'PTA',PTA
+!PRINT*,'PH',PRSRA(:) * XCPD * (PTS - PTA(:))
+!PRINT*,'LWDWN', PEMIST(:)*PLW_RAD(:) !PRSRA(:) * XCPD * PPET_B_COEF_T(:)/PEXNA(:)   
+!PRINT*,'LWUP',PEMIST(:) * XSTEFAN * PTS(:)**3 * PTS
+!PRINT*,'SWNET',PSW_RAD(:) *(1. - PALBT(:))
+!PRINT*,'PLES3L',PSFCFRZ(:)*XLSTT*PRSRA(:)*(PQSAT(:)-PPEQ_B_COEF_T(:))
+!PRINT*,'PLEL3L',(1.-PSFCFRZ(:))*XLVTT*PRSRA(:)*(PQSAT(:)-PPEQ_B_COEF_T(:))
+!!!!PRINT*,'GFLUXSNW',(PRSRA(:) * XCPD * PPET_B_COEF_T(:)/PEXNA(:) + PSW_RAD(:) * &
+!            (1. - PALBT(:)) + PEMIST(:)*PLW_RAD(:) - PRSRA(:) *                  &
+!            ZLVT(:) *  (PQSAT(:)-PPEQ_B_COEF_T(:))                               &
+!            + PRADSINK(:) )
 ! Coefficients needed for implicit solution
 ! of linearized surface energy budget:
 !
@@ -1507,7 +1594,6 @@ DO JJ=1,INLVLS-1
    ENDDO
 ENDDO
 !
-
 ZDZDIF(:,INLVLS) = 0.5*(ZSNOWDZM(:,INLVLS)+PD_G(:))
 ZWORK1(:,INLVLS) = ZSNOWDZM(:,INLVLS)/(2.0*ZDZDIF(:,INLVLS)*PSCOND   (:,INLVLS))
 ZWORK2(:,INLVLS) = PD_G    (:       )/(2.0*ZDZDIF(:,INLVLS)*PSOILCOND(:       ))
@@ -1516,6 +1602,8 @@ ZDTERM(:,:)      = 1.0/(ZDZDIF(:,:)*(ZWORK1(:,:)+ZWORK2(:,:)))
 !
 ZCTERM(:,:)      = PSCAP(:,:)*ZSNOWDZM(:,:)/PTSTEP
 !
+!!!!!!PRINT*,'SOILCOND',PSOILCOND
+!!!!!!PRINT*,'SCOND',PSCOND
 ! 2. Set up tri-diagonal matrix
 ! -----------------------------
 !
@@ -1645,7 +1733,6 @@ ELSE
       PGRNDFLUX(:)        = ZDTERM(:,INLVLS)*(MIN(XTT,ZSNOWTEMP(:,INLVLS))-PTG(:))
    ENDIF
 ENDIF
-PRINT*,PGRNDFLUX
 !
 ZSNOWTEMP(:,INLVLS) = ZSNOWTEMP(:,INLVLS) + (PGRNDFLUXO(:)-PGRNDFLUX(:))/ZCTERM(:,INLVLS)
 !
@@ -1803,6 +1890,7 @@ DO JWRK = 1, SIZE(ZMELTXS,2)
    ENDDO
 ENDDO
 PMELTXS(:) = PMELTXS(:) / PTSTEP   ! (W/m2)
+
 !
 !
 !
@@ -2090,7 +2178,19 @@ PLEL3L(:)    = (1.-PSFCFRZ(:))* XLVTT * ZEVAPC(:)
 ZLE(:)       = PLES3L(:) + PLEL3L(:)
 !
 PGFLUX(:)    = PRN(:) - PH(:) - ZLE(:) + PHPSNOW(:)
-!
+
+
+
+!PRINT*,'AFTER FLUXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx'
+!PRINT*,'LES',PLES3L
+!PRINT*,'LEL',PLEL3L
+!PRINT*,'LWNET',PLWNETSNOW
+!PRINT*,'PLW_RAD',PLW_RAD(:)
+!PRINT*,'PEMIST(:) * PLW',PEMIST(:) * PLW_RAD(:)
+!PRINT*,'PLWUP',PLWUPSNOW
+!PRINT*,'PH',PH
+!PRINT*,'PRN',PRN
+!PRINT*,'GFLUX',PGFLUX
 !
 ! 2. Initial melt adjustment
 ! --------------------------
@@ -2628,6 +2728,9 @@ REAL, DIMENSION(SIZE(PTS))        :: ZSCONDA, ZA, ZB, ZC,             &
 !
 ZSNOWDZM1(:)  = MAX(PSNOWDZ1(:), PSNOWDZMIN)
 ZSNOWDZM2(:)  = MAX(PSNOWDZ2(:), PSNOWDZMIN)
+!!PRINT*,'DZ1',ZSNOWDZM1
+!!PRINT*,'DZ2',ZSNOWDZM2
+!!PRINT*,'PSNOWDZMIN',PSNOWDZMIN
 !
 ! Surface thermal inertia:
 !
@@ -2637,11 +2740,20 @@ PCT(:)        = 1.0/(PSCAP(:)*ZSNOWDZM1(:))
 !
 PGFLUXSNOW(:) = PSWNETSNOWS(:) + PLWNETSNOW(:) - PHSNOW(:) - PLES3L(:) - PLEL3L(:)
 !
+!PRINT*,'GFLUXSNOW',PGFLUXSNOW(:)
+!PRINT*,'PSWNETSNOWS(:)',PSWNETSNOWS(:)
+!PRINT*,'PLWNETSNOW(:)',PLWNETSNOW(:)
+!PRINT*,'PHSNOW(:)',PHSNOW(:)
+!PRINT*,'PLES3L(:)',PLES3L(:)
+!PRINT*,'PLEL3L(:)',PLEL3L(:)
+
 ! Thermal conductivity between uppermost and lower snow layers:
 !
 ZSCONDA(:)    = (ZSNOWDZM1(:)+ZSNOWDZM2(:))/                           &
                ((ZSNOWDZM1(:)/PSCOND1(:)) + (ZSNOWDZM2(:)/PSCOND2(:)))
 !
+!!!PRINT*,'PCT',PCT
+!!!PRINT*,'CONDA',ZSCONDA
 !
 ! Energy budget solution terms (with surface flux imposed):
 !

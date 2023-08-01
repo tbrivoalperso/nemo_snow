@@ -27,6 +27,7 @@ MODULE icesbc
    USE lbclnk         ! lateral boundary conditions (or mpp links)
    USE timing         ! Timing
    USE fldread        !!GS: needed by agrif
+   USE sbcdcy
 
    IMPLICIT NONE
    PRIVATE
@@ -119,6 +120,7 @@ CONTAINS
       !!-------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt     ! ocean time step
       INTEGER, INTENT(in) ::   ksbc   ! flux formulation (user defined, bulk or Pure Coupled)
+      INTEGER             ::   jl
       !!--------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('icesbc')
@@ -128,6 +130,31 @@ CONTAINS
          WRITE(numout,*)'ice_sbc_flx: Surface boundary condition for sea ice (flux)'
          WRITE(numout,*)'~~~~~~~~~~~~~~~'
       ENDIF
+
+      IF(ln_isbaes) THEN ! Save atmospheric variables for isbaes use
+        !                                     ! ========================== !
+        DO jl = 1, jpl                        !  Loop over ice categories  !
+        !                                  ! ========================== !
+              
+          qsr_ice_isbaes(:,:,jl) = sf(jp_qsr  )%fnow(:,:,1)
+          IF( MOD( kt - 1, nn_fsbc ) == 0 )   THEN
+             qlwdwn_ice_isbaes(:,:,jl)   = sf(jp_qlw )%fnow(:,:,1)
+             IF( ln_dm2dc ) THEN
+                qsr_ice_isbaes(:,:,jl) = sbc_dcy( sf(jp_qsr)%fnow(:,:,1) )
+             ELSE
+                qsr_ice_isbaes(:,:,jl) =          sf(jp_qsr)%fnow(:,:,1)
+             ENDIF
+             rain_isbaes(:,:,jl)  = sf(jp_prec)%fnow(:,:,1) * rn_pfac
+             snow_isbaes(:,:,jl)  = sf(jp_snow)%fnow(:,:,1) * rn_pfac
+          ENDIF
+        ENDDO
+
+        tair_isbaes(:,:) = sf(jp_tair)%fnow(:,:,1)    !#LB: should it be POTENTIAL temperature (theta_air_zt) instead ????
+        qair_isbaes(:,:) = q_air_zt(:,:)
+        wndm_isbaes(:,:) = SQRT(sf(jp_wndi)%fnow(:,:,1) **2 + sf(jp_wndj)%fnow(:,:,1)**2)
+        slp_isbaes(:,:)  = sf(jp_slp )%fnow(:,:,1)
+      ENDIF
+
       !                     !== ice albedo ==!
       CALL ice_alb( t_su, h_i, h_s, ln_pnd_alb, a_ip_eff, h_ip, cloud_fra, alb_ice )
       !

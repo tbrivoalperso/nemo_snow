@@ -530,7 +530,6 @@ CONTAINS
          qcn_snw_bot_1d(ji) = - isnow(ji) * zkappa_si(ji) * ( t_i_1d(ji, 1) - t_s_1d (ji,nlay_s) ) 
          !IF(isnow(ji) == 1) qcn_ice_top_1d(ji) = qcn_snw_bot_1d(ji)  
       END DO
-
       ! We compute the conduction flux at the snow / ice surface here because it
       ! is used later on in snwthd_dh even when isnow=0.
       IF( k_cnd == np_cnd_OFF .OR. k_cnd == np_cnd_EMU ) THEN

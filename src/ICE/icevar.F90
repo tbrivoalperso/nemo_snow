@@ -63,6 +63,8 @@ MODULE icevar
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
 
+   USE MODE_SNOW3L   ! For isba-es
+
    IMPLICIT NONE
    PRIVATE
 
@@ -167,7 +169,11 @@ CONTAINS
                tm_i(:,:) = tm_i(:,:) + r1_nlay_i * t_i (:,:,jk,jl) * v_i(:,:,jl) * z1_vt_i(:,:)
             END DO
             DO jk = 1, nlay_s
-               tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
+               IF(ln_isbaes) THEN
+                   tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* v_s(:,:,jl) * z1_vt_s(:,:)
+               ELSE        
+                   tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
+               ENDIF
             END DO
          END DO
          !
@@ -207,6 +213,12 @@ CONTAINS
       REAL(wp), PARAMETER ::   zhl_max =  0.015_wp  ! pond lid thickness above which the ponds disappear from the albedo calculation
       REAL(wp), PARAMETER ::   zhl_min =  0.005_wp  ! pond lid thickness below which the full pond area is used in the albedo calculation
       REAL(wp), DIMENSION(jpi,jpj,jpl) ::   z1_a_i, z1_v_i, z1_a_ip, za_s_fra
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) :: ZSCAP ! for ln_isbaes
+      REAL(wp), PARAMETER       :: XLMTT=333700.0 ! isba_es parameter
+      REAL(wp), PARAMETER       :: XTT=273.16 ! isba_es parameter
+      REAL(wp), PARAMETER       :: XSNOWDMIN=0.000001 ! isba_es parameter
+      REAL(wp), PARAMETER       :: XCI=2.106E+3
+
       !!-------------------------------------------------------------------
 
 !!gm Question 2:  It is possible to define existence of sea-ice in a common way between
@@ -290,14 +302,29 @@ CONTAINS
       ! Snow temperature   [K]   (with a minimum value (rt0 - 100.))
       !--------------------
       zlay_s = REAL( nlay_s , wp )
-      DO jk = 1, nlay_s
-         WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
-            t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
-                 &                MIN( r1_rcpi * ( -r1_rhos * ( e_s(:,:,jk,:) / v_s(:,:,:) * zlay_s ) + rLfus ) , 0._wp ) )
-         ELSEWHERE                           !--- no ice
-            t_s(:,:,jk,:) = rt0
-         END WHERE
-      END DO
+      IF(ln_isbaes) THEN
+         DO jk = 1, nlay_s
+            WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
+               t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
+                    &                MIN( r1_rcpi * ( -(1 / rho_s(:,:,jk,:)) * ( e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) ) + rLfus ) , 0._wp ) )
+               !ZSCAP(:,:,jk,:)     = rho_s(:,:,jk,:) * XCI
+
+               !t_s(:,:,jk,:) = XTT + MIN(1.0, dh_s(:,:,jk,:)/XSNOWDMIN)*( ((e_s(:,:,jk,:)/MAX(XSNOWDMIN,dh_s(:,:,jk,:)))  &
+               !&    + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) )
+            ELSEWHERE                           !--- no ice
+               t_s(:,:,jk,:) = rt0
+            END WHERE
+         END DO
+      ELSE
+         DO jk = 1, nlay_s
+            WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
+               t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
+                    &                MIN( r1_rcpi * ( -r1_rhos * ( e_s(:,:,jk,:) / v_s(:,:,:) * zlay_s ) + rLfus ) , 0._wp ) )
+            ELSEWHERE                           !--- no ice
+               t_s(:,:,jk,:) = rt0
+            END WHERE
+         END DO
+      ENDIF
       !
       ! integrated values
       vt_i (:,:) = SUM( v_i , dim=3 )

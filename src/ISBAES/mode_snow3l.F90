@@ -2621,7 +2621,8 @@ WHERE (PSR(:) > 0.0)
                    (PSNOWDZ(:,1)*PSNOWRHO(:,1)+PSR(:)*PTSTEP)
 !
 ! Augment total pack depth:
-!
+!  
+   ZRHOSNEW(:) = 330. !theo
    ZSNOWFALL(:)  = PSR(:)*PTSTEP/ZRHOSNEW(:)    ! snowfall thickness (m)
 !
    PSNOW(:)      = PSNOW(:) + ZSNOWFALL(:)
@@ -2642,6 +2643,7 @@ WHERE (PSR(:) > 0.0)
    PSNOWHEAT(:,1)  = PSNOWHEAT(:,1) + PSNOWHMASS(:)
 !
 END WHERE
+
 !
 !
 ! 2. Case of new snowfall on a previously snow-free surface:
@@ -2778,6 +2780,7 @@ DO JJ=1,INLVLS
 !       Calculate snow density:
         ZSNOWRHO2(JI,JJ) = PSNOWRHO(JI,JJ) + PSNOWRHO(JI,JJ)*PTSTEP &
                          * ( (XG*ZSMASS(JI,JJ)/ZVISCOCITY(JI,JJ)) )
+                 
 !         
 !       Conserve mass by decreasing grid thicknesses in response to density increases
         PSNOWDZ(JI,JJ) = PSNOWDZ(JI,JJ)*(PSNOWRHO(JI,JJ)/ZSNOWRHO2(JI,JJ))  

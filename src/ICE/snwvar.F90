@@ -76,7 +76,11 @@ CONTAINS
       !
       DO jk = 1, nlay_s             ! Snow energy of melting
          DO ji = 1, npti
-            e_s_1d(ji,jk) = rhos * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )
+            IF(ln_isbaes) THEN
+               e_s_1d(ji,jk) = rho_s_1d(ji,jk) * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )
+            ELSE        
+               e_s_1d(ji,jk) = rhos * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )
+            ENDIF
          END DO
       END DO
       !

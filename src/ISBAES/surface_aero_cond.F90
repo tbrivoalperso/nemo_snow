@@ -122,7 +122,7 @@ DO JJ=1,SIZE(PRI)
   ZPH(JJ)     = PH(ZMU(JJ))
 !
 ! 
-  ZCDN(JJ) = (XKARMAN/ZWORK1(JJ))**2.
+  ZCDN(JJ) = 1.4 * 10e-4 !(XKARMAN/ZWORK1(JJ))**2.
 !
 !
   ZSTA(JJ) = PRI(JJ)*ZWORK3(JJ)
@@ -145,7 +145,9 @@ DO JJ=1,SIZE(PRI)
   PRA(JJ) = 1. / PAC(JJ)
 !
   PCH(JJ) = 1. / (PRA(JJ) * ZVMOD(JJ))
-!
+!   PCH(JJ) = 1.4 * 10e-4
+!   PRA(JJ) = 1 / (PCH(JJ) * ZVMOD(JJ))
+!!
 ENDDO
 !
 !-------------------------------------------------------------------------------

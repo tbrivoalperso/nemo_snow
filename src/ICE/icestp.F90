@@ -260,12 +260,14 @@ CONTAINS
       ELSEWHERE                     ;   rn_amax_2d(:,:) = rn_amax_s  ! SH
       END WHERE
       !
+
       CALL diag_set0                   ! set diag of mass, heat and salt fluxes to 0: needed for Agrif child grids
       !
       CALL ice_itd_init                ! ice thickness distribution initialization
       !
       CALL ice_thd_init                ! set ice thermodynics parameters (clem: important to call it first for melt ponds)
       !
+
       CALL ice_sbc_init                ! set ice-ocean and ice-atm. coupling parameters
       !
       CALL ice_istate_init             ! Initial sea-ice state
@@ -274,7 +276,9 @@ CONTAINS
       ELSE
          CALL ice_istate( nit000, Kbb, Kmm, Kaa )   ! start from rest or read a file
       ENDIF
+
       CALL ice_var_glo2eqv
+
       CALL ice_var_agg(1)
       !
       CALL ice_dyn_init                ! set ice dynamics parameters

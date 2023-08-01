@@ -40,7 +40,7 @@ MODULE icethd_dh
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE ice_thd_dh( zq_rema, zevap_rema, zh_s, ze_s )
+   SUBROUTINE ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )
       !!------------------------------------------------------------------
       !!                ***  ROUTINE ice_thd_dh  ***
       !!
@@ -66,6 +66,7 @@ CONTAINS
       !!              Vancoppenolle, Fichefet and Bitz, 2005, Geophys. Res. Let.
       !!              Vancoppenolle et al.,2009, Ocean Modelling
       !!------------------------------------------------------------------
+      REAL(wp), DIMENSION(jpij), INTENT(in)    ::   isnow       ! presence of snow or not
       REAL(wp), DIMENSION(jpij), INTENT(inout) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
       REAL(wp), DIMENSION(jpij), INTENT(inout) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)
       REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(inout) ::   zh_s      ! snw layer thickness (m) 
@@ -117,12 +118,11 @@ CONTAINS
       !                       ! ============================================== !
       !
 
-      IF( .NOT. (ln_snwext .OR. ln_isbaes) )  CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
+      IF( .NOT. (ln_snwext) )  CALL snw_thd_dh(isnow, zq_rema, zevap_rema, zh_s, ze_s)
       DO ji = 1, npti
          zq_top(ji) = zq_rema(ji)
       END DO
       !
-
       ! initialize ice layer thicknesses and enthalpies
       eh_i_old(1:npti,0:nlay_i+1) = 0._wp
       h_i_old (1:npti,0:nlay_i+1) = 0._wp
@@ -157,7 +157,6 @@ CONTAINS
          zf_tt(ji)         = qcn_ice_bot_1d(ji) + qsb_ice_bot_1d(ji) + fhld_1d(ji) + qtr_ice_bot_1d(ji) * frq_m_1d(ji)
          zq_bot(ji)        = MAX( 0._wp, zf_tt(ji) * rDt_ice )
       END DO
-      
       !
       !                       ! ============ !
       !                       !     Ice      !
@@ -394,109 +393,117 @@ CONTAINS
 
                ! update thickness and energy
                h_s_1d(ji)    = 0._wp
+               IF( ln_isbaes) THEN
+                   dh_s_1d(ji,jk) = 0._wp
+                   swe_s_1d(ji,jk) = 0._wp
+               ENDIF 
                ze_s  (ji,jk) = 0._wp
                zh_s  (ji,jk) = 0._wp
             ENDIF
          END DO
       END DO
+!
+!      ! Snow load on ice
+!      ! -----------------
+!      ! When snow load exceeds Archimede's limit and sst is positive,
+!      ! snow-ice formation (next bloc) can lead to negative ice enthalpy.
+!      ! Therefore we consider here that this excess of snow falls into the ocean
+!      zdeltah(1:npti) = h_s_1d(1:npti) + h_i_1d(1:npti) * (rhoi-rho0) * r1_rhos
+!      DO jk = 0, nlay_s
+!         DO ji = 1, npti
+!            IF( zdeltah(ji) > 0._wp .AND. sst_1d(ji) > 0._wp ) THEN
+!               ! snow layer thickness that falls into the ocean
+!               zdum = MIN( zdeltah(ji) , zh_s(ji,jk) )
+!               ! mass & energy loss to the ocean
+!               hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+!               wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+!               ! update thickness and energy
+!               h_s_1d(ji)    = MAX( 0._wp, h_s_1d(ji)  - zdum )
+!               zh_s  (ji,jk) = MAX( 0._wp, zh_s(ji,jk) - zdum )
+!               ! update snow thickness that still has to fall
+!               zdeltah(ji)   = MAX( 0._wp, zdeltah(ji) - zdum )
+!            ENDIF
+!         END DO
+!      END DO
 
-      ! Snow load on ice
-      ! -----------------
-      ! When snow load exceeds Archimede's limit and sst is positive,
-      ! snow-ice formation (next bloc) can lead to negative ice enthalpy.
-      ! Therefore we consider here that this excess of snow falls into the ocean
-      zdeltah(1:npti) = h_s_1d(1:npti) + h_i_1d(1:npti) * (rhoi-rho0) * r1_rhos
-      DO jk = 0, nlay_s
-         DO ji = 1, npti
-            IF( zdeltah(ji) > 0._wp .AND. sst_1d(ji) > 0._wp ) THEN
-               ! snow layer thickness that falls into the ocean
-               zdum = MIN( zdeltah(ji) , zh_s(ji,jk) )
-               ! mass & energy loss to the ocean
-               hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
-               wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-               ! update thickness and energy
-               h_s_1d(ji)    = MAX( 0._wp, h_s_1d(ji)  - zdum )
-               zh_s  (ji,jk) = MAX( 0._wp, zh_s(ji,jk) - zdum )
-               ! update snow thickness that still has to fall
-               zdeltah(ji)   = MAX( 0._wp, zdeltah(ji) - zdum )
-            ENDIF
-         END DO
-      END DO
-
-      ! Snow-Ice formation
-      ! ------------------
-      ! When snow load exceeds Archimede's limit, snow-ice interface goes down under sea-level,
-      ! flooding of seawater transforms snow into ice. Thickness that is transformed is dh_snowice (positive for the ice)
-      z1_rho = 1._wp / ( rhos+rho0-rhoi )
-      zdeltah(1:npti) = 0._wp
-      DO ji = 1, npti
-         !
-         dh_snowice(ji) = MAX( 0._wp , ( rhos * h_s_1d(ji) + (rhoi-rho0) * h_i_1d(ji) ) * z1_rho )
-
-         h_i_1d(ji)    = h_i_1d(ji) + dh_snowice(ji)
-         h_s_1d(ji)    = h_s_1d(ji) - dh_snowice(ji)
-
-         ! Contribution to energy flux to the ocean [J/m2], >0 (if sst<0)
-         zfmdt          = ( rhos - rhoi ) * dh_snowice(ji)    ! <0
-         zEw            = rcp * sst_1d(ji)
-         zQm            = zfmdt * zEw
-
-         hfx_thd_1d(ji) = hfx_thd_1d(ji) + zEw        * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Heat flux
-         sfx_sni_1d(ji) = sfx_sni_1d(ji) + sss_1d(ji) * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Salt flux
-
-         ! Case constant salinity in time: virtual salt flux to keep salinity constant
-         IF( nn_icesal /= 2 )  THEN
-            sfx_bri_1d(ji) = sfx_bri_1d(ji) - sss_1d(ji) * zfmdt                 * a_i_1d(ji) * r1_Dt_ice  &  ! put back sss_m     into the ocean
-               &                            - s_i_1d(ji) * dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice     ! and get  rn_icesal from the ocean
-         ENDIF
-
-         ! Mass flux: All snow is thrown in the ocean, and seawater is taken to replace the volume
-         wfx_sni_1d    (ji) = wfx_sni_1d    (ji) - dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice
-         wfx_snw_sni_1d(ji) = wfx_snw_sni_1d(ji) + dh_snowice(ji) * rhos * a_i_1d(ji) * r1_Dt_ice
-
-         ! update thickness
-         zh_i(ji,0)  = zh_i(ji,0) + dh_snowice(ji)
-         zdeltah(ji) =              dh_snowice(ji)
-
-         ! update heat content (J.m-2) and layer thickness
-         h_i_old (ji,0) = h_i_old (ji,0) + dh_snowice(ji)
-         eh_i_old(ji,0) = eh_i_old(ji,0) + zfmdt * zEw           ! 1st part (sea water enthalpy)
-
-      END DO
-      !
-      DO jk = nlay_s, 0, -1   ! flooding of snow starts from the base
-         DO ji = 1, npti
-            zdum           = MIN( zdeltah(ji), zh_s(ji,jk) )     ! amount of snw that floods, > 0
-            zh_s(ji,jk)    = MAX( 0._wp, zh_s(ji,jk) - zdum )    ! remove some snow thickness
-            eh_i_old(ji,0) = eh_i_old(ji,0) + zdum * ze_s(ji,jk) ! 2nd part (snow enthalpy)
-            ! update dh_snowice
-            zdeltah(ji)    = MAX( 0._wp, zdeltah(ji) - zdum )
-         END DO
-      END DO
-      !
-      !
-!!!$      ! --- Update snow diags --- !
-!!!$      !!clem: this is wrong. dh_s_tot is not used anyway
-!!!$      DO ji = 1, npti
-!!!$         dh_s_tot(ji) = dh_s_tot(ji) + dh_s_mlt(ji) + zdeltah(ji) + zdh_s_sub(ji) - dh_snowice(ji)
-!!!$      END DO
+!      ! Snow-Ice formation
+!      ! ------------------
+!      ! When snow load exceeds Archimede's limit, snow-ice interface goes down under sea-level,
+!      ! flooding of seawater transforms snow into ice. Thickness that is transformed is dh_snowice (positive for the ice)
+!      z1_rho = 1._wp / ( rhos+rho0-rhoi )
+!      zdeltah(1:npti) = 0._wp
+!      DO ji = 1, npti
+!         !
+!         dh_snowice(ji) = MAX( 0._wp , ( rhos * h_s_1d(ji) + (rhoi-rho0) * h_i_1d(ji) ) * z1_rho )
+!
+!         h_i_1d(ji)    = h_i_1d(ji) + dh_snowice(ji)
+!         h_s_1d(ji)    = h_s_1d(ji) - dh_snowice(ji)
+!
+!         ! Contribution to energy flux to the ocean [J/m2], >0 (if sst<0)
+!         zfmdt          = ( rhos - rhoi ) * dh_snowice(ji)    ! <0
+!         zEw            = rcp * sst_1d(ji)
+!         zQm            = zfmdt * zEw
+!
+!         hfx_thd_1d(ji) = hfx_thd_1d(ji) + zEw        * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Heat flux
+!         sfx_sni_1d(ji) = sfx_sni_1d(ji) + sss_1d(ji) * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Salt flux
+!
+!         ! Case constant salinity in time: virtual salt flux to keep salinity constant
+!         IF( nn_icesal /= 2 )  THEN
+!            sfx_bri_1d(ji) = sfx_bri_1d(ji) - sss_1d(ji) * zfmdt                 * a_i_1d(ji) * r1_Dt_ice  &  ! put back sss_m     into the ocean
+!               &                            - s_i_1d(ji) * dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice     ! and get  rn_icesal from the ocean
+!         ENDIF
+!
+!         ! Mass flux: All snow is thrown in the ocean, and seawater is taken to replace the volume
+!         wfx_sni_1d    (ji) = wfx_sni_1d    (ji) - dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice
+!         wfx_snw_sni_1d(ji) = wfx_snw_sni_1d(ji) + dh_snowice(ji) * rhos * a_i_1d(ji) * r1_Dt_ice
+!
+!         ! update thickness
+!         zh_i(ji,0)  = zh_i(ji,0) + dh_snowice(ji)
+!         zdeltah(ji) =              dh_snowice(ji)
+!
+!         ! update heat content (J.m-2) and layer thickness
+!         h_i_old (ji,0) = h_i_old (ji,0) + dh_snowice(ji)
+!         eh_i_old(ji,0) = eh_i_old(ji,0) + zfmdt * zEw           ! 1st part (sea water enthalpy)
+!
+!      END DO
+!      !
+!      DO jk = nlay_s, 0, -1   ! flooding of snow starts from the base
+!         DO ji = 1, npti
+!            zdum           = MIN( zdeltah(ji), zh_s(ji,jk) )     ! amount of snw that floods, > 0
+!            zh_s(ji,jk)    = MAX( 0._wp, zh_s(ji,jk) - zdum )    ! remove some snow thickness
+!            eh_i_old(ji,0) = eh_i_old(ji,0) + zdum * ze_s(ji,jk) ! 2nd part (snow enthalpy)
+!            ! update dh_snowice
+!            zdeltah(ji)    = MAX( 0._wp, zdeltah(ji) - zdum )
+!         END DO
+!      END DO
 !      !
 !      !
-      ! Remapping of snw enthalpy on a regular grid
-      !--------------------------------------------
-      CALL snw_ent( zh_s, ze_s, e_s_1d)
-
-      ! recalculate t_s_1d from e_s_1d
-      DO jk = 1, nlay_s
-         DO ji = 1,npti
-            IF( h_s_1d(ji) > 0._wp ) THEN
-               t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
-            ELSE
-               t_s_1d(ji,jk) = rt0
-            ENDIF
-         END DO
-      END DO
-
+!!!!$      ! --- Update snow diags --- !
+!!!!$      !!clem: this is wrong. dh_s_tot is not used anyway
+!!!!$      DO ji = 1, npti
+!!!!$         dh_s_tot(ji) = dh_s_tot(ji) + dh_s_mlt(ji) + zdeltah(ji) + zdh_s_sub(ji) - dh_snowice(ji)
+!!!!$      END DO
+!!      !
+!!      !
+!      ! Remapping of snw enthalpy on a regular grid
+!      !--------------------------------------------
+!      CALL snw_ent( zh_s, ze_s, e_s_1d)
+!
+!      ! recalculate t_s_1d from e_s_1d
+!      DO jk = 1, nlay_s
+!         DO ji = 1,npti
+!            IF( h_s_1d(ji) > 0._wp ) THEN
+!               IF(ln_isbaes) THEN
+!                  t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * (1 / rho_s_1d(ji,jk)) * r1_rcpi + rLfus * r1_rcpi ) 
+!               ELSE        
+!                  t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
+!               ENDIF
+!            ELSE
+!               t_s_1d(ji,jk) = rt0
+!            ENDIF
+!         END DO
+!      END DO
+!
       ! Note: remapping of ice enthalpy is done in icethd.F90
 
       ! --- ensure that a_i = 0 & h_s = 0 where h_i = 0 ---

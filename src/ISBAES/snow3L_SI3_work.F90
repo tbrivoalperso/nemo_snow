@@ -75,6 +75,7 @@ INTEGER, DIMENSION(KSIZE1)      :: NMASK      ! indices correspondance between a
 !
 !  DMK%XSRSFC(:) = 0.0
 !
+!snow_isbaes_1d(:) = 0.
   DO JJ=1,KSIZE1
     ZRRSNOW(JJ)        = rain_isbaes_1d(JJ) * za_s_fra(JJ) 
 !    DMK%XRRSFC(JJ)    = PRR(JJ) - ZRRSNOW(JJ)
@@ -116,10 +117,11 @@ INTEGER, DIMENSION(KSIZE1)      :: NMASK      ! indices correspondance between a
       isnow(JJ) = 1.
       ISIZE_SNOW = ISIZE_SNOW + 1
       NMASK(ISIZE_SNOW) = JJ
+    ELSE
+      isnow(JJ) = 0.      
     ENDIF
   ENDDO
   IF (ISIZE_SNOW>0) CALL CALL_MODEL(KSIZE1,KSIZE2,KSIZE3,NMASK,PTSTEP, za_s_fra, ZP_RADXS, zq_rema, zevap_rema) 
-
 !
 END SUBROUTINE SNOW3L_SI3
 !

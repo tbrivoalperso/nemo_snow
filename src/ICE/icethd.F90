@@ -20,7 +20,7 @@ MODULE icethd
    USE sbc_oce , ONLY : sss_m, sst_m, e3t_m, utau, vtau, ssu_m, ssv_m, frq_m, sprecip, ln_cpl
    USE sbc_ice , ONLY : qsr_oce, qns_oce, qemp_oce, qsr_ice, qns_ice, dqns_ice, evap_ice, qprec_ice, qevap_ice, &
       &                 qml_ice, qcn_ice, qtr_ice_top, slp_isbaes, tair_isbaes, qair_isbaes, wndm_isbaes, rain_isbaes, &
-      &                 snow_isbaes, qsr_ice_isbaes, qns_ice_isbaes, qlw_ice_isbaes, qsb_ice_isbaes, rho_air_isbaes
+      &                 snow_isbaes, qsr_ice_isbaes, qns_ice_isbaes, qlw_ice_isbaes, qlwdwn_ice_isbaes, qsb_ice_isbaes, qla_ice_isbaes, rho_air_isbaes
    USE snwthd        ! snow thermodynamics
    USE ice1D          ! sea-ice: thermodynamics variables
    USE icethd_zdf     ! sea-ice: vertical heat diffusion
@@ -119,7 +119,7 @@ CONTAINS
          WRITE(numout,*) 'ice_thd: sea-ice thermodynamics'
          WRITE(numout,*) '~~~~~~~'
       ENDIF
-
+      
       ! convergence tests
       IF( ln_zdf_chkcvg ) THEN
          ALLOCATE( ztice_cvgerr(jpi,jpj,jpl) , ztice_cvgstp(jpi,jpj,jpl) )
@@ -147,6 +147,11 @@ CONTAINS
          IF( ln_virtual_itd ) CALL ctl_stop( 'ln_virtual_itd not yet compatible with ln_snwext=T')
          IF( ln_cndflx ) CALL ctl_stop(' ln_cndflx and/or ln_cndemulate are not yet compatible with ln_snwext=T')
       ENDIF  
+      IF( ln_isbaes ) THEN
+         IF( ln_virtual_itd ) CALL ctl_stop( 'ln_virtual_itd not yet compatible with ln_isbaes=T')
+         IF( ln_cndflx ) CALL ctl_stop(' ln_cndflx and/or ln_cndemulate are not yet compatible with ln_isbaes=T')
+         IF( nn_flxdist /= -1 ) CALL ctl_stop(' ln_isbaes=T not compatible with ln_flxdist yes')
+      ENDIF
 
       !-------------------------------------------------------------------------------------------!
       ! Thermodynamic computation (only on grid points covered by ice) => loop over ice categories
@@ -199,8 +204,16 @@ CONTAINS
             ELSEIF( ln_isbaes ) THEN
                CALL ice_var_snwfra( h_s_1d(1:npti), za_s_fra(1:npti) )
                CALL SNOW3L_SI3(npti,nlay_s,1, rn_Dt, za_s_fra(1:npti), isnow, ZP_RADXS, zq_rema, zevap_rema)
-               zradtr_s(:,nlay_s) = ZP_RADXS(:) 
-#endif
+               DO ji = 1, npti
+                   IF(ln_isbaes) THEN
+                       IF (isnow(ji) == 0._wp) THEN
+                           zradtr_s(ji,nlay_s) = qtr_ice_top_1d(ji) 
+                       ELSE
+                           zradtr_s(:,nlay_s) = ZP_RADXS(:)  
+                       ENDIF 
+                   ENDIF
+               END DO
+#endif           
             ENDIF
 
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
@@ -208,7 +221,7 @@ CONTAINS
                              CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
             !
             IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
-                              CALL ice_thd_dh( zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
+                              CALL ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
 
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF
@@ -428,28 +441,31 @@ CONTAINS
          ! ISBA-ES variables
          DO jk = 1, nlay_s
             CALL tab_2d_1d( npti, nptidx(1:npti), rho_s_1d(1:npti,jk), rho_s(:,:,jk,kl)    )
+            CALL tab_2d_1d( npti, nptidx(1:npti), swe_s_1d(1:npti,jk), swe_s(:,:,jk,kl)    )
             CALL tab_2d_1d( npti, nptidx(1:npti), o_s_1d (1:npti,jk), o_s (:,:,jk,kl) )
             CALL tab_2d_1d( npti, nptidx(1:npti), lwc_s_1d (1:npti,jk), lwc_s (:,:,jk,kl) )
             CALL tab_2d_1d( npti, nptidx(1:npti), dh_s_1d (1:npti,jk), dh_s (:,:,jk,kl) )
          END DO
    
-         CALL tab_2d_1d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti), slp_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), tair_isbaes_1d    (1:npti), tair_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), qair_isbaes_1d    (1:npti), qair_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), wndm_isbaes_1d    (1:npti), wndm_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), rain_isbaes_1d    (1:npti), rain_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), snow_isbaes_1d    (1:npti), snow_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), albi_isbaes_1d    (1:npti), albi_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), albs_isbaes_1d    (1:npti), albs_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), cnd_i_isbaes_1d    (1:npti), cnd_i_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti),  slp_isbaes         )
+         CALL tab_2d_1d( npti, nptidx(1:npti), tair_isbaes_1d    (1:npti), tair_isbaes        )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qair_isbaes_1d    (1:npti), qair_isbaes        )
+         CALL tab_2d_1d( npti, nptidx(1:npti), wndm_isbaes_1d    (1:npti), wndm_isbaes        )
+         CALL tab_2d_1d( npti, nptidx(1:npti), rain_isbaes_1d    (1:npti), rain_isbaes(:,:,kl)        )
+         CALL tab_2d_1d( npti, nptidx(1:npti), snow_isbaes_1d    (1:npti), snow_isbaes(:,:,kl)        )
+         CALL tab_2d_1d( npti, nptidx(1:npti), albi_isbaes_1d    (1:npti), albi_isbaes (:,:,kl)       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), albs_isbaes_1d    (1:npti), albs_isbaes (:,:,kl)       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), cnd_i_isbaes_1d   (1:npti), cnd_i_isbaes(:,:,kl)       )
          CALL tab_2d_1d( npti, nptidx(1:npti), glamt_1d    (1:npti), glamt       )
          CALL tab_2d_1d( npti, nptidx(1:npti), gphit_1d    (1:npti), gphit       )
 
          CALL tab_2d_1d( npti, nptidx(1:npti), rho_air_isbaes_1d    (1:npti), rho_air_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), qsr_ice_isbaes_1d    (1:npti), qsr_ice_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), qns_ice_isbaes_1d    (1:npti), qns_ice_isbaes       )
-         CALL tab_2d_1d( npti, nptidx(1:npti), qlw_ice_isbaes_1d    (1:npti), qlw_ice_isbaes       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qsr_ice_isbaes_1d    (1:npti), qsr_ice_isbaes(:,:,kl)       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qns_ice_isbaes_1d    (1:npti), qns_ice_isbaes(:,:,kl)       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qlw_ice_isbaes_1d    (1:npti), qlw_ice_isbaes(:,:,kl)       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qlwdwn_ice_isbaes_1d    (1:npti), qlwdwn_ice_isbaes(:,:,kl)       )
          CALL tab_2d_1d( npti, nptidx(1:npti), qsb_ice_isbaes_1d (1:npti), qsb_ice_isbaes (:,:,kl) )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qla_ice_isbaes_1d (1:npti), qla_ice_isbaes (:,:,kl) )
 
          !
          ! --- Change units of e_i, e_s from J/m2 to J/m3 --- !
@@ -457,7 +473,11 @@ CONTAINS
             WHERE( h_i_1d(1:npti)>0._wp ) e_i_1d(1:npti,jk) = e_i_1d(1:npti,jk) / (h_i_1d(1:npti) * a_i_1d(1:npti)) * nlay_i
          END DO
          DO jk = 1, nlay_s
-            WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s
+            IF(ln_isbaes) THEN
+               WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))     
+            ELSE 
+               WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s
+            ENDIF
          END DO
          !
          !                 !---------------------!
@@ -468,7 +488,11 @@ CONTAINS
             e_i_1d(1:npti,jk) = e_i_1d(1:npti,jk) * h_i_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_i
          END DO
          DO jk = 1, nlay_s
-            e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
+            IF(ln_isbaes) THEN
+               e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * dh_s_1d(1:npti,jk) * a_i_1d(1:npti) 
+            ELSE
+               e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
+            ENDIF
          END DO
          !
          ! Change thickness to volume (replaces routine ice_var_eqv2glo)
@@ -559,27 +583,30 @@ CONTAINS
          ! ISBA-ES variables
          DO jk = 1, nlay_s
             CALL tab_1d_2d( npti, nptidx(1:npti), rho_s_1d(1:npti,jk), rho_s(:,:,jk,kl)    )
+            CALL tab_1d_2d( npti, nptidx(1:npti), swe_s_1d(1:npti,jk), swe_s(:,:,jk,kl)    )
             CALL tab_1d_2d( npti, nptidx(1:npti), o_s_1d(1:npti,jk), o_s(:,:,jk,kl)    )
             CALL tab_1d_2d( npti, nptidx(1:npti), lwc_s_1d(1:npti,jk), lwc_s(:,:,jk,kl)    )
             CALL tab_1d_2d( npti, nptidx(1:npti), dh_s_1d(1:npti,jk), dh_s(:,:,jk,kl)    )
          END DO
 
-         CALL tab_1d_2d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti), slp_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti),  slp_isbaes        )
          CALL tab_1d_2d( npti, nptidx(1:npti), tair_isbaes_1d    (1:npti), tair_isbaes       )
          CALL tab_1d_2d( npti, nptidx(1:npti), qair_isbaes_1d    (1:npti), qair_isbaes       )
          CALL tab_1d_2d( npti, nptidx(1:npti), wndm_isbaes_1d    (1:npti), wndm_isbaes       )
-         CALL tab_1d_2d( npti, nptidx(1:npti), rain_isbaes_1d    (1:npti), rain_isbaes       )
-         CALL tab_1d_2d( npti, nptidx(1:npti), snow_isbaes_1d    (1:npti), snow_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), rain_isbaes_1d    (1:npti), rain_isbaes(:,:,kl)       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), snow_isbaes_1d    (1:npti), snow_isbaes(:,:,kl)       )
 
-         CALL tab_1d_2d( npti, nptidx(1:npti), albi_isbaes_1d    (1:npti), albi_isbaes       )
-         CALL tab_1d_2d( npti, nptidx(1:npti), albs_isbaes_1d    (1:npti), albs_isbaes       )
-         CALL tab_1d_2d( npti, nptidx(1:npti), cnd_i_isbaes_1d    (1:npti), cnd_i_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), albi_isbaes_1d    (1:npti), albi_isbaes(:,:,kl)       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), albs_isbaes_1d    (1:npti), albs_isbaes(:,:,kl)       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), cnd_i_isbaes_1d    (1:npti), cnd_i_isbaes(:,:,kl)       )
 
          CALL tab_1d_2d( npti, nptidx(1:npti), rho_air_isbaes_1d    (1:npti), rho_air_isbaes       )
-         CALL tab_1d_2d( npti, nptidx(1:npti), qsr_ice_isbaes_1d    (1:npti), qsr_ice_isbaes       )
-         CALL tab_1d_2d( npti, nptidx(1:npti), qns_ice_isbaes_1d    (1:npti), qns_ice_isbaes       )
-         CALL tab_1d_2d( npti, nptidx(1:npti), qlw_ice_isbaes_1d    (1:npti), qlw_ice_isbaes       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qsr_ice_isbaes_1d    (1:npti), qsr_ice_isbaes(:,:,kl)       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qns_ice_isbaes_1d    (1:npti), qns_ice_isbaes(:,:,kl)       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qlw_ice_isbaes_1d    (1:npti), qlw_ice_isbaes(:,:,kl)       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qlwdwn_ice_isbaes_1d    (1:npti), qlwdwn_ice_isbaes(:,:,kl)       )
          CALL tab_1d_2d( npti, nptidx(1:npti), qsb_ice_isbaes_1d(1:npti), qsb_ice_isbaes(:,:,kl)    )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qla_ice_isbaes_1d(1:npti), qla_ice_isbaes(:,:,kl)    )
 
          !
 

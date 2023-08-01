@@ -129,7 +129,7 @@ CONTAINS
       ! 3) Snow melt & sublimation 
       !------------------
 
-      IF( ln_icedH )   CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
+      IF( ln_icedH )   CALL snw_thd_dh(isnow, zq_rema, zevap_rema, zh_s, ze_s)
       !
       !
       IF( ln_timing )   CALL timing_stop('snwthd')                                        ! timing

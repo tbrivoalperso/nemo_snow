@@ -117,7 +117,7 @@ MODULE sbcblk
    REAL(wp) ::   rn_stau_a      ! Alpha and Beta coefficients of Renault et al. 2020, eq. 10: Stau = Alpha * Wnd + Beta
    REAL(wp) ::   rn_stau_b      !
    !
-   REAL(wp)         ::   rn_pfac   ! multiplication factor for precipitation
+   REAL(wp), PUBLIC ::   rn_pfac   ! multiplication factor for precipitation
    REAL(wp), PUBLIC ::   rn_efac   ! multiplication factor for evaporation
    REAL(wp)         ::   rn_zqt    ! z(q,t) : height of humidity and temperature measurements
    REAL(wp)         ::   rn_zu     ! z(u)   : height of wind measurements
@@ -564,24 +564,24 @@ CONTAINS
             theta_air_zt(:,:) = theta_exner( sf(jp_tair)%fnow(:,:,1), zpre(:,:) )
          ENDIF
          !
-         IF(ln_isbaes) THEN ! Save atmospheric variables for isbaes use
-            qsr_ice_isbaes(:,:) = sf(jp_qsr  )%fnow(:,:,1)
-            IF( MOD( kt - 1, nn_fsbc ) == 0 )   THEN
-               qlw_ice_isbaes(:,:)   = sf(jp_qlw )%fnow(:,:,1)
-               IF( ln_dm2dc ) THEN
-                  qsr_ice_isbaes(:,:) = sbc_dcy( sf(jp_qsr)%fnow(:,:,1) )
-               ELSE
-                  qsr_ice_isbaes(:,:) =          sf(jp_qsr)%fnow(:,:,1)
-               ENDIF
-               tair_isbaes(:,:) = sf(jp_tair)%fnow(:,:,1)    !#LB: should it be POTENTIAL temperature (theta_air_zt) instead ????
-               qair_isbaes(:,:) = q_air_zt(:,:)
-               rain_isbaes(:,:)  = sf(jp_prec)%fnow(:,:,1) * rn_pfac
-               snow_isbaes(:,:)  = sf(jp_snow)%fnow(:,:,1) * rn_pfac
-               wndm_isbaes(:,:) = SQRT(sf(jp_wndi)%fnow(:,:,1) **2 + sf(jp_wndj)%fnow(:,:,1)**2)
-               slp_isbaes(:,:)  = sf(jp_slp )%fnow(:,:,1)
-            ENDIF
+         !IF(ln_isbaes) THEN ! Save atmospheric variables for isbaes use
+         !   qsr_ice_isbaes(:,:) = sf(jp_qsr  )%fnow(:,:,1)
+         !   IF( MOD( kt - 1, nn_fsbc ) == 0 )   THEN
+         !      qlwdwn_ice_isbaes(:,:)   = sf(jp_qlw )%fnow(:,:,1)
+         !      IF( ln_dm2dc ) THEN
+         !         qsr_ice_isbaes(:,:) = sbc_dcy( sf(jp_qsr)%fnow(:,:,1) )
+         !      ELSE
+         !         qsr_ice_isbaes(:,:) =          sf(jp_qsr)%fnow(:,:,1)
+         !      ENDIF
+         !      tair_isbaes(:,:) = sf(jp_tair)%fnow(:,:,1)    !#LB: should it be POTENTIAL temperature (theta_air_zt) instead ????
+         !      qair_isbaes(:,:) = q_air_zt(:,:)
+         !      rain_isbaes(:,:)  = sf(jp_prec)%fnow(:,:,1) * rn_pfac
+         !      snow_isbaes(:,:)  = sf(jp_snow)%fnow(:,:,1) * rn_pfac
+         !      wndm_isbaes(:,:) = SQRT(sf(jp_wndi)%fnow(:,:,1) **2 + sf(jp_wndj)%fnow(:,:,1)**2)
+         !      slp_isbaes(:,:)  = sf(jp_slp )%fnow(:,:,1)
+         !   ENDIF
 
-         ENDIF
+         !ENDIF
          CALL blk_oce_1( kt, sf(jp_wndi )%fnow(:,:,1), sf(jp_wndj )%fnow(:,:,1),   &   !   <<= in
             &                theta_air_zt(:,:), q_air_zt(:,:),                     &   !   <<= in
             &                sf(jp_slp  )%fnow(:,:,1), sst_m, ssu_m, ssv_m,        &   !   <<= in
@@ -1194,7 +1194,7 @@ CONTAINS
             z_qlw(ji,jj,jl)   = emiss_i * ( pdqlw(ji,jj) - stefan * zst * zst3 ) * tmask(ji,jj,1)
             ! lw sensitivity
             z_dqlw(ji,jj,jl)  = zcoef_dqlw * zst3
-
+            
             ! ----------------------------!
             !     II    Turbulent FLUXES  !
             ! ----------------------------!
@@ -1220,6 +1220,8 @@ CONTAINS
 
             IF(ln_isbaes) THEN
                qsb_ice_isbaes(ji,jj,jl) = z_qsb (ji,jj,jl)
+               qla_ice_isbaes(ji,jj,jl) = qla_ice (ji,jj,jl)
+               qlw_ice_isbaes(ji,jj,jl) = z_qlw (ji,jj,jl)
                rho_air_isbaes(ji,jj) = rhoa(ji,jj)
             ENDIF
             ! ----------------------------!
