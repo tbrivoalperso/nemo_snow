@@ -91,10 +91,10 @@ CONTAINS
       !!-------------------------------------------------------------------
       !
       ! -- quantities -- !
-      IF(ln_isbaes) THEN
+      IF(.NOT. ln_isbaes) THEN
           ztmp3(:,:,1) = SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
       ELSE
-          ztmp3(:,:,1) = SUM( v_i * rhoi + SUM(rho_s * dh_s ,dim=3) * a_i + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
+          ztmp3(:,:,1) = SUM( v_i * rhoi + SUM(rho_s * dh_s ,dim=3) + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
       ENDIF
       ztmp3(:,:,2) = SUM( sv_i * rhoi, dim=3 ) * e1e2t                                             ! salt
       ztmp3(:,:,3) = ( SUM( SUM( e_i, dim=4 ), dim=3 ) + SUM( SUM( e_s, dim=4 ), dim=3 ) ) * e1e2t ! heat
@@ -264,7 +264,7 @@ CONTAINS
          IF(.NOT. ln_isbaes) THEN
              pdiag_v = SUM( v_i  * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 )
          ELSE
-             pdiag_v = SUM( v_i  * rhoi + SUM(rho_s * dh_s ,dim=3) * a_i + ( v_ip + v_il ) * rhow, dim=3 )
+             pdiag_v = SUM( v_i  * rhoi + SUM(rho_s * dh_s ,dim=3) + ( v_ip + v_il ) * rhow, dim=3 )
          ENDIF
          pdiag_s = SUM( sv_i * rhoi , dim=3 )
          pdiag_t = SUM( SUM( e_i, dim=4 ), dim=3 ) + SUM( SUM( e_s, dim=4 ), dim=3 )
@@ -286,7 +286,7 @@ CONTAINS
                &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
                &         - pdiag_fv
          ELSE
-            zdiag_mass =   ( SUM( v_i * rhoi + SUM(rho_s * dh_s, dim=3) * a_i  + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
+            zdiag_mass =   ( SUM( v_i * rhoi + SUM(rho_s * dh_s, dim=3)  + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
                &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
                &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
                &         - pdiag_fv

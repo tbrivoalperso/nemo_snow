@@ -1310,7 +1310,7 @@ CONTAINS
    SUBROUTINE ice_var_snwfra_3d( ph_s, pa_s_fra )
       REAL(wp), DIMENSION(:,:,:), INTENT(in   ) ::   ph_s        ! snow thickness
       REAL(wp), DIMENSION(:,:,:), INTENT(  out) ::   pa_s_fra    ! ice fraction covered by snow
-      IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
+      IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
          WHERE( ph_s > 0._wp ) ; pa_s_fra = 1._wp
          ELSEWHERE             ; pa_s_fra = 0._wp
          END WHERE
@@ -1324,7 +1324,7 @@ CONTAINS
    SUBROUTINE ice_var_snwfra_2d( ph_s, pa_s_fra )
       REAL(wp), DIMENSION(:,:), INTENT(in   ) ::   ph_s        ! snow thickness
       REAL(wp), DIMENSION(:,:), INTENT(  out) ::   pa_s_fra    ! ice fraction covered by snow
-      IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
+      IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
          WHERE( ph_s > 0._wp ) ; pa_s_fra = 1._wp
          ELSEWHERE             ; pa_s_fra = 0._wp
          END WHERE
@@ -1338,7 +1338,7 @@ CONTAINS
    SUBROUTINE ice_var_snwfra_1d( ph_s, pa_s_fra )
       REAL(wp), DIMENSION(:), INTENT(in   ) ::   ph_s        ! snow thickness
       REAL(wp), DIMENSION(:), INTENT(  out) ::   pa_s_fra    ! ice fraction covered by snow
-      IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
+      IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
          WHERE( ph_s > 0._wp ) ; pa_s_fra = 1._wp
          ELSEWHERE             ; pa_s_fra = 0._wp
          END WHERE

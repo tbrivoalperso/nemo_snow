@@ -801,6 +801,10 @@ PDELHEATN_SFC(:) = (PSNOWHEAT(:,1)-ZSNOWHEAT0(:,1))/PTSTEP
 PSNOWSFCH(:)     = PDELHEATN_SFC(:) - (PSWNETSNOWS(:) +PLWNETSNOW(:) - PHSNOW(:) -PLES3L(:)-PLEL3L(:))    &
                       + PSNOWFLUX(:) - PSNOWHMASS(:)/PTSTEP
 !
+IF(OSI3) THEN
+ZRADXS(:) = ZRADXS(:) +  ZRADSINK(:,INLVLS)
+! Total radiative sink = RADXS + SINK ????
+ENDIF        
 !
 !
  CONTAINS
@@ -1150,7 +1154,6 @@ IF(OMEB)THEN
 ELSE
 
 ! Consider 3 bands:
-   
    ZCOEF(:,:)           = SNOW3LRADABS_SFC(PSNOWRHO,ZSNOWDZ,PSPECTRALALBEDO,PZENITH,PPERMSNOWFRAC,ZDSGRAIN)
 
    PSWNETSNOW(:)        = PSW_RAD(:)*(1.-PSNOWALB(:))
@@ -1180,11 +1183,13 @@ PRADSINK(:,INLVLS) = PRADSINK(:,INLVLS)*(1.0-PALB(:))
 ! ----------------------------------------------------
 !
 ZRADTOT(:)    = PRADSINK(:,1) + (1.-PSNOWALB(:))*PSW_RAD(:)
+
 DO JJ=2,INLVLS
    DO JI=1,INI
       ZRADTOT(JI) = ZRADTOT(JI) + PRADSINK(JI,JJ)-PRADSINK(JI,JJ-1)
    ENDDO
 ENDDO
+
 !
 PRADXS(:)     = (1.-PSNOWALB(:))*PSW_RAD(:) - ZRADTOT(:)
 !

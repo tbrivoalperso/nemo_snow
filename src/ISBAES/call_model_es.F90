@@ -142,7 +142,9 @@ REAL(wp), DIMENSION(KSIZE1) :: ZP_PA ! Atmospheric pressure at forcing level
 REAL(wp), PARAMETER :: ZDEPTHABS = 0.60 ! m
 REAL(wp) ::  ZSCAP
 REAL(wp), DIMENSION(KSIZE1)          ::   zq_ini      ! diag errors on heat
-REAL(wp) ::   zdq             ! diag errors on heat
+REAL(wp), DIMENSION(KSIZE1)          ::   zm_ini      ! diag errors on mass
+REAL(wp), DIMENSION(KSIZE1) ::   zdq             ! diag errors on heat
+REAL(wp), DIMENSION(KSIZE1) ::   zdm             ! diag errors on mass
 
 
 !
@@ -267,6 +269,7 @@ END DO
 ! --- diag error on heat diffusion - PART 1 --- !
 DO JI = 1, npti
    zq_ini(JI) = SUM( e_s_1d(JI,1:nlay_s)  * dh_s_1d(JI,1:nlay_s) )!* r1_nlay_s 
+   zm_ini(JI) = SUM(rho_s_1d(JI,1:nlay_s) * dh_s_1d(JI,1:nlay_s)) !* a_i_1d(JI) 
 END DO
 
 
@@ -441,7 +444,8 @@ CALL snw_var_enthalpy ! Compute e_s_1d from T°
 !ENDDO
 !
 DO JI = 1, npti
-   zdq = - zq_ini(JI) + SUM( e_s_1d(JI,1:nlay_s)  * dh_s_1d(JI,1:nlay_s) ) 
+   zdq(JI) = - zq_ini(JI) + SUM( e_s_1d(JI,1:nlay_s)  * dh_s_1d(JI,1:nlay_s) )
+   zdm(JI) = - zm_ini(JI) + SUM(rho_s_1d(JI,1:nlay_s) * dh_s_1d(JI,1:nlay_s)) !* a_i_1d(JI) 
 ENDDO
 
 DO JJ=1,KSIZE1
@@ -485,23 +489,25 @@ DO JJ=1,KSIZE1
 !  hfx_sub_1d(JJ) = 0. !ZP_LES3L(JJ) + ZP_LEL3L(JJ) ! Sublimation + liquid water Evaporation (for now) (W/m2)
 !  hfx_spr_1d(JJ) = 0. ! ZP_SNOWHMASS(JJ)! heat release from rainfall (W/m2)
 !  hfx_res_1d(JJ) = 0. ! 
-  hfx_snw_1d(JJ) = hfx_snw_1d(JJ) - zdq * r1_Dt_ice * a_i_1d(JJ)  !ZP_DELHEATN(JJ) ! total heat content change in the snow 
+  hfx_snw_1d(JJ) = hfx_snw_1d(JJ) - zdq(JJ) * r1_Dt_ice * a_i_1d(JJ)  !ZP_DELHEATN(JJ) ! total heat content change in the snow 
   zq_rema       (JJ)   = (ZP_GFLXCOR     (JJ) + ZP_RADXS (JJ)) * rDt_ice ! En J / m2
    
   ! We put 0 to all heat fluxes except from wfx_snw_sum that we now consider as the total mass change in snow
-  wfx_spr_1d    (JJ)   = ZP_SRSNOW  (JJ) + ZP_RRSNOW(JJ)   
-!  wfx_snw_sub_1d   (JJ)   = 0.
-  wfx_snw_sum_1d(JJ)   = ZP_THRUFAL     (JJ) ! rate that liquid water leaves snow pack (kg/(m2 s)): 
+  wfx_spr_1d    (JJ)   =  - (ZP_SRSNOW  (JJ) + ZP_RRSNOW(JJ) - ZP_EVAP(JJ)) !* a_i_1d(JJ) * za_s_fra(JJ)! wfx_spr_1d    (JJ) + ZP_SRSNOW  (JJ) + ZP_RRSNOW(JJ) !+ ZP_EVAPCOR(JJ) + ZP_SOILCOR(JJ) 
+  wfx_snw_sub_1d   (JJ)   = 0.
+  wfx_snw_sum_1d(JJ)   =  ZP_THRUFAL     (JJ) !* a_i_1d(JJ)! rate that liquid water leaves snow pack (kg/(m2 s)): 
                                              ! partitioned into soil infiltration/runoff by ISBA
   zevap_rema    (JJ)   = (ZP_EVAPCOR(JJ) + ZP_SOILCOR(JJ)) * rDt_ice
-
+  PRINT*,'DM',zdm(JJ) * r1_Dt_ice
+  PRINT*,'THRUFAL',ZP_THRUFAL     (JJ)
+  PRINT*,'ZP_SRSNOW  (JJ) + ZP_RRSNOW(JJ)', (ZP_SRSNOW  (JJ) + ZP_RRSNOW(JJ) - ZP_EVAP(JJ)) !* a_i_1d(JJ) * za_s_fra(JJ) !+ ZP_RRSNOW(JJ)
   ! Surface total flux => Qtot = qns_ice_1d(ji) + qsr_ice_1d(ji) - qtr_ice_top_1d(ji) - qcn_ice_top_1d(ji)                                            
 !  qns_ice_1d(JJ) = ZP_LES3L(JJ) + ZP_LEL3L(JJ) + ZP_HSNOW(JJ) + ZP_LWNETSNOW(JJ)
 !  qcn_ice_top_1d(JJ) = ZP_GSFCSNOW(JJ)
 !  qtr_ice_top_1d(JJ) =  ZP_SW_RAD(JJ) * ZP_SNOWALB     (JJ)
 
 ENDDO
-
+PRINT*,'RADXS',ZP_RADXS
 
 ! Other inout variables that we do not need (à priori??)
 ! PRNSNOW, ! Not needed (à priori)

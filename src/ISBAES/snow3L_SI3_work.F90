@@ -113,8 +113,9 @@ INTEGER, DIMENSION(KSIZE1)      :: NMASK      ! indices correspondance between a
   NMASK(:) = 0
 !
   DO JJ=1,KSIZE1
-    IF (ZSNOW(JJ) >= XSNOWDMIN .OR. ZSNOWFALL(JJ) >= XSNOWDMIN) THEN
-      isnow(JJ) = 1.
+!    IF (ZSNOW(JJ) >= XSNOWDMIN .OR. ZSNOWFALL(JJ) >= XSNOWDMIN) THEN
+    IF (ZSNOW(JJ) >= 0. .OR. ZSNOWFALL(JJ) >= 0.) THEN
+            isnow(JJ) = 1.
       ISIZE_SNOW = ISIZE_SNOW + 1
       NMASK(ISIZE_SNOW) = JJ
     ELSE
