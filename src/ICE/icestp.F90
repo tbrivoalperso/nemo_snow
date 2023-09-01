@@ -145,6 +145,8 @@ CONTAINS
 #endif
                                         CALL store_fields             ! Store now ice values
          !
+                  PRINT*,'h_i init 0', h_i(1,1,1)
+
          !------------------------------------------------!
          ! --- Dynamical coupling with the atmosphere --- !
          !------------------------------------------------!
@@ -188,6 +190,7 @@ CONTAINS
          !----------------------------!
          ! --- ice thermodynamics --- !
          !----------------------------!
+         PRINT*,'h_i init', h_i(1,1,1)
          IF( ln_icethd )                CALL ice_thd( kt )            ! -- Ice thermodynamics
          !
                                         CALL diag_trends( 2 )         ! record thermo trends

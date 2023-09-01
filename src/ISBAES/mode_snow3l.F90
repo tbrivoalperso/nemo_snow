@@ -2876,7 +2876,7 @@ REAL :: ZPROPOR
 !
 !
 !
-INI        = SIZE(PSNOWRHO,1)
+INI        = SIZE(PSNOWDZ,1)
 INLVLS     = SIZE(PSNOWRHO,2)
 !
 ZPSNOW_NEW(:) = 0.0
@@ -2895,6 +2895,7 @@ ZSNOWRHOO (:,:) = PSNOWRHO (:,:)
 ZSNOWHEATO(:,:) = PSNOWHEAT(:,:)
 ZSNOWAGEO (:,:) = PSNOWAGE (:,:)
 ZMASSDZO  (:,:) = XUNDEF
+
 !
 ! 1. Calculate vertical grid limits (m):
 ! --------------------------------------
@@ -2926,7 +2927,6 @@ ZSNOWZBOT_NEW(:,INLVLS)=0.0
 ZSNOWHEAN(:,:)=0.0
 ZMASTOTN (:,:)=0.0
 ZSNOWAGN (:,:)=0.0
-!
 DO JL=1,INLVLS
    DO JLO=1, INLVLS   
       DO JI=1,INI
@@ -2935,18 +2935,19 @@ DO JL=1,INLVLS
           ZPROPOR = (MIN(ZSNOWZTOP_OLD(JI,JLO), ZSNOWZTOP_NEW(JI,JL)) &
                   -  MAX(ZSNOWZBOT_OLD(JI,JLO), ZSNOWZBOT_NEW(JI,JL)))&
                   / ZSNOWDZO(JI,JLO) 
-!
+!         
           ZMASSDZO (JI,JLO)=ZSNOWRHOO(JI,JLO)*ZSNOWDZO(JI,JLO)*ZPROPOR
 !
           ZMASTOTN (JI,JL)=ZMASTOTN (JI,JL)+ZMASSDZO  (JI,JLO)
           ZSNOWAGN (JI,JL)=ZSNOWAGN (JI,JL)+ZSNOWAGEO (JI,JLO)*ZMASSDZO(JI,JLO)
 !
           ZSNOWHEAN(JI,JL)=ZSNOWHEAN(JI,JL)+ZSNOWHEATO(JI,JLO)*ZPROPOR
-!          
+!
         ENDIF
-      ENDDO 
-    ENDDO 
-ENDDO  
+      ENDDO
+
+    ENDDO
+ENDDO 
 !
 ! the new layer inherits from the weighted average properties of the old ones
 ! heat and mass
@@ -2955,7 +2956,7 @@ ZSNOWHEATN(:,:)= ZSNOWHEAN(:,:)
 ZSNOWAGEN (:,:)= ZSNOWAGN (:,:)/ZMASTOTN(:,:)
 ZSNOWRHON (:,:)= ZMASTOTN (:,:)/PSNOWDZN(:,:)
 !
-!
+
 ! 4. Vanishing or very thin snowpack check:
 ! -----------------------------------------
 !
@@ -2985,6 +2986,7 @@ ENDDO
 ! heat and mass (density and thickness) are constant
 ! in profile:
 !
+
 DO JL=1,INLVLS
    DO JI=1,INI
 !         

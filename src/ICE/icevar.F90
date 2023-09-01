@@ -164,13 +164,15 @@ CONTAINS
          !
          tm_i(:,:) = 0._wp
          tm_s(:,:) = 0._wp
+         rhom_s(:,:) = 0._wp
          DO jl = 1, jpl
             DO jk = 1, nlay_i
                tm_i(:,:) = tm_i(:,:) + r1_nlay_i * t_i (:,:,jk,jl) * v_i(:,:,jl) * z1_vt_i(:,:)
             END DO
             DO jk = 1, nlay_s
                IF(ln_isbaes) THEN
-                   tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* v_s(:,:,jl) * z1_vt_s(:,:)
+                   tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
+                   rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
                ELSE        
                    tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
                ENDIF

@@ -442,11 +442,25 @@ ENDWHERE
 ! Reset grid to conform to model specifications:
 !
  CALL SNOW3LGRID(ZSNOWDZN,ZSNOW,PSNOWDZ_OLD=PSNOWDZ)
-!
+
+ PRINT*,'DZN',ZSNOWDZN(1,:)
+ !
 ! Mass/Heat redistribution:
 !
+ PRINT*,'PSNOWDZ BEF TRANSF SNOW3L',PSNOWDZ(1,:)
+ PRINT*,'ZSNOWDZN BEF TRANSF SNOW3L',ZSNOWDZN(1,:)
+
+ PRINT*,'************************************************************* &
+         & *****************IN SNOW3L *********************************&
+         &************************************************************&
+         & ****************************************************'
  CALL SNOW3LTRANSF(ZSNOW,PSNOWDZ,ZSNOWDZN,PSNOWRHO,PSNOWHEAT,PSNOWAGE)
-!
+ PRINT*,'************************************************************* &
+         & *****************END TRANSF IN SNOW3L *********************************&
+         &************************************************************&
+         & **************************************************** /'
+
+ !
 !
 !*       4.     Liquid water content and snow temperature
 !               -----------------------------------------
@@ -572,7 +586,6 @@ ZGRNDFLUXI(:)  = ZGRNDFLUX(:)
 !                  ZQSAT,ZDQSAT,ZRSRA,                                 &
 !                  PRNSNOW,PHSNOW,PGFLUXSNOW,PLES3L,PLEL3L,PEVAP,      &
 !                  PUSTAR,GSFCMELT      )
-
 CALL SNOW3LSOLVT(OMEB,OSI3, PTSTEP,XSNOWDZMIN,PSNOWDZ,ZSCOND,ZSCAP,PTG,              &
                    PSOILCOND,PD_G,ZRADSINK,ZCT,ZTSTERM1,ZTSTERM2,              &
                    ZPET_A_COEF_T,ZPEQ_A_COEF_T,ZPET_B_COEF_T,ZPEQ_B_COEF_T,    &
@@ -1183,13 +1196,11 @@ PRADSINK(:,INLVLS) = PRADSINK(:,INLVLS)*(1.0-PALB(:))
 ! ----------------------------------------------------
 !
 ZRADTOT(:)    = PRADSINK(:,1) + (1.-PSNOWALB(:))*PSW_RAD(:)
-
 DO JJ=2,INLVLS
    DO JI=1,INI
       ZRADTOT(JI) = ZRADTOT(JI) + PRADSINK(JI,JJ)-PRADSINK(JI,JJ-1)
    ENDDO
 ENDDO
-
 !
 PRADXS(:)     = (1.-PSNOWALB(:))*PSW_RAD(:) - ZRADTOT(:)
 !
@@ -1720,12 +1731,13 @@ ENDIF
 ! faster than for the composite soil-veg case), thus this correction
 ! is not as essential and is off.
 !
-PGRNDFLUXO(:)          = ZDTERM(:,INLVLS)*(ZSNOWTEMP(:,INLVLS)         -PTG(:))
-
 IF(OSI3) THEN
          ZKAPPA_SI(:) = PSCOND   (:,INLVLS) * PSOILCOND(:) &
                   &                            / ( 0.5 * (  PSOILCOND(:) * PSNOWDZ(:,INLVLS) + PSCOND(:,INLVLS) * PD_G(:) ) )
          PGRNDFLUXO(:) =   ZKAPPA_SI(:) * (ZSNOWTEMP(:,INLVLS)         -PTG(:)) 
+ELSE
+
+         PGRNDFLUXO(:)          = ZDTERM(:,INLVLS)*(ZSNOWTEMP(:,INLVLS)         -PTG(:))
 ENDIF          
 
 IF(OSI3) THEN
@@ -1895,7 +1907,6 @@ DO JWRK = 1, SIZE(ZMELTXS,2)
    ENDDO
 ENDDO
 PMELTXS(:) = PMELTXS(:) / PTSTEP   ! (W/m2)
-
 !
 !
 !
@@ -2185,15 +2196,19 @@ ZLE(:)       = PLES3L(:) + PLEL3L(:)
 PGFLUX(:)    = PRN(:) - PH(:) - ZLE(:) + PHPSNOW(:)
 
 
-
+!PRINT*,'PSNOWTEMP(:)/PEXNS(:',PSNOWTEMP(:)/PEXNS(:)
+!PRINT*,'PTA(:)/PEXNA(:)',PTA(:)/PEXNA(:)
 !PRINT*,'AFTER FLUXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx'
 !PRINT*,'LES',PLES3L
 !PRINT*,'LEL',PLEL3L
 !PRINT*,'LWNET',PLWNETSNOW
 !PRINT*,'PLW_RAD',PLW_RAD(:)
+!PRINT*,'(1. - PALBT(:)) * PSW_RAD(:)',(1. - PALBT(:)) * PSW_RAD(:)
 !PRINT*,'PEMIST(:) * PLW',PEMIST(:) * PLW_RAD(:)
 !PRINT*,'PLWUP',PLWUPSNOW
-!PRINT*,'PH',PH
+!PRINT*,'PH',-PH
+!PRINT*,'ZLE',-ZLE
+!PRINT*,'PHPSNOW',PHPSNOW
 !PRINT*,'PRN',PRN
 !PRINT*,'GFLUX',PGFLUX
 !

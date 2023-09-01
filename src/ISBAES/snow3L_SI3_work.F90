@@ -114,7 +114,7 @@ INTEGER, DIMENSION(KSIZE1)      :: NMASK      ! indices correspondance between a
 !
   DO JJ=1,KSIZE1
 !    IF (ZSNOW(JJ) >= XSNOWDMIN .OR. ZSNOWFALL(JJ) >= XSNOWDMIN) THEN
-    IF (ZSNOW(JJ) >= 0. .OR. ZSNOWFALL(JJ) >= 0.) THEN
+    IF ((ZSNOW(JJ) > 0. .OR. ZSNOWFALL(JJ) > 0.) .AND. h_i_1d(JJ) > 0.) THEN
             isnow(JJ) = 1.
       ISIZE_SNOW = ISIZE_SNOW + 1
       NMASK(ISIZE_SNOW) = JJ
@@ -122,6 +122,7 @@ INTEGER, DIMENSION(KSIZE1)      :: NMASK      ! indices correspondance between a
       isnow(JJ) = 0.      
     ENDIF
   ENDDO
+  PRINT*,'isnow',isnow
   IF (ISIZE_SNOW>0) CALL CALL_MODEL(KSIZE1,KSIZE2,KSIZE3,NMASK,PTSTEP, za_s_fra, ZP_RADXS, zq_rema, zevap_rema) 
 !
 END SUBROUTINE SNOW3L_SI3
