@@ -504,7 +504,7 @@ PHPSNOW(:) = 0.0
 ! and standard ISBA turbulent transfer formulation
 !
 
-IF(OMEB)THEN 
+IF(OMEB .OR. OSI3)THEN 
 PRINT*,'PSWNETSNOWS',PSWNETSNOWS
 PRINT*,'PSWNETSNOW',PSWNETSNOW
 PRINT*,'PLWNETSNOWs',PLWNETSNOW
@@ -512,15 +512,6 @@ PRINT*,'PHSNOW',PHSNOW
 PRINT*,'PLES3L',PLES3L
 PRINT*,'PLEL3L',PLEL3L
 PRINT*,'PHPSNOW',PHPSNOW
-!   CALL SNOW3LFLUX(ZSNOWTEMP(:,1),PSNOWDZ(:,1),PEXNS,PEXNA,           &
-!                  ZUSTAR2_IC,                                         &
-!                  PTSTEP,PSNOWALB,PSW_RAD,                            &
-!                  PEMISNOW,ZLWUPSNOW,PLW_RAD,PLWNETSNOW,              &
-!                  ZTA_IC,ZSFCFRZ,ZQA_IC,PHPSNOW,                      &
-!                  ZSNOWTEMPO1,PSNOWFLUX,ZCT,ZRADSINK(:,1),            &
-!                  ZQSAT,ZDQSAT,ZRSRA,                                 &
-!                  PRNSNOW,PHSNOW,PGFLUXSNOW,PLES3L,PLEL3L,PEVAP,      &
-!                  PUSTAR,GSFCMELT      )
 
 ! - surface fluxes prescribed:
    CALL SNOW3LEBUDMEB(PTSTEP,XSNOWDZMIN,                                     &                
@@ -583,7 +574,7 @@ CALL SNOW3LSOLVT(OMEB,OSI3, PTSTEP,XSNOWDZMIN,PSNOWDZ,ZSCOND,ZSCAP,PTG,         
 ! Since surface fluxes already computed under MEB option (and already
 ! recomputed for the case when T>Tf), Only call if MEB not in use:
 !
-IF(.NOT. (OMEB) )THEN 
+IF(.NOT. (OMEB .OR. OSI3) )THEN 
 
    CALL SNOW3LFLUX(ZSNOWTEMP(:,1),PSNOWDZ(:,1),PEXNS,PEXNA,           &
                   ZUSTAR2_IC,                                         &
@@ -1612,7 +1603,7 @@ PSNOWFLUX(:)      = ZDTERM(:,1)*(ZSNOWTEMP(:,1) - ZSNOWTEMP(:,2))
 ! will likely never greatly exceed Tf (before melt computed and they are adjusted to Tf)
 ! so we can skip the next block of code when MEB is active.
 !
-IF(.NOT.(OMEB))THEN
+IF(.NOT.(OMEB .OR. OSI3))THEN
 !
    ZAMTRX_M(:,1)  =  0.0
    ZBMTRX_M(:,1)  =  ZCTERM(:,2) + ZDTERM(:,1) + ZDTERM(:,2)

@@ -123,7 +123,7 @@ CONTAINS
          WRITE(numout,*) 'ice_thd: sea-ice thermodynamics'
          WRITE(numout,*) '~~~~~~~'
       ENDIF
-      
+
       ! convergence tests
       IF( ln_zdf_chkcvg ) THEN
          ALLOCATE( ztice_cvgerr(jpi,jpj,jpl) , ztice_cvgstp(jpi,jpj,jpl) )
@@ -176,11 +176,6 @@ CONTAINS
                               CALL ice_thd_1d2d( jl, 1 )            ! --- Move to 1D arrays --- !
             !                                                       ! --- & Change units of e_i, e_s from J/m2 to J/m3 --- !
             !
-            !DO ji = 1, npti
-            !   zm_ini(ji) =  rhoi * h_i_1d(ji) * r1_nlay_i
-            !   zm2_ini(ji) = SUM( rho_s_1d(ji,1:nlay_s)  * dh_s_1d(ji,1:nlay_s) )
-            !ENDDO
-
             IF( ln_fcond ) qcn_snw_bot_read_1D(1:npti) = qcn_snw_bot_1D(1:npti)
             s_i_new   (1:npti) = 0._wp ; dh_s_tot(1:npti) = 0._wp   ! --- some init --- !  (important to have them here)
             dh_i_sum  (1:npti) = 0._wp ; dh_i_bom(1:npti) = 0._wp ; dh_i_itm  (1:npti) = 0._wp
@@ -193,8 +188,6 @@ CONTAINS
             ze_s(1:npti, 0:nlay_s) = 0._wp ; 
             
             qcn_snw_bot_1d(1:npti)     = 0._wp
-            PRINT*,'H_i here0',h_i_1d(1)
-
             !
             ! Theo : Here We call the new snow_thd routine which compute: 
             ! - The T° equation in the snow (snw_thd_zdf)
@@ -225,19 +218,12 @@ CONTAINS
                END DO
 #endif           
             ENDIF
-            DO ji = 1, npti
-               zm_ini(ji) =  rhoi * h_i_1d(ji) * r1_nlay_i
-               zm2_ini(ji) = SUM( rho_s_1d(ji,1:nlay_s)  * dh_s_1d(ji,1:nlay_s) )
-            ENDDO
-
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
                              CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
             !
-            PRINT*,'H_i here',h_i_1d(1)
             IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
                               CALL ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
-            PRINT*,'H_i here2',h_i_1d(1)
 
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF
@@ -249,16 +235,6 @@ CONTAINS
                &              CALL ice_thd_mono                     ! --- Extra lateral melting if virtual_itd --- !
             !
             IF( ln_icedA )    CALL ice_thd_da                       ! --- Lateral melting --- !
-
-            DO ji = 1,npti
-               zdm(ji) = - zm_ini(ji) + rhoi * h_i_1d(ji) * r1_nlay_i
-               zdm2(ji) = - zm2_ini(ji) + SUM( rho_s_1d(ji,1:nlay_s)  * dh_s_1d(ji,1:nlay_s) )
-   
-            END DO
-            PRINT*,'wfx snw computed (thd)', zdm2(1) * r1_Dt_ice * a_i_1d(1)
-            PRINT*,'wfx ice computed (thd)', zdm(1) * r1_Dt_ice * a_i_1d(1)
-            PRINT*,'wfx SUM computed (thd)', (zdm(1) + zdm2(2)) * r1_Dt_ice * a_i_1d(1)
-            
             !
                               CALL ice_thd_1d2d( jl, 2 )            ! --- Change units of e_i, e_s from J/m3 to J/m2 --- !
             !                                                       ! --- & Move to 2D arrays --- !

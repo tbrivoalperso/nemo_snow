@@ -528,7 +528,6 @@ CONTAINS
 
          ! Conduction flux at snow ice - interval : Fc,si = - Kappa_int * (T_i1 - T_s)
          qcn_snw_bot_1d(ji) = - isnow(ji) * zkappa_si(ji) * ( t_i_1d(ji, 1) - t_s_1d (ji,nlay_s) ) 
-         PRINT*,'qcn',qcn_snw_bot_1d(ji)
          !IF(isnow(ji) == 1) qcn_ice_top_1d(ji) = qcn_snw_bot_1d(ji)  
       END DO
       ! We compute the conduction flux at the snow / ice surface here because it

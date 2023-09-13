@@ -122,7 +122,6 @@ INTEGER, DIMENSION(KSIZE1)      :: NMASK      ! indices correspondance between a
       isnow(JJ) = 0.      
     ENDIF
   ENDDO
-  PRINT*,'isnow',isnow
   IF (ISIZE_SNOW>0) CALL CALL_MODEL(KSIZE1,KSIZE2,KSIZE3,NMASK,PTSTEP, za_s_fra, ZP_RADXS, zq_rema, zevap_rema) 
 !
 END SUBROUTINE SNOW3L_SI3

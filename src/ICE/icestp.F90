@@ -145,8 +145,6 @@ CONTAINS
 #endif
                                         CALL store_fields             ! Store now ice values
          !
-                  PRINT*,'h_i init 0', h_i(1,1,1)
-
          !------------------------------------------------!
          ! --- Dynamical coupling with the atmosphere --- !
          !------------------------------------------------!
@@ -190,7 +188,6 @@ CONTAINS
          !----------------------------!
          ! --- ice thermodynamics --- !
          !----------------------------!
-         PRINT*,'h_i init', h_i(1,1,1)
          IF( ln_icethd )                CALL ice_thd( kt )            ! -- Ice thermodynamics
          !
                                         CALL diag_trends( 2 )         ! record thermo trends
@@ -263,14 +260,12 @@ CONTAINS
       ELSEWHERE                     ;   rn_amax_2d(:,:) = rn_amax_s  ! SH
       END WHERE
       !
-
       CALL diag_set0                   ! set diag of mass, heat and salt fluxes to 0: needed for Agrif child grids
       !
       CALL ice_itd_init                ! ice thickness distribution initialization
       !
       CALL ice_thd_init                ! set ice thermodynics parameters (clem: important to call it first for melt ponds)
       !
-
       CALL ice_sbc_init                ! set ice-ocean and ice-atm. coupling parameters
       !
       CALL ice_istate_init             ! Initial sea-ice state
@@ -279,9 +274,7 @@ CONTAINS
       ELSE
          CALL ice_istate( nit000, Kbb, Kmm, Kaa )   ! start from rest or read a file
       ENDIF
-
       CALL ice_var_glo2eqv
-
       CALL ice_var_agg(1)
       !
       CALL ice_dyn_init                ! set ice dynamics parameters

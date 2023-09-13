@@ -350,7 +350,6 @@ CONTAINS
             ALLOCATE( zhi_2d (npti,jpl), zhs_2d (npti,jpl), zai_2d (npti,jpl), &
                &      zti_2d (npti,jpl), zts_2d (npti,jpl), ztsu_2d(npti,jpl), zsi_2d(npti,jpl), &
                &      zaip_2d(npti,jpl), zhip_2d(npti,jpl), zhil_2d(npti,jpl) )
-            PRINT*,'h_i_init 0 ts 0',h_i_1d
 
             ! distribute 1-cat into jpl-cat: (jpi*jpj) -> (jpi*jpj,jpl)
             CALL ice_var_itd( h_i_1d(1:npti)  , h_s_1d(1:npti)  , at_i_1d(1:npti),                  &
@@ -359,8 +358,6 @@ CONTAINS
                &              s_i_1d(1:npti)  , a_ip_1d(1:npti) , h_ip_1d(1:npti), h_il_1d(1:npti), &
                &              zti_2d          , zts_2d          , ztsu_2d        ,                  &
                &              zsi_2d          , zaip_2d         , zhip_2d        , zhil_2d )
-            PRINT*,'h_i_init 0 ts 1',h_i_1d
-            PRINT*,'h_i_init 0 ts 2',zhi_2d
 
             ! move to 3D arrays: (jpi*jpj,jpl) -> (jpi,jpj,jpl)
             DO jl = 1, jpl
@@ -377,7 +374,6 @@ CONTAINS
             CALL tab_2d_3d( npti, nptidx(1:npti), zaip_2d  , a_ip   )
             CALL tab_2d_3d( npti, nptidx(1:npti), zhip_2d  , h_ip   )
             CALL tab_2d_3d( npti, nptidx(1:npti), zhil_2d  , h_il   )
-            PRINT*,'h_i_init 0 ts',h_i
             ! deallocate temporary arrays
             DEALLOCATE( zhi_2d, zhs_2d, zai_2d , &
                &        zti_2d, zts_2d, ztsu_2d, zsi_2d, zaip_2d, zhip_2d, zhil_2d )
@@ -420,10 +416,6 @@ CONTAINS
 
                END_3D
             END DO
-            PRINT*,'e_s',e_s
-            PRINT*,'lwc',lwc_s
-            PRINT*,'rho_s',rho_s
-            PRINT*,'t_s',t_s
             !
             DO jl = 1, jpl
                DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_i )

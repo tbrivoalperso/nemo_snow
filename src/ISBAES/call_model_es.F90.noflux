@@ -248,7 +248,6 @@ XRAGNC_FACTOR=200.
 XKDELTA_WR=0.25
 
 PRINT*,'H before snow3l', h_s_1d(1)
-PRINT*,'T° before snow3l',t_s_1d(1,:)
 !
 ! Initialize:
 !
@@ -349,7 +348,7 @@ DO JJ=1,KSIZE1
    ZP_TG       (JI) = t_i_1d(JI,1) * ZP_EXNS(JI) ! Ground T° => 1st ice level 
    ZP_ALB     (JI) = albi_isbaes_1d(JI) ! green areas albedo => snow free albedo   
 
-   ZP_RRSNOW  (JI) = 0.! rain_isbaes_1d(JI) * a_i_1d(JI) !* za_s_fra(JI) ! rain rate over snow [kg/(m2 s)] !!!!!!! MULTIPLIER PAR LA FRACTION DE NEIGE 
+   ZP_RRSNOW  (JI) = rain_isbaes_1d(JI) * a_i_1d(JI) !* za_s_fra(JI) ! rain rate over snow [kg/(m2 s)] !!!!!!! MULTIPLIER PAR LA FRACTION DE NEIGE 
    ZP_SOILCOND(JI) = cnd_i_isbaes_1d(JI) ! Temporary heat conductivity of litter + soil => conductivity of 1st ice layer 
  
    !
@@ -514,7 +513,6 @@ DO JJ=1,KSIZE1
 
 ENDDO
 PRINT*,'H after snow3l', h_s_1d(1)
-PRINT*,'T° after snow3l',t_s_1d(1,:)
 
 ! Other inout variables that we do not need (à priori??)
 ! PRNSNOW, ! Not needed (à priori)
