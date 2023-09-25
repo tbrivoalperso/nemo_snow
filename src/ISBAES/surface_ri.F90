@@ -54,6 +54,7 @@ USE MODD_SURF_ATM, ONLY : XRIMAX
 USE MODI_WIND_THRESHOLD
 !
 !
+!
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
@@ -99,11 +100,11 @@ REAL, DIMENSION(SIZE(PVMOD)) :: ZVMOD
 !
 ZTHVA(:)=PTA(:)/PEXNA(:)*( 1.+(XRV/XRD-1.)*PQA(:) )   
 ZTHVS(:)=PTG(:)/PEXNS(:)*( 1.+(XRV/XRD-1.)*PQS(:) )
-!   
-
+!                                                 
 ZVMOD(:) = WIND_THRESHOLD(PVMOD(:),PUREF(:))
 !
                                                 ! Richardson's number
+!                                                                                
 PRI(:) = XG * PDIRCOSZW(:) * PUREF(:) * PUREF(:)              &
           * (ZTHVA(:)-ZTHVS(:)) / (0.5 * (ZTHVA(:)+ZTHVS(:)) )  &
           / (ZVMOD(:)*ZVMOD(:)) /PZREF(:)  

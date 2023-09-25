@@ -380,6 +380,7 @@ CONTAINS
             ! For ISBA-ES
             DO jk = 1, nlay_s
                dh_s(:,:,jk,:) = h_s(:,:,:) * r1_nlay_s
+               dv_s(:,:,jk,:) = dh_s(:,:,jk,:) * a_i(:,:,:)
             END DO
 
             ! calculate extensive and intensive variables
@@ -402,10 +403,14 @@ CONTAINS
                           ZSCAP     = rho_s(ji,jj,jk,jl) * XCI  ! In isba-es, capacity = rho x cst, with cst=XCI
                           swe_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dh_s(ji,jj,jk,jl)
                           lwc_s(ji,jj,jk,jl) = MAX(0.0,t_s(ji,jj,jk,jl)-rt0)*ZSCAP*dh_s(ji,jj,jk,jl)/(XLMTT*XRHOLW)
-                          !e_s(ji,jj,jk,jl) =  dh_s(ji,jj,jk,jl)*( ZSCAP*(t_s(ji,jj,jk,jl)-rt0)- XLMTT*rho_s(ji,jj,jk,jl)) + &
-                          !& XLMTT*XRHOLW*lwc_s(ji,jj,jk,jl) ! En J / m2
-                          e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+                          e_s(ji,jj,jk,jl) =  dh_s(ji,jj,jk,jl)*( ZSCAP*(t_s(ji,jj,jk,jl)-rt0)- XLMTT*rho_s(ji,jj,jk,jl)) + &
+                          & XLMTT*XRHOLW*lwc_s(ji,jj,jk,jl) !* a_i(ji,jk,jl) ! En J / m2
+                          !e_s(ji,jj,jk,jl) = e_s(ji,jj,jk,jl) * dh_s_1d(1:npti,jk) * a_i_1d(1:npti)
+                          !e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+                     !&               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
+                          PRINT*,'e_s SI3 style',zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
                      &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
+
                   ELSE
                           lwc_s(ji,jj,jk,jl) = 0.
                           swe_s(ji,jj,jk,jl) = 0. 
@@ -415,6 +420,10 @@ CONTAINS
                   ENDIF
 
                END_3D
+               PRINT*,'e_s istate',e_s
+               PRINT*,'t_s istate',t_s
+               PRINT*,'rho_s istate',rho_s
+               PRINT*,'lwc_s istate',lwc_s
             END DO
             !
             DO jl = 1, jpl

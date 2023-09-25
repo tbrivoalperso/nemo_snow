@@ -218,12 +218,15 @@ CONTAINS
                END DO
 #endif           
             ENDIF
+            PRINT*,'MASS AT 1',SUM(rho_s_1d * dh_s_1d)
+           
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
                              CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
             !
             IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
                               CALL ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
+            PRINT*,'MASS AT 2',SUM(rho_s_1d * dh_s_1d)
 
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF
@@ -236,6 +239,8 @@ CONTAINS
             !
             IF( ln_icedA )    CALL ice_thd_da                       ! --- Lateral melting --- !
             !
+            PRINT*,'MASS AT 3',SUM(rho_s_1d * dh_s_1d)
+
                               CALL ice_thd_1d2d( jl, 2 )            ! --- Change units of e_i, e_s from J/m3 to J/m2 --- !
             !                                                       ! --- & Move to 2D arrays --- !
          ENDIF
@@ -445,6 +450,7 @@ CONTAINS
             CALL tab_2d_1d( npti, nptidx(1:npti), o_s_1d (1:npti,jk), o_s (:,:,jk,kl) )
             CALL tab_2d_1d( npti, nptidx(1:npti), lwc_s_1d (1:npti,jk), lwc_s (:,:,jk,kl) )
             CALL tab_2d_1d( npti, nptidx(1:npti), dh_s_1d (1:npti,jk), dh_s (:,:,jk,kl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), dv_s_1d (1:npti,jk), dv_s (:,:,jk,kl) )
          END DO
    
          CALL tab_2d_1d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti),  slp_isbaes         )
@@ -474,7 +480,7 @@ CONTAINS
          END DO
          DO jk = 1, nlay_s
             IF(ln_isbaes) THEN
-               WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))     
+               WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))     
             ELSE 
                WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s
             ENDIF
@@ -489,7 +495,7 @@ CONTAINS
          END DO
          DO jk = 1, nlay_s
             IF(ln_isbaes) THEN
-               e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * dh_s_1d(1:npti,jk) * a_i_1d(1:npti) 
+               e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !* dh_s_1d(1:npti,jk) !* a_i_1d(1:npti) 
             ELSE
                e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
             ENDIF
@@ -501,6 +507,11 @@ CONTAINS
          sv_i_1d(1:npti) = s_i_1d (1:npti) * v_i_1d (1:npti)
          oa_i_1d(1:npti) = o_i_1d (1:npti) * a_i_1d (1:npti)
 
+         IF(ln_isbaes) THEN 
+            DO jk = 1, nlay_s
+               dv_s_1d (1:npti,jk) = dh_s_1d (1:npti,jk) * a_i_1d (1:npti) 
+            END DO
+         ENDIF
 
          CALL tab_1d_2d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_1d_2d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
@@ -587,6 +598,7 @@ CONTAINS
             CALL tab_1d_2d( npti, nptidx(1:npti), o_s_1d(1:npti,jk), o_s(:,:,jk,kl)    )
             CALL tab_1d_2d( npti, nptidx(1:npti), lwc_s_1d(1:npti,jk), lwc_s(:,:,jk,kl)    )
             CALL tab_1d_2d( npti, nptidx(1:npti), dh_s_1d(1:npti,jk), dh_s(:,:,jk,kl)    )
+            CALL tab_1d_2d( npti, nptidx(1:npti), dv_s_1d(1:npti,jk), dv_s(:,:,jk,kl)    )
          END DO
 
          CALL tab_1d_2d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti),  slp_isbaes        )

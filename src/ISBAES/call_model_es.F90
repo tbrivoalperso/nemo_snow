@@ -79,7 +79,7 @@ REAL(wp), DIMENSION(KSIZE1)        :: ZP_SOILCOND
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_THRUFAL
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_GRNDFLUX
 ! REAL(wp), DIMENSION(KSIZE1)        :: ZP_FLSN_COR   ! Not used 
-REAL(wp), DIMENSION(KSIZE1)        :: ZP_GSFCSNOW
+REAL(wp), DIMENSION(KSIZE1)        :: ZP_RESTOREN
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_EVAPCOR
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_SOILCOR
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_GFLXCOR
@@ -88,6 +88,11 @@ REAL(wp), DIMENSION(KSIZE1)        :: ZP_HSNOW
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_GFLUXSNOW
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_DELHEATN
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_DELHEATN_SFC
+REAL(wp), DIMENSION(KSIZE1)        :: ZP_DELPHASEN
+REAL(wp), DIMENSION(KSIZE1)        :: ZP_DELPHASEN_SFC
+REAL(wp), DIMENSION(KSIZE1)        :: ZP_MELTSTOT
+REAL(wp), DIMENSION(KSIZE1)        :: ZP_SNREFREEZ
+
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_SNOWSFCH
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_HPSNOW
 REAL(wp), DIMENSION(KSIZE1)        :: ZP_LES3L
@@ -171,7 +176,8 @@ LOGICAL                 :: OSI3       ! Coupled with SI3
 !                                     
 !                                     
 !                                     
-LOGICAL                 :: OSNOWDRIFT, OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
+CHARACTER(4)            :: OSNOWDRIFT
+LOGICAL                 :: OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
 
 TYPE(DATE_TIME)         :: TPTIME      ! current date and time
 
@@ -184,7 +190,7 @@ HIMPLICIT_WIND = 'OLD'
 OMEB = .false.
 OSI3 = .true.
 !OMEB = OSI3
-OSNOWDRIFT = .false.
+OSNOWDRIFT = 'NONE' 
 OSNOWDRIFT_SUBLIM = .false.
 
 
@@ -217,7 +223,8 @@ XCPV   = 4.* XRV
 XRHOLW = 1000.
 XCL    = 4.218E+3
 XCI    = 2.106E+3
-XTT    = 273.16
+XTT    = rt0 ! We use the SI3 parameter for the 0°C 
+PRINT*,'XTT bef',XTT
 XTTSI  = XTT - 1.8
 XTTS   = XTT*(1-XICEC) + XTTSI*XICEC
 XICEC  = 0.5
@@ -259,20 +266,20 @@ ZP_SOILD(:)        = 0.
 ! pack the variables
 !
 ! Compute the T° from SI3 enthalpy 
-DO JWRK=1,KSIZE2
-   DO JJ=1,KSIZE1
-      IF( h_s_1d(JJ) > 0._wp ) THEN
-         t_s_1d(JJ,JWRK) = rt0 + ( - e_s_1d(JJ,JWRK) * (1 / rho_s_1d(JJ,JWRK)) * r1_rcpi + rLfus * r1_rcpi ) 
-      ELSE
-         t_s_1d(JJ,JWRK) = rt0
-      ENDIF
-   END DO
-END DO
+!DO JWRK=1,KSIZE2
+!   DO JJ=1,KSIZE1
+!      IF( h_s_1d(JJ) > 0._wp ) THEN
+!         t_s_1d(JJ,JWRK) = rt0 + ( - e_s_1d(JJ,JWRK) * (1 / rho_s_1d(JJ,JWRK)) * r1_rcpi + rLfus * r1_rcpi ) 
+!      ELSE
+!         t_s_1d(JJ,JWRK) = rt0
+!      ENDIF
+!   END DO
+!END DO
 
 ! --- diag error on heat diffusion - PART 1 --- !
 DO JI = 1, npti
-   zq_ini(JI) = SUM( e_s_1d(JI,1:nlay_s)  * dh_s_1d(JI,1:nlay_s) )!* r1_nlay_s 
-   zm_ini(JI) = SUM(rho_s_1d(JI,1:nlay_s) * dh_s_1d(JI,1:nlay_s)) !* a_i_1d(JI) 
+   zq_ini(JI) = SUM( e_s_1d(JI,1:nlay_s))!  * dh_s_1d(JI,1:nlay_s) )!* r1_nlay_s 
+   zm_ini(JI) = SUM(rho_s_1d(JI,1:nlay_s) * dh_s_1d(JI,1:nlay_s)) * a_i_1d(JI) 
 END DO
 
 
@@ -288,10 +295,12 @@ DO JWRK=1,KSIZE2
       ZP_SNOWDZ  (JI,JWRK) = dh_s_1d(JI,JWRK)       ! Snow layer(s) thickness (m) (per layer 
 
       ! Compute the snow heat from SI3 T°
-      ZP_SNOWHEAT(JI,JWRK) = ZP_SNOWDZ(JI,JWRK)*( ZSCAP*(ZP_SNOWTEMP(JI,JWRK)-XTT)        &
+!      ZP_SNOWHEAT(JI,JWRK) = ZP_SNOWDZ(JI,JWRK)*( ZSCAP*(ZP_SNOWTEMP(JI,JWRK)-XTT)        &
+!                   - XLMTT*ZP_SNOWRHO(JI,JWRK) ) + XLMTT*XRHOLW*ZP_SNOWLIQ(JI,JWRK)
+      PRINT*,'DIAG SNOWHEAT',ZP_SNOWDZ(JI,JWRK)*( ZSCAP*(ZP_SNOWTEMP(JI,JWRK)-XTT)        &
                    - XLMTT*ZP_SNOWRHO(JI,JWRK) ) + XLMTT*XRHOLW*ZP_SNOWLIQ(JI,JWRK)
-
-!      ZP_SNOWHEAT(JI,JWRK) = e_s_1d(JI,JWRK) * dh_s_1d(JI,JWRK)  * a_i_1d(JI) !- e_s_1d(JI,JWRK) * dh_s_1d(JI,JWRK)  * a_i_1d(JI)  ! Snow layer(s) heat content (J/m2) (=> verifier correspondance unités) 
+      PRINT*,'e_s_1d',e_s_1d(JI,JWRK)
+      ZP_SNOWHEAT(JI,JWRK) = e_s_1d(JI,JWRK) !* dh_s_1d(JI,JWRK) ! * a_i_1d(JI) !- e_s_1d(JI,JWRK) * dh_s_1d(JI,JWRK)  * a_i_1d(JI)  ! Snow layer(s) heat content (J/m2) (=> verifier correspondance unités) 
    ENDDO
      
 ENDDO
@@ -349,7 +358,7 @@ DO JJ=1,KSIZE1
    ZP_TG       (JI) = t_i_1d(JI,1) * ZP_EXNS(JI) ! Ground T° => 1st ice level 
    ZP_ALB     (JI) = albi_isbaes_1d(JI) ! green areas albedo => snow free albedo   
 
-   ZP_RRSNOW  (JI) = 0.! rain_isbaes_1d(JI) * a_i_1d(JI) !* za_s_fra(JI) ! rain rate over snow [kg/(m2 s)] !!!!!!! MULTIPLIER PAR LA FRACTION DE NEIGE 
+   ZP_RRSNOW  (JI) = rain_isbaes_1d(JI) * a_i_1d(JI) !* za_s_fra(JI) ! rain rate over snow [kg/(m2 s)] !!!!!!! MULTIPLIER PAR LA FRACTION DE NEIGE 
    ZP_SOILCOND(JI) = cnd_i_isbaes_1d(JI) ! Temporary heat conductivity of litter + soil => conductivity of 1st ice layer 
  
    !
@@ -372,7 +381,7 @@ DO JJ=1,KSIZE1
    ZP_SNOWSFCH    (JI) = 0. ! snow surface layer pseudo-heating term owing to changes in grid thickness (W m-2) ! DIAG => PAS BESOIN
    !!!!!!!!!!!!!!!!!!!!!!!!!!
    !!!!!! KEZAKO
-   ZP_LES3L       (JI) = qla_ice_isbaes_1d(JI) ! hfx_sub_1d(JI) ! ATTENTION INVERSE AVEC SUBLIMATION !evaporation heat flux from snow (W/m2) !!!!!!!!!!!!!!!! EAU LIQUIDE QUI SEVAPORE ????????????
+   ZP_LES3L       (JI) = 0. ! qla_ice_isbaes_1d(JI) ! hfx_sub_1d(JI) ! ATTENTION INVERSE AVEC SUBLIMATION !evaporation heat flux from snow (W/m2) !!!!!!!!!!!!!!!! EAU LIQUIDE QUI SEVAPORE ????????????
    ZP_LEL3L       (JI) = 0. ! ATTENTION INVERSE !! hfx_sub_1d(JI) ! sublimation (W/m2) ! A
    ZP_EVAP        (JI) = 0. !ZP_LES3L(JI) + ZP_LEL3L(JI) ! total evaporative flux (kg/m2/s) LES + LEL ?????
    !
@@ -380,6 +389,11 @@ DO JJ=1,KSIZE1
    ZP_SWNETSNOWS  (JI) = qsr_ice_isbaes_1d(JI) * (1. - albs_isbaes_1d(JI)) ! net shortwave radiation in uppermost layer of snowpack
    !/!\ /!\/!\/!\/!\/!\/!\/!\/!\ SWNETSNOWS must take into account solar penetration => for now it is qsr * (1 -albedo)
    ZP_LWNETSNOW   (JI) = qlw_ice_isbaes_1d(JI) ! net longwave radiation entering top of snowpack
+   ZP_MELTSTOT    (JI) = 0.0
+   ZP_SNREFREEZ   (JI) = 0.0
+   ZP_DELPHASEN   (JI) = 0.0 
+   ZP_DELPHASEN_SFC(JI)= 0.0
+
 ENDDO
 !ZP_PA     (JJ)  = pres_temp(ZP_QA(JJ), ZP_PS(JJ), ZP_ZREF(JJ), ptpot=ZP_TA(JJ), l_ice=.true. ) ! Compute pressure at atmospheric level
 !
@@ -399,25 +413,25 @@ ZP_PSN_INV(:)       = 0.
 ZP_PSN(:)           = ZP_PSN3L(:) 
 !
 !
-CALL SNOW3L(HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,                    &
-           & ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                 &
-           & ZP_PET_A_COEF, ZP_PEQ_A_COEF,ZP_PET_B_COEF, ZP_PEQ_B_COEF,    &
-           & ZP_SNOWSWE, ZP_SNOWRHO, ZP_SNOWHEAT, ZP_SNOWALB,              &
-           & ZP_SNOWGRAN1, ZP_SNOWGRAN2, ZP_SNOWHIST, ZP_SNOWAGE, PTSTEP,  &
-           & ZP_PS, ZP_SRSNOW, ZP_RRSNOW, ZP_PSN3L, ZP_TA, ZP_TG,     &
-           & ZP_SW_RAD, ZP_QA, ZP_VMOD, ZP_LW_RAD, ZP_RHOA, ZP_UREF,       &
-           & ZP_EXNS, ZP_EXNA, ZP_DIRCOSZW, ZP_ZREF, ZP_Z0NAT, ZP_Z0EFF,   &
-           & ZP_Z0HNAT, ZP_ALB, ZP_SOILCOND, ZP_D_G,                  &
-           & ZP_LVTT, ZP_LSTT, ZP_SNOWLIQ,                                 &
-           & ZP_SNOWTEMP, ZP_SNOWDZ, ZP_THRUFAL, ZP_GRNDFLUX ,             &
-           & ZP_EVAPCOR, ZP_SOILCOR, ZP_GFLXCOR, ZP_SNOWSFCH,              &
-           & ZP_DELHEATN, ZP_DELHEATN_SFC,                                 &
-           & ZP_SWNETSNOW, ZP_SWNETSNOWS, ZP_LWNETSNOW, ZP_GSFCSNOW,       &
-           & ZP_RNSNOW, ZP_HSNOW, ZP_GFLUXSNOW, ZP_HPSNOW, ZP_LES3L,       &
-           & ZP_LEL3L, ZP_EVAP, ZP_SNDRIFT, ZP_RI,                         &
-           & ZP_EMISNOW, ZP_CDSNOW, ZP_USTARSNOW,                          &
-           & ZP_CHSNOW, ZP_SNOWHMASS, ZP_QS, ZP_RADXS, ZP_VEGTYPE,  ZP_FOREST,       &
-           & ZP_ZENITH, ZP_LAT, ZP_LON, OSNOWDRIFT,OSNOWDRIFT_SUBLIM )
+  CALL SNOW3L(HSNOWRES, TPTIME, OMEB, HIMPLICIT_WIND,                   &
+             ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                 &
+             ZP_PET_A_COEF, ZP_PEQ_A_COEF,ZP_PET_B_COEF, ZP_PEQ_B_COEF,    &
+             ZP_SNOWSWE, ZP_SNOWRHO, ZP_SNOWHEAT, ZP_SNOWALB,              &
+             ZP_SNOWGRAN1, ZP_SNOWGRAN2, ZP_SNOWHIST, ZP_SNOWAGE, PTSTEP,  &
+             ZP_PS, ZP_SRSNOW, ZP_RRSNOW, ZP_PSN3L, ZP_TA, ZP_TG(:,1),     &
+             ZP_SW_RAD, ZP_QA, ZP_VMOD, ZP_LW_RAD, ZP_RHOA, ZP_UREF,       &
+             ZP_EXNS, ZP_EXNA, ZP_DIRCOSZW, ZP_ZREF, ZP_Z0NAT, ZP_Z0EFF,   &
+             ZP_Z0HNAT, ZP_ALB, ZP_SOILCOND, ZP_D_G(:,1),                  &
+             ZP_LVTT, ZP_LSTT, ZP_SNOWLIQ,                                 &
+             ZP_SNOWTEMP, ZP_SNOWDZ, ZP_THRUFAL, ZP_MELTSTOT, ZP_SNREFREEZ,&
+             ZP_GRNDFLUX, ZP_EVAPCOR, ZP_SOILCOR, ZP_GFLXCOR, ZP_SNOWSFCH, &
+             ZP_DELHEATN, ZP_DELHEATN_SFC, ZP_DELPHASEN, ZP_DELPHASEN_SFC, &
+             ZP_SWNETSNOW, ZP_SWNETSNOWS, ZP_LWNETSNOW, ZP_RESTOREN,       &
+             ZP_RNSNOW, ZP_HSNOW, ZP_GFLUXSNOW, ZP_HPSNOW, ZP_LES3L,       &
+             ZP_LEL3L, ZP_EVAP, ZP_SNDRIFT, ZP_RI,                         &
+             ZP_EMISNOW, ZP_CDSNOW, ZP_USTARSNOW,                          &
+             ZP_CHSNOW, ZP_SNOWHMASS, ZP_QS, ZP_RADXS, ZP_VEGTYPE,  ZP_FOREST,       &
+             ZP_ZENITH, ZP_LAT, ZP_LON, OSNOWDRIFT,OSNOWDRIFT_SUBLIM)
 
 ! unpack variables
 !
@@ -427,7 +441,7 @@ h_s_1d(JJ) = 0.
   DO JWRK=1,KSIZE2
     swe_s_1d(JJ,JWRK) = ZP_SNOWSWE  (JJ,JWRK) ! Should we advect it ???
     rho_s_1d(JJ,JWRK) = ZP_SNOWRHO  (JJ,JWRK)
-!    e_s_1d(JJ,JWRK) = - ZP_SNOWHEAT (JJ,JWRK) / (ZP_SNOWDZ   (JJ,JWRK) * a_i_1d(JJ))
+    e_s_1d(JJ,JWRK) =  ZP_SNOWHEAT (JJ,JWRK) !/ (ZP_SNOWDZ   (JJ,JWRK) )!* a_i_1d(JJ))
     o_s_1d(JJ,JWRK) = ZP_SNOWAGE  (JJ,JWRK)
     t_s_1d(JJ,JWRK)   = ZP_SNOWTEMP (JJ,JWRK)
     lwc_s_1d(JJ,JWRK)   = ZP_SNOWLIQ  (JJ,JWRK) ! No need because it is a diagnostic
@@ -438,7 +452,7 @@ h_s_1d(JJ) = 0.
     h_s_1d(JJ) = SUM(dh_s_1d(JJ,:))
 ENDDO
 
-CALL snw_var_enthalpy ! Compute e_s_1d from T°
+!CALL snw_var_enthalpy ! Compute e_s_1d from T°
 
 !DO JWRK=1,KSIZE3
 !   DO JJ=1,KSIZE1
@@ -448,8 +462,8 @@ CALL snw_var_enthalpy ! Compute e_s_1d from T°
 !ENDDO
 !
 DO JI = 1, npti
-   zdq(JI) = - zq_ini(JI) + SUM( e_s_1d(JI,1:nlay_s)  * dh_s_1d(JI,1:nlay_s) )
-   zdm(JI) = - zm_ini(JI) + SUM(rho_s_1d(JI,1:nlay_s) * dh_s_1d(JI,1:nlay_s)) !* a_i_1d(JI) 
+   zdq(JI) = - zq_ini(JI) + SUM( e_s_1d(JI,1:nlay_s))!  * dh_s_1d(JI,1:nlay_s) )
+   zdm(JI) = - zm_ini(JI) + SUM(rho_s_1d(JI,1:nlay_s) * dh_s_1d(JI,1:nlay_s)) * a_i_1d(JI) 
 ENDDO
 
 DO JJ=1,KSIZE1
@@ -476,7 +490,7 @@ DO JJ=1,KSIZE1
 !  PDELHEATN    (JJ)   = ZP_DELHEATN    (JJ)
 !  PDELHEATN_SFC(JJ)   = ZP_DELHEATN_SFC(JJ)
 !  PSNOWSFCH    (JJ)   = ZP_SNOWSFCH    (JJ) ! Check avec bertrand
-!  PGSFCSNOW    (JJ)   = ZP_GSFCSNOW    (JJ)  !heat flux between the surface and sub-surface 
+!  PGSFCSNOW    (JJ)   = ZP_RESTOREN    (JJ)  !heat flux between the surface and sub-surface 
 !                                                  snow layers (W/m2)
 !  PLES3L       (JJ)   = ZP_LES3L       (JJ)
 !  PLEL3L       (JJ)   = ZP_LEL3L       (JJ)
@@ -493,14 +507,15 @@ DO JJ=1,KSIZE1
 !  hfx_sub_1d(JJ) = 0. !ZP_LES3L(JJ) + ZP_LEL3L(JJ) ! Sublimation + liquid water Evaporation (for now) (W/m2)
 !  hfx_spr_1d(JJ) = 0. ! ZP_SNOWHMASS(JJ)! heat release from rainfall (W/m2)
 !  hfx_res_1d(JJ) = 0. ! 
-  hfx_snw_1d(JJ) = hfx_snw_1d(JJ) - zdq(JJ) * r1_Dt_ice * a_i_1d(JJ)  !ZP_DELHEATN(JJ) ! total heat content change in the snow 
+  hfx_snw_1d(JJ) = hfx_snw_1d(JJ) - zdq(JJ) * r1_Dt_ice !* a_i_1d(JJ)  !ZP_DELHEATN(JJ) ! total heat content change in the snow 
   zq_rema       (JJ)   = (ZP_GFLXCOR     (JJ) + ZP_RADXS (JJ)) * rDt_ice ! En J / m2
    
   ! We put 0 to all heat fluxes except from wfx_snw_sum that we now consider as the total mass change in snow
-  wfx_spr_1d    (JJ)   =  -(ZP_SRSNOW  (JJ) + ZP_RRSNOW(JJ) - ZP_EVAP(JJ)) * a_i_1d(JJ) !* za_s_fra(JJ)! wfx_spr_1d    (JJ) + ZP_SRSNOW  (JJ) + ZP_RRSNOW(JJ) !+ ZP_EVAPCOR(JJ) + ZP_SOILCOR(JJ) 
-  wfx_snw_sub_1d   (JJ)   = 0.
+  wfx_spr_1d    (JJ)   =  -(ZP_SRSNOW  (JJ) + ZP_RRSNOW(JJ) ) * a_i_1d(JJ) ! METTRE EVAP A SUB 
+  wfx_snw_sub_1d   (JJ)   = ZP_EVAP(JJ) * a_i_1d(JJ)
   IF((h_s_bef(JJ) .eq. 0.) .AND. (h_s_1d(JJ) .eq. 0.)) THEN 
      ! IF all snow is melted, all precip are considered as melted 
+     PRINT*,'WE ARE HEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEERE'
      wfx_snw_sum_1d(JJ)   = wfx_spr_1d    (JJ)  
   ELSE
      wfx_snw_sum_1d(JJ)   =  ZP_THRUFAL     (JJ) * a_i_1d(JJ)! rate that liquid water leaves snow pack (kg/(m2 s)): 
@@ -509,13 +524,14 @@ DO JJ=1,KSIZE1
   zevap_rema    (JJ)   = (ZP_EVAPCOR(JJ) + ZP_SOILCOR(JJ)) * rDt_ice
   ! Surface total flux => Qtot = qns_ice_1d(ji) + qsr_ice_1d(ji) - qtr_ice_top_1d(ji) - qcn_ice_top_1d(ji)                                            
   qns_ice_1d(JJ) = ZP_LES3L(JJ) + ZP_LEL3L(JJ) + ZP_HSNOW(JJ) + ZP_LWNETSNOW(JJ)
-!  qcn_ice_top_1d(JJ) = ZP_GSFCSNOW(JJ)
+!  qcn_ice_top_1d(JJ) = ZP_RESTOREN(JJ)
 !  qtr_ice_top_1d(JJ) =  ZP_SW_RAD(JJ) * ZP_SNOWALB     (JJ)
 
 ENDDO
+
 PRINT*,'H after snow3l', h_s_1d(1)
 PRINT*,'T° after snow3l',t_s_1d(1,:)
-
+PRINT*,'Mass difference', zdm *a_i_1d * r1_Dt_ice
 ! Other inout variables that we do not need (à priori??)
 ! PRNSNOW, ! Not needed (à priori)
 ! PHSNOW, ! 

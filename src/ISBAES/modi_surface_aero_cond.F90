@@ -2,7 +2,7 @@
 MODULE MODI_SURFACE_AERO_COND
 INTERFACE
     SUBROUTINE SURFACE_AERO_COND(PRI, PZREF, PUREF, PVMOD, PZ0,&
-                                     PZ0H, PAC, PRA, PCH           ) 
+                                     PZ0H, PAC, PRA, PCH,HSNOWRES           ) 
 REAL, DIMENSION(:), INTENT(IN)    :: PRI      ! Richardson number
 REAL, DIMENSION(:), INTENT(IN)    :: PVMOD    ! module of the horizontal wind
 REAL, DIMENSION(:), INTENT(IN)    :: PZREF    ! reference height of the first
@@ -12,6 +12,8 @@ REAL, DIMENSION(:), INTENT(IN)    :: PZ0H     ! roughness length for heat
 REAL, DIMENSION(:), INTENT(OUT)   :: PAC      ! aerodynamical conductance
 REAL, DIMENSION(:), INTENT(OUT)   :: PRA      ! aerodynamical resistance
 REAL, DIMENSION(:), INTENT(OUT)   :: PCH      ! drag coefficient for heat
+CHARACTER(LEN=3), INTENT(IN), OPTIONAL :: HSNOWRES !surface exchange coefficient option
+
 END SUBROUTINE SURFACE_AERO_COND
 
 END INTERFACE

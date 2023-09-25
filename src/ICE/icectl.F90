@@ -48,7 +48,7 @@ MODULE icectl
    ! thresold rates for conservation
    !    these values are changed by the namelist parameter rn_icechk, so that threshold = zchk * rn_icechk
    REAL(wp), PARAMETER ::   rchk_m   = 2.5e-7   ! kg/m2/s <=> 1e-6 m of ice per hour spuriously gained/lost
-   REAL(wp), PARAMETER ::   rchk_s   = 1000. ! 2.5e-6   ! g/m2/s  <=> 1e-6 m of ice per hour spuriously gained/lost (considering s=10g/kg)
+   REAL(wp), PARAMETER ::   rchk_s   = 2.5e-6   ! g/m2/s  <=> 1e-6 m of ice per hour spuriously gained/lost (considering s=10g/kg)
    REAL(wp), PARAMETER ::   rchk_t   = 7.5e-2   ! W/m2    <=> 1e-6 m of ice per hour spuriously gained/lost (considering Lf=3e5J/kg)
 
    ! for drift outputs
@@ -94,7 +94,7 @@ CONTAINS
       IF(.NOT. ln_isbaes) THEN
           ztmp3(:,:,1) = SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
       ELSE
-          ztmp3(:,:,1) = SUM( v_i * rhoi + SUM(rho_s * dh_s ,dim=3) * a_i + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
+          ztmp3(:,:,1) = SUM( v_i * rhoi + SUM(rho_s * dv_s ,dim=3) + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
       ENDIF
       ztmp3(:,:,2) = SUM( sv_i * rhoi, dim=3 ) * e1e2t                                             ! salt
       ztmp3(:,:,3) = ( SUM( SUM( e_i, dim=4 ), dim=3 ) + SUM( SUM( e_s, dim=4 ), dim=3 ) ) * e1e2t ! heat
@@ -148,6 +148,7 @@ CONTAINS
 
       ! -- global sum -- !
       zchk3(1:6) = glob_sum_vec( 'icectl', ztmp3(:,:,1:6) )
+      PRINT*,'SUM v_s * rho_s',SUM(rho_s * dh_s ,dim=3) * a_i, 'icount=',icount
 
       IF( icount == 0 ) THEN
          !
@@ -164,10 +165,9 @@ CONTAINS
          zdiag_mass = ( zchk3(1) - pdiag_v ) * r1_Dt_ice + ( zchk3(4) - pdiag_fv )
          zdiag_salt = ( zchk3(2) - pdiag_s ) * r1_Dt_ice + ( zchk3(5) - pdiag_fs )
          zdiag_heat = ( zchk3(3) - pdiag_t ) * r1_Dt_ice + ( zchk3(6) - pdiag_ft )
-
-         PRINT*,'Diag mass',( zchk3(1) - pdiag_v ) /e1e2t!* r1_Dt_ice
-         PRINT*,'Diag heat',( zchk3(3) - pdiag_t ) /e1e2t!* r1_Dt_ice
-         PRINT*,'Diag salt',( zchk3(2) - pdiag_s ) /e1e2t!* r1_Dt_ice
+         PRINT*,'Diag mass delta',( zchk3(1) - pdiag_v ) /e1e2t!* r1_Dt_ice
+         PRINT*,'Diag heat delta',( zchk3(3) - pdiag_t ) /e1e2t!* r1_Dt_ice
+         PRINT*,'Diag salt delta',( zchk3(2) - pdiag_s ) /e1e2t!* r1_Dt_ice
          PRINT*,'Diag mass 2',( zchk3(4) - pdiag_fv )/ (r1_Dt_ice* e1e2t)  
          PRINT*,'Diag heat 2',( zchk3(6) - pdiag_ft )/ (r1_Dt_ice* e1e2t)
          PRINT*,'Diag salt 2',( zchk3(5) - pdiag_fs )/ (r1_Dt_ice* e1e2t)
@@ -293,7 +293,7 @@ CONTAINS
          IF(.NOT. ln_isbaes) THEN
              pdiag_v = SUM( v_i  * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 )
          ELSE
-             pdiag_v = SUM( v_i  * rhoi + SUM(rho_s * dh_s ,dim=3)* a_i + ( v_ip + v_il ) * rhow, dim=3 )
+             pdiag_v = SUM( v_i  * rhoi + SUM(rho_s * dv_s ,dim=3) + ( v_ip + v_il ) * rhow, dim=3 )
          ENDIF
          pdiag_s = SUM( sv_i * rhoi , dim=3 )
          pdiag_t = SUM( SUM( e_i, dim=4 ), dim=3 ) + SUM( SUM( e_s, dim=4 ), dim=3 )
@@ -315,7 +315,7 @@ CONTAINS
                &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
                &         - pdiag_fv
          ELSE
-            zdiag_mass =   ( SUM( v_i * rhoi + SUM(rho_s * dh_s , dim=3)* a_i  + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
+            zdiag_mass =   ( SUM( v_i * rhoi + SUM(rho_s * dv_s , dim=3)  + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
                &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
                &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
                &         - pdiag_fv

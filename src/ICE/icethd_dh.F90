@@ -131,6 +131,7 @@ CONTAINS
       DO ji = 1, npti
          zq_top(ji) = zq_rema(ji)
       END DO
+      PRINT*,'zq_rema',zq_rema
       !
       ! initialize ice layer thicknesses and enthalpies
       eh_i_old(1:npti,0:nlay_i+1) = 0._wp
@@ -397,231 +398,233 @@ CONTAINS
          END DO
       END DO
       PRINT*,'ICE HEIGHT',h_i_1d(1)
-      IF(ln_isbaes) THEN
-         ! With isbaes, snow grid height are not constant along the vertical
-         ! Thus, changes in snow height due to snow to ice conversion may impact cells with different size on the vertical
-         ! Therefore, enthalpies and snow age are multiplied by the grid thicknesses and we use these quantities instead      
-         DO ji = 1, npti
-            eh_s_1d(ji,:) = e_s_1D(ji,:) * dh_s_1d(ji,:) !* a_i_1d(ji)
-            oh_s_1d(ji,:) = o_s_1d(ji,:) * dh_s_1d(ji,:) !* a_i_1d(ji)
-         END DO
-      ENDIF
-
-      ! Remove snow if ice has melted entirely
-      ! --------------------------------------
-      DO jk = 0, nlay_s
-         DO ji = 1,npti
-            IF( h_i_1d(ji) == 0._wp ) THEN
-               ! mass & energy loss to the ocean
-               hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
-               IF( ln_isbaes) THEN
-                   ! Mass flux is computed from 3D density arrays instead of constant density
-                   wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk)        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-
-                   dh_s_1d(ji,jk) = 0._wp
-                   swe_s_1d(ji,jk) = 0._wp
-               ELSE
-                    wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-               ENDIF
-
-               wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-
-               ! update thickness and energy
-               h_s_1d(ji)    = 0._wp
-               ze_s  (ji,jk) = 0._wp
-               zh_s  (ji,jk) = 0._wp
-            ENDIF
-         END DO
-      END DO
-
-      ! Snow load on ice
-      ! -----------------
-      ! When snow load exceeds Archimede's limit and sst is positive,
-      ! snow-ice formation (next bloc) can lead to negative ice enthalpy.
-      ! Therefore we consider here that this excess of snow falls into the ocean
-      IF(ln_isbaes) THEN
-         DO ji = 1, npti
-             IF(h_s_1d(ji) > 0.00000000000000001) THEN
-                zdeltah(ji) = h_s_1d(ji) + h_i_1d(ji) * (rhoi-rho0) * (1._wp / (SUM(rho_s_1d(ji,:)*dh_s_1d(ji,:))/h_s_1d(ji)))
-             ELSE
-                zdeltah(ji) = 0._wp
-             ENDIF
-         END DO
-      ELSE
-         zdeltah(1:npti) = h_s_1d(1:npti) + h_i_1d(1:npti) * (rhoi-rho0) * r1_rhos
-      ENDIF
-      
-      DO jk = 0, nlay_s
-         DO ji = 1, npti
-            IF( zdeltah(ji) > 0._wp .AND. sst_1d(ji) > 0._wp ) THEN
-               ! snow layer thickness that falls into the ocean
-               zdum = MIN( zdeltah(ji) , zh_s(ji,jk) )
-               ! mass & energy loss to the ocean
-               hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
-               IF(ln_isbaes) THEN
-                  wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk)        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-                  ! update thickness and energy
-                  eh_s_1d(ji,jk)= MAX( 0._wp, eh_s_1d(ji,jk) - zdum * e_s_1d(ji,jk))
-               ELSE
-                  wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-               ENDIF 
-               h_s_1d(ji)    = MAX( 0._wp, h_s_1d(ji)  - zdum )
-               zh_s  (ji,jk) = MAX( 0._wp, zh_s(ji,jk) - zdum )
-               ! update snow thickness that still has to fall
-               zdeltah(ji)   = MAX( 0._wp, zdeltah(ji) - zdum )
-            ENDIF
-         END DO
-      END DO
-
-      ! Snow-Ice formation
-      ! ------------------
-      ! When snow load exceeds Archimede's limit, snow-ice interface goes down under sea-level,
-      ! flooding of seawater transforms snow into ice. Thickness that is transformed is dh_snowice (positive for the ice)
-      z1_rho = 1._wp / ( rhos+rho0-rhoi )
-      IF(ln_isbaes) THEN
-         DO ji = 1, npti
-           IF(h_s_1d(ji) > 0.00000000000000001) THEN
-               z1_rho_isbaes(ji) = 1._wp / ( SUM(rho_s_1d(ji,:)*dh_s_1d(ji,:))/h_s_1d(ji) + rho0-rhoi )
-           ELSE
-               z1_rho_isbaes(ji) = 0._wp ! Not used anyway, so we can assign a random value
-           ENDIF
-         END DO
-      ENDIF
-
-      zdeltah(1:npti) = 0._wp
-      DO ji = 1, npti
-         !
-         IF(h_s_1d(ji) > 0.00000000000000001) THEN
-            IF(ln_isbaes) THEN
-               ! dh_snowice is computed from a variying density
-               dh_snowice(ji) = MAX( 0._wp , ( SUM(rho_s_1d(ji,:) * dh_s_1d(ji,:)) + (rhoi-rho0) * h_i_1d(ji) ) * z1_rho_isbaes(ji) )
-            ELSE     
-               dh_snowice(ji) = MAX( 0._wp , ( rhos * h_s_1d(ji) + (rhoi-rho0) * h_i_1d(ji) ) * z1_rho )
-            ENDIF
-            h_i_1d(ji)    = h_i_1d(ji) + dh_snowice(ji)
-            h_s_1d(ji)    = h_s_1d(ji) - dh_snowice(ji)
-            ! Mass flux: All snow is thrown in the ocean, and seawater is taken to replace the volume
-            wfx_sni_1d    (ji) = wfx_sni_1d    (ji) - dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice
-
-            IF(ln_isbaes) THEN
-               ! We compute heat & salt fluxes from a varying density
-               zdum = SUM(rho_s_1d(ji,:)*dh_s_1d(ji,:))/h_s_1d(ji)
-               zfmdt          = ( zdum - rhoi ) * dh_snowice(ji)    ! <0
-               zEw            = rcp * sst_1d(ji)
-               zQm            = zfmdt * zEw
-
-               hfx_thd_1d(ji) = hfx_thd_1d(ji)  + zEw        * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Heat flux
-               sfx_sni_1d(ji) = sfx_sni_1d(ji) + sss_1d(ji) * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Salt flux
-
-                  ! Case constant salinity in time: virtual salt flux to keep salinity constant
-                  IF( nn_icesal /= 2 )  THEN
-                     sfx_bri_1d(ji) = sfx_bri_1d(ji) - sss_1d(ji) * zfmdt                 * a_i_1d(ji) * r1_Dt_ice  &  ! put back sss_m     into the ocean
-                        &                            - s_i_1d(ji) * dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice     ! and get  rn_icesal from the ocean
-                  ENDIF
-            ELSE
-               zfmdt          = ( rhos - rhoi ) * dh_snowice(ji)    ! <0
-               zEw            = rcp * sst_1d(ji)
-               zQm            = zfmdt * zEw
-
-               hfx_thd_1d(ji) = hfx_thd_1d(ji)  + zEw        * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Heat flux
-               sfx_sni_1d(ji) = sfx_sni_1d(ji) + sss_1d(ji) * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Salt flux
-
-                  ! Case constant salinity in time: virtual salt flux to keep salinity constant
-                  IF( nn_icesal /= 2 )  THEN
-                     sfx_bri_1d(ji) = sfx_bri_1d(ji) - sss_1d(ji) * zfmdt                 * a_i_1d(ji) * r1_Dt_ice  &  ! put back sss_m     into the ocean
-                        &                            - s_i_1d(ji) * dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice     ! and get  rn_icesal from the ocean
-                  ENDIF
-
-                  wfx_snw_sni_1d(ji) = wfx_snw_sni_1d(ji) + dh_snowice(ji) * rhos * a_i_1d(ji) * r1_Dt_ice
-            ENDIF        
-         
-            ! update thickness
-            zh_i(ji,0)  = zh_i(ji,0) + dh_snowice(ji)
-            zdeltah(ji) =              dh_snowice(ji)
-
-            ! update heat content (J.m-2) and layer thickness
-            h_i_old (ji,0) = h_i_old (ji,0) + dh_snowice(ji)
-            eh_i_old(ji,0) = eh_i_old(ji,0) + zfmdt * zEw           ! 1st part (sea water enthalpy)
-
-         ELSE ! IF(h_s_1d(ji) > 0.00000000000000001
-            ! we set fluxes to 0. (this is just to avoid nans)    
-            zdeltah(ji) = 0._wp
-            dh_snowice(ji) = 0._wp
-            wfx_sni_1d(ji) = 0._wp
-            wfx_snw_sni_1d(ji) = 0._wp
-         ENDIF 
-      END DO
-      !
-      DO jk = nlay_s, 1, -1   ! flooding of snow starts from the base
-         DO ji = 1, npti
-            zdum           = MIN( zdeltah(ji), zh_s(ji,jk) )     ! amount of snw that floods, > 0
-            zh_s(ji,jk)    = MAX( 0._wp, zh_s(ji,jk) - zdum )    ! remove some snow thickness
-            eh_i_old(ji,0) = eh_i_old(ji,0) + zdum * ze_s(ji,jk) ! 2nd part (snow enthalpy)
-
-            IF(ln_isbaes) THEN
-               ! When ln_isbaes=T, remove enthalpy per snow layer
-               ! => This is necessary as thicknesses are constant 
-               ! 
-               eh_s_1d(ji,jk) = eh_s_1d(ji,jk) - zdum * ze_s(ji,jk)
-
-               ! Mass flux is computed from 3D densities
-               wfx_snw_sni_1d(ji) = wfx_snw_sni_1d(ji) + zdum * rho_s_1d(ji,jk) *a_i_1d(ji) * r1_Dt_ice
-            ENDIF
-            ! update dh_snowice
-            zdeltah(ji)    = MAX( 0._wp, zdeltah(ji) - zdum )
-         END DO
-      END DO
-
-      IF(ln_isbaes) THEN
-           ! If ln_isbaes:
-           ! - We compute a new grid according to the new snow height after snow / ice conversion
-           ! - Then, we regrid snow quantities on this new grid
-           ! This is necessary, since those quantities will be advected later on
-
-           DO ji = 1, npti
-              h_s_1d(ji) = SUM(zh_s(ji,:)) ! Compute new total snow height
-           END DO
-           rho_s_bef(:,:) = rho_s_1d(:,:)
-           
-           ! We recompute the isbaes grid from the new snow height            
-           CALL SNOW3LGRID(dh_s_1d(:,1:nlay_s),h_s_1d(:),PSNOWDZ_OLD=zh_s(:,1:nlay_s))
-
-           !
-           ! Mass/Heat redistribution:
-           !
-           ! Regrid quantities on the new grid 
-           CALL SNOW3LTRANSF(h_s_1d(:),zh_s(:,1:nlay_s), dh_s_1d(:,:),rho_s_1d(:,:),eh_s_1d(:,:),oh_s_1d(:,:))
-           !
-
-           DO ji = 1, npti
-              IF(h_s_1d(ji) > 0.00000000000000001) THEN
-                 ! Recompute snow enthalpies and age 
-                 dh_s_1d(ji,:) = zh_s(ji,1:nlay_s)
-   
-                 e_s_1d(ji,:) = eh_s_1d(ji,:) / (dh_s_1d(ji,:)) 
-                 o_s_1d(ji,:) = oh_s_1d(ji,:) / (dh_s_1d(ji,:)) 
-              ELSE
-                 ! We reset rho to previous value when snow height = 0 just to avoid having nans
-                 rho_s_1d(:,:) = rho_s_bef(:,:) 
-              ENDIF
-
-           END DO
-       ENDIF
-           ! recalculate t_s_1d from e_s_1d
-           DO jk = 1, nlay_s
-              DO ji = 1,npti
-                 IF( h_s_1d(ji) > 0._wp ) THEN
-                    IF(ln_isbaes) THEN
-                       t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * (1 / rho_s_1d(ji,jk)) * r1_rcpi + rLfus * r1_rcpi ) 
-                    ELSE        
-                       t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
-                    ENDIF
-                 ELSE
-                    t_s_1d(ji,jk) = rt0
-                 ENDIF
-              END DO
-           END DO
-      PRINT*,'H_s_1d after sni', h_s_1d(1)
+!      IF(ln_isbaes) THEN
+!         ! With isbaes, snow grid height are not constant along the vertical
+!         ! Thus, changes in snow height due to snow to ice conversion may impact cells with different size on the vertical
+!         ! Therefore, enthalpies and snow age are multiplied by the grid thicknesses and we use these quantities instead      
+!         DO ji = 1, npti
+!            eh_s_1d(ji,:) = e_s_1D(ji,:) * dh_s_1d(ji,:) !* a_i_1d(ji)
+!            oh_s_1d(ji,:) = o_s_1d(ji,:) * dh_s_1d(ji,:) !* a_i_1d(ji)
+!         END DO
+!      ENDIF
+!
+!      ! Remove snow if ice has melted entirely
+!      ! --------------------------------------
+!      DO jk = 0, nlay_s
+!         DO ji = 1,npti
+!            IF( h_i_1d(ji) == 0._wp ) THEN
+!               ! mass & energy loss to the ocean
+!               hfx_res_1d(ji) = hfx_res_1d(ji) - e_s_1d(ji,jk) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+!               IF( ln_isbaes) THEN
+!                   ! Mass flux is computed from 3D density arrays instead of constant density
+!                   wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk)        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+!
+!                   dh_s_1d(ji,jk) = 0._wp
+!                   swe_s_1d(ji,jk) = 0._wp
+!               ELSE
+!                    wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+!               ENDIF
+!
+!               wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+!
+!               ! update thickness and energy
+!               h_s_1d(ji)    = 0._wp
+!               e_s_1d  (ji,jk) = 0._wp
+!               zh_s  (ji,jk) = 0._wp
+!               dh_s_1d(ji,jk) = 0._wp
+!            ENDIF
+!         END DO
+!      END DO
+!      PRINT*,'Ice height after melt',h_i_1d
+!
+!      ! Snow load on ice
+!      ! -----------------
+!      ! When snow load exceeds Archimede's limit and sst is positive,
+!      ! snow-ice formation (next bloc) can lead to negative ice enthalpy.
+!      ! Therefore we consider here that this excess of snow falls into the ocean
+!      IF(ln_isbaes) THEN
+!         DO ji = 1, npti
+!             IF(h_s_1d(ji) > 0.00000000000000001) THEN
+!                zdeltah(ji) = h_s_1d(ji) + h_i_1d(ji) * (rhoi-rho0) * (1._wp / (SUM(rho_s_1d(ji,:)*dh_s_1d(ji,:))/h_s_1d(ji)))
+!             ELSE
+!                zdeltah(ji) = 0._wp
+!             ENDIF
+!         END DO
+!      ELSE
+!         zdeltah(1:npti) = h_s_1d(1:npti) + h_i_1d(1:npti) * (rhoi-rho0) * r1_rhos
+!      ENDIF
+!      
+!      DO jk = 0, nlay_s
+!         DO ji = 1, npti
+!            IF( zdeltah(ji) > 0._wp .AND. sst_1d(ji) > 0._wp ) THEN
+!               ! snow layer thickness that falls into the ocean
+!               zdum = MIN( zdeltah(ji) , zh_s(ji,jk) )
+!               ! mass & energy loss to the ocean
+!               hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+!               IF(ln_isbaes) THEN
+!                  wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk)        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+!                  ! update thickness and energy
+!                  eh_s_1d(ji,jk)= MAX( 0._wp, eh_s_1d(ji,jk) - zdum * e_s_1d(ji,jk))
+!               ELSE
+!                  wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+!               ENDIF 
+!               h_s_1d(ji)    = MAX( 0._wp, h_s_1d(ji)  - zdum )
+!               zh_s  (ji,jk) = MAX( 0._wp, zh_s(ji,jk) - zdum )
+!               ! update snow thickness that still has to fall
+!               zdeltah(ji)   = MAX( 0._wp, zdeltah(ji) - zdum )
+!            ENDIF
+!         END DO
+!      END DO
+!
+!      ! Snow-Ice formation
+!      ! ------------------
+!      ! When snow load exceeds Archimede's limit, snow-ice interface goes down under sea-level,
+!      ! flooding of seawater transforms snow into ice. Thickness that is transformed is dh_snowice (positive for the ice)
+!      z1_rho = 1._wp / ( rhos+rho0-rhoi )
+!      IF(ln_isbaes) THEN
+!         DO ji = 1, npti
+!           IF(h_s_1d(ji) > 0.00000000000000001) THEN
+!               z1_rho_isbaes(ji) = 1._wp / ( SUM(rho_s_1d(ji,:)*dh_s_1d(ji,:))/h_s_1d(ji) + rho0-rhoi )
+!           ELSE
+!               z1_rho_isbaes(ji) = 0._wp ! Not used anyway, so we can assign a random value
+!           ENDIF
+!         END DO
+!      ENDIF
+!
+!      zdeltah(1:npti) = 0._wp
+!      DO ji = 1, npti
+!         !
+!         IF(h_s_1d(ji) > 0.00000000000000001) THEN
+!            IF(ln_isbaes) THEN
+!               ! dh_snowice is computed from a variying density
+!               dh_snowice(ji) = MAX( 0._wp , ( SUM(rho_s_1d(ji,:) * dh_s_1d(ji,:)) + (rhoi-rho0) * h_i_1d(ji) ) * z1_rho_isbaes(ji) )
+!            ELSE     
+!               dh_snowice(ji) = MAX( 0._wp , ( rhos * h_s_1d(ji) + (rhoi-rho0) * h_i_1d(ji) ) * z1_rho )
+!            ENDIF
+!            h_i_1d(ji)    = h_i_1d(ji) + dh_snowice(ji)
+!            h_s_1d(ji)    = h_s_1d(ji) - dh_snowice(ji)
+!            ! Mass flux: All snow is thrown in the ocean, and seawater is taken to replace the volume
+!            wfx_sni_1d    (ji) = wfx_sni_1d    (ji) - dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice
+!
+!            IF(ln_isbaes) THEN
+!               ! We compute heat & salt fluxes from a varying density
+!               zdum = SUM(rho_s_1d(ji,:)*dh_s_1d(ji,:))/h_s_1d(ji)     ! BOUCLER LA DESSUS
+!               zfmdt          = ( zdum - rhoi ) * dh_snowice(ji)    ! <0
+!               zEw            = rcp * sst_1d(ji)
+!               zQm            = zfmdt * zEw
+!
+!               hfx_thd_1d(ji) = hfx_thd_1d(ji)  + zEw        * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Heat flux
+!               sfx_sni_1d(ji) = sfx_sni_1d(ji) + sss_1d(ji) * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Salt flux
+!
+!                  ! Case constant salinity in time: virtual salt flux to keep salinity constant
+!                  IF( nn_icesal /= 2 )  THEN
+!                     sfx_bri_1d(ji) = sfx_bri_1d(ji) - sss_1d(ji) * zfmdt                 * a_i_1d(ji) * r1_Dt_ice  &  ! put back sss_m     into the ocean
+!                        &                            - s_i_1d(ji) * dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice     ! and get  rn_icesal from the ocean
+!                  ENDIF
+!            ELSE
+!               zfmdt          = ( rhos - rhoi ) * dh_snowice(ji)    ! <0
+!               zEw            = rcp * sst_1d(ji)
+!               zQm            = zfmdt * zEw
+!
+!               hfx_thd_1d(ji) = hfx_thd_1d(ji)  + zEw        * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Heat flux
+!               sfx_sni_1d(ji) = sfx_sni_1d(ji) + sss_1d(ji) * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Salt flux
+!
+!                  ! Case constant salinity in time: virtual salt flux to keep salinity constant
+!                  IF( nn_icesal /= 2 )  THEN
+!                     sfx_bri_1d(ji) = sfx_bri_1d(ji) - sss_1d(ji) * zfmdt                 * a_i_1d(ji) * r1_Dt_ice  &  ! put back sss_m     into the ocean
+!                        &                            - s_i_1d(ji) * dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice     ! and get  rn_icesal from the ocean
+!                  ENDIF
+!
+!                  wfx_snw_sni_1d(ji) = wfx_snw_sni_1d(ji) + dh_snowice(ji) * rhos * a_i_1d(ji) * r1_Dt_ice
+!            ENDIF        
+!         
+!            ! update thickness
+!            zh_i(ji,0)  = zh_i(ji,0) + dh_snowice(ji)
+!            zdeltah(ji) =              dh_snowice(ji)
+!
+!            ! update heat content (J.m-2) and layer thickness
+!            h_i_old (ji,0) = h_i_old (ji,0) + dh_snowice(ji)
+!            eh_i_old(ji,0) = eh_i_old(ji,0) + zfmdt * zEw           ! 1st part (sea water enthalpy)
+!
+!         ELSE ! IF(h_s_1d(ji) > 0.00000000000000001
+!            ! we set fluxes to 0. (this is just to avoid nans)    
+!            zdeltah(ji) = 0._wp
+!            dh_snowice(ji) = 0._wp
+!            wfx_sni_1d(ji) = 0._wp
+!            wfx_snw_sni_1d(ji) = 0._wp
+!         ENDIF 
+!      END DO
+!      !
+!      DO jk = nlay_s, 1, -1   ! flooding of snow starts from the base
+!         DO ji = 1, npti
+!            zdum           = MIN( zdeltah(ji), zh_s(ji,jk) )     ! amount of snw that floods, > 0
+!            zh_s(ji,jk)    = MAX( 0._wp, zh_s(ji,jk) - zdum )    ! remove some snow thickness
+!            eh_i_old(ji,0) = eh_i_old(ji,0) + zdum * ze_s(ji,jk) ! 2nd part (snow enthalpy)
+!
+!            IF(ln_isbaes) THEN
+!               ! When ln_isbaes=T, remove enthalpy per snow layer
+!               ! => This is necessary as thicknesses are constant 
+!               ! 
+!               eh_s_1d(ji,jk) = eh_s_1d(ji,jk) - zdum * ze_s(ji,jk)
+!
+!               ! Mass flux is computed from 3D densities
+!               wfx_snw_sni_1d(ji) = wfx_snw_sni_1d(ji) + zdum * rho_s_1d(ji,jk) *a_i_1d(ji) * r1_Dt_ice
+!            ENDIF
+!            ! update dh_snowice
+!            zdeltah(ji)    = MAX( 0._wp, zdeltah(ji) - zdum )
+!         END DO
+!      END DO
+!
+!      IF(ln_isbaes) THEN
+!           ! If ln_isbaes:
+!           ! - We compute a new grid according to the new snow height after snow / ice conversion
+!           ! - Then, we regrid snow quantities on this new grid
+!           ! This is necessary, since those quantities will be advected later on
+!
+!           DO ji = 1, npti
+!              h_s_1d(ji) = SUM(zh_s(ji,:)) ! Compute new total snow height
+!           END DO
+!           rho_s_bef(:,:) = rho_s_1d(:,:)
+!           
+!           ! We recompute the isbaes grid from the new snow height            
+!           CALL SNOW3LGRID(dh_s_1d(:,1:nlay_s),h_s_1d(:),PSNOWDZ_OLD=zh_s(:,1:nlay_s))
+!
+!           !
+!           ! Mass/Heat redistribution:
+!           !
+!           ! Regrid quantities on the new grid 
+!           CALL SNOW3LTRANSF(h_s_1d(:),zh_s(:,1:nlay_s), dh_s_1d(:,:),rho_s_1d(:,:),eh_s_1d(:,:),oh_s_1d(:,:))
+!           !
+!
+!           DO ji = 1, npti
+!              IF(h_s_1d(ji) > 0.00000000000000001) THEN
+!                 ! Recompute snow enthalpies and age 
+!                 dh_s_1d(ji,:) = zh_s(ji,1:nlay_s)
+!   
+!                 e_s_1d(ji,:) = eh_s_1d(ji,:) / (dh_s_1d(ji,:)) 
+!                 o_s_1d(ji,:) = oh_s_1d(ji,:) / (dh_s_1d(ji,:)) 
+!              ELSE
+!                 ! We reset rho to previous value when snow height = 0 just to avoid having nans
+!                 rho_s_1d(:,:) = rho_s_bef(:,:) 
+!              ENDIF
+!
+!           END DO
+!       ENDIF
+!           ! recalculate t_s_1d from e_s_1d
+!           DO jk = 1, nlay_s
+!              DO ji = 1,npti
+!                 IF( h_s_1d(ji) > 0._wp ) THEN
+!                    IF(ln_isbaes) THEN
+!                       t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * (1 / rho_s_1d(ji,jk)) * r1_rcpi + rLfus * r1_rcpi ) 
+!                    ELSE        
+!                       t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
+!                    ENDIF
+!                 ELSE
+!                    t_s_1d(ji,jk) = rt0
+!                 ENDIF
+!              END DO
+!           END DO
+!      PRINT*,'H_s_1d after sni', h_s_1d(1)
 
 !      !
 !      !

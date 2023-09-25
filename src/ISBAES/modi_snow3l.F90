@@ -1,7 +1,7 @@
 !depfile:snow3l.F90
 MODULE MODI_SNOW3L
 INTERFACE
-      SUBROUTINE SNOW3L(HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,           &
+      SUBROUTINE SNOW3L(HSNOWRES, TPTIME, OMEB,OSI3, HIMPLICIT_WIND,           &
                 PPEW_A_COEF, PPEW_B_COEF,                                 &
                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,       &
                 PSNOWSWE,PSNOWRHO,PSNOWHEAT,PSNOWALB,                     &
@@ -12,15 +12,16 @@ INTERFACE
                 PZREF,PZ0,PZ0EFF,PZ0H,PALB,                               &
                 PSOILCOND,PD_G,PLVTT,PLSTT,                               &
                 PSNOWLIQ,PSNOWTEMP,PSNOWDZ,                               &
-                PTHRUFAL,PGRNDFLUX,PEVAPCOR,PSOILCOR,                     &
-                PGFLXCOR,PSNOWSFCH, PDELHEATN, PDELHEATN_SFC,             &
-                PSWNETSNOW,PSWNETSNOWS,PLWNETSNOW,PSNOWFLUX,              &
+                PTHRUFAL,PSNOWMELT,PSNREFREEZ,                            &
+                PGRNDFLUX,PEVAPCOR,PSOILCOR,                              &
+                PGFLXCOR,PSNOWSFCH,PDELHEATN,PDELHEATN_SFC,               &
+                PDELPHASEN, PDELPHASEN_SFC,                               &
+                PSWNETSNOW,PSWNETSNOWS,PLWNETSNOW,PRESTOREN,              &
                 PRNSNOW,PHSNOW,PGFLUXSNOW,                                &
                 PHPSNOW,PLES3L,PLEL3L,PEVAP,PSNDRIFT,PRI,                 &
-                PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS, ZRADXS,    &
+                PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS,ZRADXS,    &
                 PPERMSNOWFRAC,PFORESTFRAC,PZENITH,PXLAT,PXLON,            &
-                OSNOWDRIFT,OSNOWDRIFT_SUBLIM                              )
-                
+                HSNOWDRIFT,OSNOWDRIFT_SUBLIM                              )
                 
                 
 USE MODD_CSTS,     ONLY : XTT, XRHOLW, XLMTT, XCL, XDAY
@@ -56,7 +57,7 @@ LOGICAL, INTENT(IN)                 :: OSI3       ! True = coupled with SI3
 !                                                     ! 'NEW' = Taylor serie, order 1
 !
 REAL, DIMENSION(:), INTENT(IN)    :: PPS, PTA, PSW_RAD, PQA,                       &
-                                         PVMOD, PLW_RAD, PSR, PRR
+                                         PVMOD, PLW_RAD, PSR, PRR  
 !                                      PSW_RAD = incoming solar radiation (W/m2)
 !                                      PLW_RAD = atmospheric infrared radiation (W/m2)
 !                                      PRR     = rain rate [kg/(m2 s)]
@@ -74,7 +75,7 @@ REAL, DIMENSION(:), INTENT(IN)    :: PSOILCOND, PD_G, PPSN3L
 !                                      PPSN3L    = snow fraction
 !
 REAL, DIMENSION(:), INTENT(IN)    :: PZREF, PUREF, PEXNS, PEXNA, PDIRCOSZW, PRHOA, PZ0, PZ0EFF, &
-                                       PALB, PZ0H, PPERMSNOWFRAC, PFORESTFRAC
+                                       PALB, PZ0H, PPERMSNOWFRAC, PFORESTFRAC 
 !                                      PZ0EFF    = roughness length for momentum
 !                                      PZ0       = grid box average roughness length
 !                                      PZ0H      = grid box average roughness length for heat
@@ -92,7 +93,7 @@ REAL, DIMENSION(:), INTENT(IN)    :: PZREF, PUREF, PEXNS, PEXNA, PDIRCOSZW, PRHO
 !
 REAL, DIMENSION(:), INTENT(IN)      :: PPEW_A_COEF, PPEW_B_COEF,                   &
                                          PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,      &
-                                         PPEQ_B_COEF
+                                         PPEQ_B_COEF  
 !                                      PPEW_A_COEF = wind coefficient (m2s/kg)
 !                                      PPEW_B_COEF = wind coefficient (m/s)
 !                                      PPET_A_COEF = A-air temperature coefficient
@@ -159,8 +160,9 @@ REAL, DIMENSION(:,:), INTENT(OUT)   :: PSNOWLIQ, PSNOWDZ
 !                                      PSNOWDZ   = Snow layer(s) thickness (m)
 !
 REAL, DIMENSION(:), INTENT(OUT)     :: PTHRUFAL, PEVAPCOR, PSOILCOR, PGFLXCOR, &
-                                       PSNOWFLUX, PSNOWSFCH, PDELHEATN, PDELHEATN_SFC
-!                                      PTHRUFAL  = rate that liquid water leaves snow pack:
+                                       PRESTOREN, PSNOWSFCH, PDELHEATN, PDELHEATN_SFC, &
+                                       PDELPHASEN, PDELPHASEN_SFC, PSNOWMELT, PSNREFREEZ
+!                                      PTHRUFAL  = rate that liquid water leaves snowpack :
 !                                                  paritioned into soil infiltration/runoff
 !                                                  by ISBA [kg/(m2 s)]
 !                                      PEVAPCOR  = evaporation/sublimation correction term:
@@ -175,12 +177,16 @@ REAL, DIMENSION(:), INTENT(OUT)     :: PTHRUFAL, PEVAPCOR, PSOILCOR, PGFLXCOR, &
 !                                                 balance [kg/(m2 s)]
 !                                      PGFLXCOR  = flux correction to underlying soil for vanishing snowpack
 !                                                  (to put any energy excess from snow to soil) (W/m2)
-!                                      PSNOWFLUX = heat flux between the surface and sub-surface 
+!                                      PRESTOREN = heat flux between the surface and sub-surface 
 !                                                  snow layers (W/m2)
 !                                      PSNOWSFCH = snow surface layer pseudo-heating term owing to
 !                                                  changes in grid thickness            (W m-2)
-!                                      PDELHEATN = total snow heat content change in the surface layer (W m-2)
-!                                      PDELHEATN_SFC = total snow heat content change during the timestep (W m-2)
+!                                      PDELHEATN = total snow heat content change  (W m-2)
+!                                      PDELHEATN_SFC = surface layer snow heat content change during the timestep (W m-2)
+!                                      PDELPHASEN = latent heating due to snow melt/freeze  (W m-2)
+!                                      PDELPHASEN_SFC = latent heating due to surface layer snow melt/freeze  (W m-2)
+!                                      PSNOWMELT = snowmelt in the snowpack  [kg/(m2 s)]
+!                                      PSNREFREEZ = refreezing of water in the snowpack  [kg/(m2 s)]
 !
 REAL, DIMENSION(:), INTENT(OUT)     :: PSNDRIFT
 !                                      PSNDRIFT    = blowing snow sublimation (kg/m2/s)
@@ -199,7 +205,12 @@ REAL, DIMENSION(:), INTENT(OUT)   :: ZRADXS
 REAL, DIMENSION(:), INTENT(IN)    :: PZENITH ! solar zenith angle
 REAL, DIMENSION(:), INTENT(IN)    :: PXLAT,PXLON ! LAT/LON after packing
 !
-LOGICAL, INTENT(IN)               :: OSNOWDRIFT, OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
+CHARACTER(4), INTENT(IN)          :: HSNOWDRIFT  ! Snowdrift scheme :
+                                                 ! 'NONE': No snowdrift scheme
+                                                 !  'DFLT':  Snowdrift scheme activated
+                                                 !  Other options are available in Crocus
+
+LOGICAL, INTENT(IN)               ::  OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
 
 
 END SUBROUTINE SNOW3L
