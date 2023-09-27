@@ -160,6 +160,7 @@
    !
    ln_leadhfx       = .true.          !  heat in the leads is used to melt sea-ice before warming the ocean
    ln_snwext        = .false.           !  Snow thermodynamics treated separately from sea-ice (T) or not (F) 
+   ln_isbaes        = .false.           !  Snow thermodynamics treated separately from sea-ice (T) or not (F)
 /
 !------------------------------------------------------------------------------
 &namthd_snw     !   Snow parameters for thermodynamics
