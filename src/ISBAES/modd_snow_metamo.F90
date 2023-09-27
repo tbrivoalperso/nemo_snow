@@ -56,7 +56,7 @@ REAL, PARAMETER                 :: XDIAFP = 4.E-4
 ! Compaction/Settling Coefficients from Crocus v2.4
 !
 REAL, PARAMETER        :: XVVISC1 = 7.62237E6   ! pre-exponential viscosity factor (UNIT : N m-2 s)
-REAL, SAVE        :: XVVISC3 
+REAL, SAVE        :: XVVISC3 = 0.023  
 ! Default value = 0.023       ! density adjustement in the exponential correction for viscosity (UNIT : m3 kg-1)
 !<B. Cluzet added old compaction parameters from ISBA-ES
 !REAL, PARAMETER        :: XVVISC3_B93 = 0.021    

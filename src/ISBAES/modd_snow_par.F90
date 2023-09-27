@@ -45,71 +45,74 @@ IMPLICIT NONE
 !
 ! Snow emissivity:
 !
-REAL, SAVE       :: XEMISSN
+REAL, PARAMETER       :: XEMISSN=0.99
 !
 ! Minimum and maximum values of the albedo of snow:
 !
-REAL, SAVE       :: XANSMIN
-REAL, SAVE       :: XANSMAX 
+REAL, PARAMETER       :: XANSMIN=0.50
+REAL, PARAMETER       :: XANSMAX=0.85 
 !
 ! Minimum and maximum values of the albedo of permanet snow/ice:
 !
-REAL, SAVE       :: XAGLAMIN
-REAL, SAVE       :: XAGLAMAX
+REAL, PARAMETER       :: XAGLAMIN=0.8
+REAL, PARAMETER       :: XAGLAMAX=0.85
 !
 ! Use recommended settings for snow albedo (FALSE = ISBA default)
 ! 
-LOGICAL,SAVE     :: LMEBREC
+LOGICAL,PARAMETER     :: LMEBREC=.FALSE.
 !
 ! Fraction of maximum value of the albedo of snow that is reached for melting
 ! snow
 !
-REAL, SAVE       :: XANSFRACMEL
+REAL, PARAMETER       :: XANSFRACMEL=1.0
 !
 ! Threeshold temperature above which the snow albedo starts to decrease 
 !
-REAL, SAVE       :: XTEMPANS
+REAL, PARAMETER       :: XTEMPANS=268.15
 !
 ! Minimum value of the albedo of snow reached under canopy vegetation:
 !
-REAL, SAVE       :: XANSMINMEB
+REAL, PARAMETER       :: XANSMINMEB=0.30
 ! 
 ! Prescribed ice albedo in 3 spectral bands for glacier simulation with CROCUS scheme.
-REAL, SAVE       :: XALBICE1,XALBICE2,XALBICE3
+REAL, PARAMETER       :: XALBICE1=0.38
+REAL, PARAMETER       :: XALBICE2=0.23
+REAL, PARAMETER       :: XALBICE3=0.08
 !
 
 ! Density threshold for ice detection in CROCUS scheme.
-REAL, SAVE       :: XRHOTHRESHOLD_ICE
+REAL, PARAMETER       :: XRHOTHRESHOLD_ICE=850.
 
 !for ageing effects
-REAL, SAVE      :: XVAGING_NOGLACIER, XVAGING_GLACIER
+REAL, PARAMETER      :: XVAGING_NOGLACIER=60.
+REAL, PARAMETER      :: XVAGING_GLACIER=900.
 
 ! percentage of the total pore volume to compute the max liquid water holding capacity
-REAL, SAVE      :: XPERCENTAGEPORE
+REAL, PARAMETER      :: XPERCENTAGEPORE=0.05
 
 ! Height (m) of aged snow in glacier case (allows Pn=1)
 !
-REAL, SAVE       :: XHGLA
+REAL, PARAMETER       :: XHGLA=33.3
 ! 
 ! Coefficient for calculation of snow fraction over vegetation
 !
-REAL, SAVE       :: XWSNV
+REAL, PARAMETER       :: XWSNV=5.0
 !
 ! Roughness length of pure snow surface (m)
 !
-REAL, SAVE       :: XZ0SN  
+REAL, PARAMETER       :: XZ0SN=0.001  
 !
 ! Roughness length for heat of pure snow surface (m)
 !
-REAL, SAVE       :: XZ0HSN
+REAL, PARAMETER       :: XZ0HSN=0.0001
 !
 ! Roughness length ratio between ice and snow
-REAL, SAVE       :: XZ0ICEZ0SNOW
+REAL, PARAMETER       :: XZ0ICEZ0SNOW=10.
 !
 ! Snow Melt timescale with D95 (s): needed to prevent time step 
 ! dependence of melt when snow fraction < unity.
 !
-REAL, SAVE       :: XTAU_SMELT
+REAL, PARAMETER       :: XTAU_SMELT=300.
 ! for snow impurity
 REAL,DIMENSION(5), SAVE :: XIMPUR_COEFF !(g/s)
 REAL,DIMENSION(5), SAVE     :: XIMPUR_INIT !(g)
@@ -208,8 +211,7 @@ REAL, PARAMETER      :: XWHOLDMAX_S02 = 0.08 !(-)        fixed value for the max
 !                                   
 ! Maximum Richardson number limit for very stable conditions using the ISBA-ES 'RIL' option
 !
-REAL, SAVE       :: X_RI_MAX
-
+REAL, PARAMETER       :: X_RI_MAX = 0.20
 !                                       
 ! ISBA-ES Maximum snow liquid water holding capacity (fraction by mass) parameters:
 !

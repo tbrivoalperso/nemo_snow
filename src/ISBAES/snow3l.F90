@@ -398,6 +398,7 @@ PSNREFREEZ    (:) = 0.0
 ! and it is updated at the end of this routine.
 !
 PSNOWDZ(:,:) = PSNOWSWE(:,:)/PSNOWRHO(:,:)
+PRINT*,'SUM DZ', SUM(PSNOWDZ(1,:))
 !
 INI          = SIZE(PSNOWSWE(:,:),1)
 INLVLS       = SIZE(PSNOWSWE(:,:),2)    ! total snow layers
@@ -447,6 +448,8 @@ ENDDO
 !
 !*       2.     Snowfall
 !               --------
+PRINT*,'SUM DZ 0',SUM(PSNOWDZ(1,:))
+
 !
 ! Caluclate uppermost density and thickness changes due to snowfall,
 ! and add heat content of falling snow
@@ -477,7 +480,13 @@ ENDWHERE
 !
 ! Mass/Heat redistribution:
 !
+PRINT*,'RHO bef',PSNOWRHO(1,:)
+
 CALL SNOW3LTRANSF(ZSNOW,PSNOWDZ,ZSNOWDZN,PSNOWRHO,PSNOWHEAT,PSNOWAGE)
+PRINT*,'RHO aft',PSNOWRHO(1,:)
+
+PRINT*,'SUM DZ 1',SUM(PSNOWDZ(1,:))
+
 !
 !
 !*       4.     Liquid water content and snow temperature
@@ -500,6 +509,7 @@ ZSNOWTEMP(:,:) = MIN(XTT,ZSNOWTEMP(:,:))
 !*       5.     Snow Compaction
 !               ---------------
 !
+PRINT*,'PSNOWLIQ',PSNOWLIQ
 ! Calculate snow density: compaction/aging: density increases
 !
 CALL SNOW3LCOMPACTN(PTSTEP,PSNOWRHO,PSNOWDZ,ZSNOWTEMP,ZSNOW,PSNOWLIQ)
@@ -513,6 +523,8 @@ ENDIF
 !
 ! Update snow heat content (J/m2):
 !
+PRINT*,'SUM DZ COMPAC',SUM(PSNOWDZ(1,:))
+
 ZSCAP(:,:)     = SNOW3LSCAP(PSNOWRHO)
 PSNOWHEAT(:,:) = PSNOWDZ(:,:)*( ZSCAP(:,:)*(ZSNOWTEMP(:,:)-XTT)        &
                    - XLMTT*PSNOWRHO(:,:) ) + XLMTT*XRHOLW*PSNOWLIQ(:,:)  
@@ -593,7 +605,7 @@ ZSNOWTEMP01(:) = ZSNOWTEMP(:,1) ! save surface snow temperature before update
 !
 ZGRNDFLUXI(:)  = ZGRNDFLUX(:)
 !
-CALL SNOW3LSOLVT(OMEB,PTSTEP,XSNOWDZMIN,PSNOWDZ,ZSCOND,ZSCAP,PTG,              &
+CALL SNOW3LSOLVT(OMEB,OSI3, PTSTEP,XSNOWDZMIN,PSNOWDZ,ZSCOND,ZSCAP,PTG,              &
                    PSOILCOND,PD_G,ZRADSINK,ZCT,ZTSTERM1,ZTSTERM2,              &
                    ZPET_A_COEF_T,ZPEQ_A_COEF_T,ZPET_B_COEF_T,ZPEQ_B_COEF_T,    &
                    ZTA_IC,ZQA_IC,ZGRNDFLUX,ZGRNDFLUXO,ZSNOWTEMP,PRESTOREN      )  
@@ -633,7 +645,11 @@ CALL SNOW3LGONE(PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                            &
 !
 ZSNOWLIQ0(:,:) = PSNOWLIQ(:,:) ! save liquid water profile before update
 !
+PRINT*,'SUM DZ GONE',SUM(PSNOWDZ(1,:))
+
 CALL SNOW3LMELT(PTSTEP,ZSCAP,ZSNOWTEMP,PSNOWDZ,PSNOWRHO,PSNOWLIQ,ZMELTXS)  
+PRINT*,'SUM DZ MELT',SUM(PSNOWDZ(1,:))
+
 !
 !
 !*      10.     Snow water flow, refreezing, and water budget
@@ -724,8 +740,12 @@ PSNOWHEAT(:,:)    = PSNOWDZ(:,:)*( ZSCAP(:,:)*(PSNOWTEMP(:,:)-XTT)        &
 !
 !Add radiation not absorbed by snow to soil/vegetation interface flux
 !
-PGRNDFLUX(:) = ZGRNDFLUXO(:)+ZRADXS(:)
-!
+IF( OSI3) THEN
+   PGRNDFLUX(:) = ZGRNDFLUXO(:)
+ELSE        
+   PGRNDFLUX(:) = ZGRNDFLUXO(:)+ZRADXS(:)
+ENDIF
+   !
 !Comput soil/snow correction heat flux to prevent TG1 numerical oscillations
 !Add any excess heat for melting and liquid water :
 !
@@ -1480,7 +1500,7 @@ END SUBROUTINE SNOW3LEBUD
 !####################################################################
 !####################################################################
 !####################################################################
-      SUBROUTINE SNOW3LSOLVT(OMEB,PTSTEP,PSNOWDZMIN,                  &
+      SUBROUTINE SNOW3LSOLVT(OMEB, OSI3, PTSTEP,PSNOWDZMIN,                  &
                                PSNOWDZ,PSCOND,PSCAP,PTG,              &
                                PSOILCOND,PD_G,                        &
                                PRADSINK,PCT,PTERM1,PTERM2,            &
@@ -1519,6 +1539,7 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 LOGICAL,            INTENT(IN)      :: OMEB
+LOGICAL,            INTENT(IN)      :: OSI3
 !
 REAL,               INTENT(IN)      :: PTSTEP, PSNOWDZMIN
 !
@@ -1551,7 +1572,8 @@ REAL, DIMENSION(SIZE(PTG))                     :: ZSNOWTEMP_DELTA
 REAL, DIMENSION(SIZE(PSNOWDZ,1),SIZE(PSNOWDZ,2)) :: ZSNOWTEMP, ZDTERM, ZCTERM, &
                                                       ZFRCV, ZAMTRX, ZBMTRX,     &
                                                       ZCMTRX  
-!
+REAL, DIMENSION(SIZE(PSNOWDZ,1))                  :: ZKAPPA_SI ! Kappa factor to compute the conduction flux as in SI3
+                                              !
 REAL, DIMENSION(SIZE(PSNOWDZ,1),SIZE(PSNOWDZ,2)) :: ZWORK1, ZWORK2, ZDZDIF,    &
                                                       ZSNOWDZM  
 !
@@ -1703,11 +1725,24 @@ ENDIF
 ! faster than for the composite soil-veg case), thus this correction
 ! is not as essential and is off.
 !
-PGRNDFLUXO(:)          = ZDTERM(:,INLVLS)*(ZSNOWTEMP(:,INLVLS)         -PTG(:))
-IF(OMEB)THEN
-   PGRNDFLUX(:)        = PGRNDFLUXO(:) 
+IF(OSI3) THEN
+         ZKAPPA_SI(:) = PSCOND   (:,INLVLS) * PSOILCOND(:) &
+                  &                            / ( 0.5 * (  PSOILCOND(:) * PSNOWDZ(:,INLVLS) + PSCOND(:,INLVLS) * PD_G(:) ) )
+         PGRNDFLUXO(:) =   ZKAPPA_SI(:) * (ZSNOWTEMP(:,INLVLS)         -PTG(:)) 
 ELSE
-   PGRNDFLUX(:)        = ZDTERM(:,INLVLS)*(MIN(XTT,ZSNOWTEMP(:,INLVLS))-PTG(:))
+
+         PGRNDFLUXO(:)          = ZDTERM(:,INLVLS)*(ZSNOWTEMP(:,INLVLS)         -PTG(:))
+ENDIF          
+
+IF(OSI3) THEN
+        PGRNDFLUX(:) =   ZKAPPA_SI(:) *(MIN(XTT,ZSNOWTEMP(:,INLVLS))-PTG(:)) 
+ELSE
+           
+   IF(OMEB)THEN
+      PGRNDFLUX(:)        = PGRNDFLUXO(:) 
+   ELSE
+      PGRNDFLUX(:)        = ZDTERM(:,INLVLS)*(MIN(XTT,ZSNOWTEMP(:,INLVLS))-PTG(:))
+   ENDIF
 ENDIF
 !
 ZSNOWTEMP(:,INLVLS) = ZSNOWTEMP(:,INLVLS) + (PGRNDFLUXO(:)-PGRNDFLUX(:))/ZCTERM(:,INLVLS)

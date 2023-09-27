@@ -1,6 +1,6 @@
-MODULE icethd_dh
+MODULE snwiceconv
    !!======================================================================
-   !!                       ***  MODULE icethd_dh ***
+   !!                       ***  MODULE snwiceconv ***
    !!   seaice : thermodynamic growth and melt
    !!======================================================================
    !! History :       !  2003-05  (M. Vancoppenolle) Original code in 1D
@@ -11,7 +11,7 @@ MODULE icethd_dh
    !!----------------------------------------------------------------------
    !!   'key_si3'                                       SI3 sea-ice model
    !!----------------------------------------------------------------------
-   !!   ice_thd_dh        : vertical sea-ice growth and melt
+   !!   snwice_conv        : vertical sea-ice growth and melt
    !!----------------------------------------------------------------------
    USE dom_oce        ! ocean space and time domain
    USE phycst         ! physical constants
@@ -33,18 +33,18 @@ MODULE icethd_dh
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   ice_thd_dh        ! called by ice_thd
+   PUBLIC   snwice_conv        ! called by ice_thd
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_dh.F90 14686 2021-04-08 15:36:01Z clem $
+   !! $Id: snwiceconv.F90 14686 2021-04-08 15:36:01Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )
+   SUBROUTINE snwice_conv( isnow, zq_rema, zevap_rema, zh_s, ze_s )
       !!------------------------------------------------------------------
-      !!                ***  ROUTINE ice_thd_dh  ***
+      !!                ***  ROUTINE snwice_conv  ***
       !!
       !! ** Purpose :   compute ice and snow thickness changes due to growth/melting
       !!
@@ -533,7 +533,7 @@ CONTAINS
          END DO
       ENDIF
 
-   END SUBROUTINE ice_thd_dh
+   END SUBROUTINE snwice_conv
 
 #else
    !!----------------------------------------------------------------------
@@ -542,4 +542,4 @@ CONTAINS
 #endif
 
    !!======================================================================
-END MODULE icethd_dh
+END MODULE snwiceconv

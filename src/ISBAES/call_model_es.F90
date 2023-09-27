@@ -190,7 +190,7 @@ HIMPLICIT_WIND = 'OLD'
 OMEB = .false.
 OSI3 = .true.
 !OMEB = OSI3
-OSNOWDRIFT = 'NONE' 
+OSNOWDRIFT = 'DFLT' 
 OSNOWDRIFT_SUBLIM = .false.
 
 
@@ -337,7 +337,7 @@ DO JJ=1,KSIZE1
    ZP_HPSNOW  (JI) = qprec_ice_1d(JI) ! heat release from rainfall 
 
    ZP_PS      (JI) = slp_isbaes_1d(JI)      ! pressure at the surface => slp !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-   ZP_SRSNOW  (JI) = snow_isbaes_1d(JI) * at_i_1d(JI)      ! Snow rate => sprecip_1d (Kg/m2/s) => 
+   ZP_SRSNOW  (JI) = snow_isbaes_1d(JI) * a_i_1d(JI)      ! Snow rate => sprecip_1d (Kg/m2/s) => 
    ZP_CT      (JI) = 1. / (rcpi * SUM(rho_s_1d(JI,:)) ) !inverse of the product of snow heat capacity and layer thickness [(m2 K)/J] 
    ZP_DELHEATG(JI) = 0. ! ground heat content change (diagnostic) (W/m2) JUST NEED TO DECLARE POINTER  
    ZP_DELHEATG_SFC(JI) = 0. ! ground heat content change in sfc only (diagnostic) (W/m2) JUST NEED TO DECLARE POINTER
@@ -413,15 +413,16 @@ ZP_PSN_INV(:)       = 0.
 ZP_PSN(:)           = ZP_PSN3L(:) 
 !
 !
-  CALL SNOW3L(HSNOWRES, TPTIME, OMEB, HIMPLICIT_WIND,                   &
+PRINT*,'ZP_SNOWRHO bef',ZP_SNOWRHO(1,:)
+  CALL SNOW3L(HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,                   &
              ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                 &
              ZP_PET_A_COEF, ZP_PEQ_A_COEF,ZP_PET_B_COEF, ZP_PEQ_B_COEF,    &
              ZP_SNOWSWE, ZP_SNOWRHO, ZP_SNOWHEAT, ZP_SNOWALB,              &
              ZP_SNOWGRAN1, ZP_SNOWGRAN2, ZP_SNOWHIST, ZP_SNOWAGE, PTSTEP,  &
-             ZP_PS, ZP_SRSNOW, ZP_RRSNOW, ZP_PSN3L, ZP_TA, ZP_TG(:,1),     &
+             ZP_PS, ZP_SRSNOW, ZP_RRSNOW, ZP_PSN3L, ZP_TA, ZP_TG(:),     &
              ZP_SW_RAD, ZP_QA, ZP_VMOD, ZP_LW_RAD, ZP_RHOA, ZP_UREF,       &
              ZP_EXNS, ZP_EXNA, ZP_DIRCOSZW, ZP_ZREF, ZP_Z0NAT, ZP_Z0EFF,   &
-             ZP_Z0HNAT, ZP_ALB, ZP_SOILCOND, ZP_D_G(:,1),                  &
+             ZP_Z0HNAT, ZP_ALB, ZP_SOILCOND, ZP_D_G(:),                  &
              ZP_LVTT, ZP_LSTT, ZP_SNOWLIQ,                                 &
              ZP_SNOWTEMP, ZP_SNOWDZ, ZP_THRUFAL, ZP_MELTSTOT, ZP_SNREFREEZ,&
              ZP_GRNDFLUX, ZP_EVAPCOR, ZP_SOILCOR, ZP_GFLXCOR, ZP_SNOWSFCH, &
@@ -432,6 +433,7 @@ ZP_PSN(:)           = ZP_PSN3L(:)
              ZP_EMISNOW, ZP_CDSNOW, ZP_USTARSNOW,                          &
              ZP_CHSNOW, ZP_SNOWHMASS, ZP_QS, ZP_RADXS, ZP_VEGTYPE,  ZP_FOREST,       &
              ZP_ZENITH, ZP_LAT, ZP_LON, OSNOWDRIFT,OSNOWDRIFT_SUBLIM)
+PRINT*,'ZP_SNOWRHO aft',ZP_SNOWRHO(1,:)
 
 ! unpack variables
 !
