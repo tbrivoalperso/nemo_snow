@@ -167,6 +167,7 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   o_s_1d        !: Snow age
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   dh_s_1d        !: Snow layer thicknesses
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   dv_s_1d        !: Snow layer volume
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rhov_s_1d        !: Snow layer density X volume
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   lwc_s_1d        !: Snow liquid water content
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   albs_isbaes_1d        !: Snow albedo
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   albi_isbaes_1d        !: Ice albedo
@@ -200,7 +201,6 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   v_i_2d 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   v_s_2d 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   oa_i_2d
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   oa_s_2d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   sv_i_2d 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   a_ip_2d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   v_ip_2d 
@@ -282,7 +282,7 @@ CONTAINS
 
        ii = ii + 1
       ALLOCATE( qcn_snw_bot_1d(jpij), albs_isbaes_1d(jpij), albi_isbaes_1d(jpij), cnd_i_isbaes_1d(jpij), o_s_1d(jpij,nlay_s), lwc_s_1d(jpij,nlay_s),  &
-         &     oa_s_1d(jpij) , dh_s_1d(jpij,nlay_s),dv_s_1d(jpij,nlay_s), oa_s_2d(jpij,jpl),                                                                               & 
+         &     oa_s_1d(jpij) , dh_s_1d(jpij,nlay_s),dv_s_1d(jpij,nlay_s),rhov_s_1d(jpij,nlay_s),                                                      & 
          &      tair_isbaes_1d(jpij), qair_isbaes_1d(jpij), slp_isbaes_1d(jpij), wndm_isbaes_1d(jpij), rain_isbaes_1d(jpij),   & 
          &      snow_isbaes_1d(jpij), qsr_ice_isbaes_1d(jpij), qns_ice_isbaes_1d(jpij), qlwdwn_ice_isbaes_1d(jpij), qlw_ice_isbaes_1d(jpij),          & 
          &      qla_ice_isbaes_1d(jpij), qsb_ice_isbaes_1d(jpij), rho_air_isbaes_1d(jpij), glamt_1d(jpij), gphit_1d(jpij), STAT=ierr(ii) )

@@ -405,6 +405,7 @@ CONTAINS
                           lwc_s(ji,jj,jk,jl) = MAX(0.0,t_s(ji,jj,jk,jl)-rt0)*ZSCAP*dh_s(ji,jj,jk,jl)/(XLMTT*XRHOLW)
                           e_s(ji,jj,jk,jl) =  dh_s(ji,jj,jk,jl)*( ZSCAP*(t_s(ji,jj,jk,jl)-rt0)- XLMTT*rho_s(ji,jj,jk,jl)) + &
                           & XLMTT*XRHOLW*lwc_s(ji,jj,jk,jl) !* a_i(ji,jk,jl) ! En J / m2
+                          rhov_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dv_s(ji,jj,jk,jl)
                           !e_s(ji,jj,jk,jl) = e_s(ji,jj,jk,jl) * dh_s_1d(1:npti,jk) * a_i_1d(1:npti)
                           !e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
                      !&               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
