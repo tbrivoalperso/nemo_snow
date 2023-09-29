@@ -163,7 +163,7 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rho_s_1d      !:    Snow density per unit volume  
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   swe_s_1d      !:    Snow water equivalent (kg m-2)  
  
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   oa_s_1d       !: Snow age times area
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   ov_s_1d       !: Snow age times volume
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   o_s_1d        !: Snow age
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   dh_s_1d        !: Snow layer thicknesses
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   dv_s_1d        !: Snow layer volume
@@ -282,7 +282,7 @@ CONTAINS
 
        ii = ii + 1
       ALLOCATE( qcn_snw_bot_1d(jpij), albs_isbaes_1d(jpij), albi_isbaes_1d(jpij), cnd_i_isbaes_1d(jpij), o_s_1d(jpij,nlay_s), lwc_s_1d(jpij,nlay_s),  &
-         &     oa_s_1d(jpij) , dh_s_1d(jpij,nlay_s),dv_s_1d(jpij,nlay_s),rhov_s_1d(jpij,nlay_s),                                                      & 
+         &     dh_s_1d(jpij,nlay_s),dv_s_1d(jpij,nlay_s),rhov_s_1d(jpij,nlay_s),ov_s_1d(jpij,nlay_s),                                                      & 
          &      tair_isbaes_1d(jpij), qair_isbaes_1d(jpij), slp_isbaes_1d(jpij), wndm_isbaes_1d(jpij), rain_isbaes_1d(jpij),   & 
          &      snow_isbaes_1d(jpij), qsr_ice_isbaes_1d(jpij), qns_ice_isbaes_1d(jpij), qlwdwn_ice_isbaes_1d(jpij), qlw_ice_isbaes_1d(jpij),          & 
          &      qla_ice_isbaes_1d(jpij), qsb_ice_isbaes_1d(jpij), rho_air_isbaes_1d(jpij), glamt_1d(jpij), gphit_1d(jpij), STAT=ierr(ii) )

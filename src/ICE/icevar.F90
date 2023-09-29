@@ -306,8 +306,13 @@ CONTAINS
       zlay_s = REAL( nlay_s , wp )
       IF(ln_isbaes) THEN
          DO jk = 1, nlay_s
+            PRINT*,'dh_sGLOOOO 1 ',dh_s
+            PRINT*,'RHOV',rhov_s
+
             WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
-               dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)     
+               dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)    
+               rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
+               o_s(:,:,jk,:) = ov_s(:,:,jk,:) / dv_s(:,:,jk,:)
                !t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
                !     &                MIN( r1_rcpi * ( -(1 / rho_s(:,:,jk,:)) * ( e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) ) + rLfus ) , 0._wp ) )
                ZSCAP(:,:,jk,:)     = rho_s(:,:,jk,:) * XCI
@@ -317,6 +322,7 @@ CONTAINS
             ELSEWHERE                           !--- no ice
                t_s(:,:,jk,:) = rt0
             END WHERE
+            PRINT*,'dh_sGLOOOO 2',dh_s
          END DO
       ELSE
          DO jk = 1, nlay_s
@@ -714,7 +720,11 @@ CONTAINS
       WHERE( psv_i(1:npti,:)   < 0._wp )   psv_i(1:npti,:)   = 0._wp   ! sv_i must be >= 0
       WHERE( poa_i(1:npti,:)   < 0._wp )   poa_i(1:npti,:)   = 0._wp   ! oa_i must be >= 0
       WHERE( pe_i (1:npti,:,:) < 0._wp )   pe_i (1:npti,:,:) = 0._wp   !  e_i must be >= 0
-      WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+      IF(ln_isbaes) THEN 
+              WHERE( pe_s (1:npti,:,:) > 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be <= 0
+      ELSE
+              WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+      ENDIF                
       IF( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
          WHERE( pa_ip(1:npti,:) < 0._wp )    pa_ip(1:npti,:)   = 0._wp   ! a_ip must be >= 0
          WHERE( pv_ip(1:npti,:) < 0._wp )    pv_ip(1:npti,:)   = 0._wp   ! v_ip must be >= 0

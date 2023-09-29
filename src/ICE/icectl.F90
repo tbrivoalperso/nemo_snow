@@ -119,21 +119,21 @@ CONTAINS
       !PRINT*,'hfx_res',hfx_res
       !PRINT*,'hfx_sub',hfx_sub
       !PRINT*,'hfx_spr',hfx_spr
-      !PRINT*,'wfx_bog',wfx_bog 
-      !PRINT*,'wfx_bom',wfx_bom 
-      !PRINT*,'wfx_sum',wfx_sum 
-      !PRINT*,'wfx_sni',wfx_sni 
-      !PRINT*,'wfx_opw',wfx_opw 
-      !PRINT*,'wfx_res',wfx_res 
-      !PRINT*,'wfx_dyn',wfx_dyn 
-      !PRINT*,'wfx_lam',wfx_lam 
-      !PRINT*,'wfx_pnd',wfx_pnd 
-      !PRINT*,'wfx_snw_sni',wfx_snw_sni 
-      !PRINT*,'wfx_snw_sum',wfx_snw_sum 
-      !PRINT*,'wfx_snw_dyn',wfx_snw_dyn 
-      !PRINT*,'wfx_snw_sub',wfx_snw_sub 
-      !PRINT*,'wfx_ice_sub',wfx_ice_sub 
-      !PRINT*,'wfx_spr',wfx_spr 
+      PRINT*,'wfx_bog',wfx_bog 
+      PRINT*,'wfx_bom',wfx_bom 
+      PRINT*,'wfx_sum',wfx_sum 
+      PRINT*,'wfx_sni',wfx_sni 
+      PRINT*,'wfx_opw',wfx_opw 
+      PRINT*,'wfx_res',wfx_res 
+      PRINT*,'wfx_dyn',wfx_dyn 
+      PRINT*,'wfx_lam',wfx_lam 
+      PRINT*,'wfx_pnd',wfx_pnd 
+      PRINT*,'wfx_snw_sni',wfx_snw_sni 
+      PRINT*,'wfx_snw_sum',wfx_snw_sum 
+      PRINT*,'wfx_snw_dyn',wfx_snw_dyn 
+      PRINT*,'wfx_snw_sub',wfx_snw_sub 
+      PRINT*,'wfx_ice_sub',wfx_ice_sub 
+      PRINT*,'wfx_spr',wfx_spr 
       !PRINT*,'sfx_bri',sfx_bri
       !PRINT*,'sfx_bog',sfx_bog
       !PRINT*,'sfx_bom',sfx_bom
@@ -165,6 +165,7 @@ CONTAINS
          zdiag_mass = ( zchk3(1) - pdiag_v ) * r1_Dt_ice + ( zchk3(4) - pdiag_fv )
          zdiag_salt = ( zchk3(2) - pdiag_s ) * r1_Dt_ice + ( zchk3(5) - pdiag_fs )
          zdiag_heat = ( zchk3(3) - pdiag_t ) * r1_Dt_ice + ( zchk3(6) - pdiag_ft )
+         PRINT*,'ROUTINE:', cd_routine
          PRINT*,'Diag mass delta',( zchk3(1) - pdiag_v ) /e1e2t!* r1_Dt_ice
          PRINT*,'Diag heat delta',( zchk3(3) - pdiag_t ) /e1e2t!* r1_Dt_ice
          PRINT*,'Diag salt delta',( zchk3(2) - pdiag_s ) /e1e2t!* r1_Dt_ice

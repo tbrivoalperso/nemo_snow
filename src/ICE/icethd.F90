@@ -207,18 +207,18 @@ CONTAINS
             ELSEIF( ln_isbaes ) THEN
                CALL ice_var_snwfra( h_s_1d(1:npti), za_s_fra(1:npti) )
                CALL SNOW3L_SI3(npti,nlay_s,1, rn_Dt, za_s_fra(1:npti), isnow, ZP_RADXS, zq_rema, zevap_rema)
-               DO ji = 1, npti
-                   IF(ln_isbaes) THEN
-                       IF (isnow(ji) == 0._wp) THEN
-                           zradtr_s(ji,nlay_s) = qtr_ice_top_1d(ji) 
-                       ELSE
-                           zradtr_s(:,nlay_s) = ZP_RADXS(:)  
-                       ENDIF 
-                   ENDIF
-               END DO
 #endif           
             ENDIF
-            PRINT*,'MASS AT 1',SUM(rho_s_1d * dh_s_1d)
+
+            DO ji = 1, npti
+                   IF(ln_isbaes) THEN
+                       IF (isnow(ji) == 0._wp) THEN
+                           zradtr_s(ji,nlay_s) = qtr_ice_top_1d(ji)
+                       ELSE
+                           zradtr_s(:,nlay_s) = ZP_RADXS(:)
+                       ENDIF
+                   ENDIF
+             END DO
            
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
@@ -226,7 +226,7 @@ CONTAINS
             !
             IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
                               CALL ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
-            PRINT*,'MASS AT 2',SUM(rho_s_1d * dh_s_1d)
+            PRINT*,'MASS AT 2',SUM(rho_s_1d(1,:) * dh_s_1d(1,:))* a_i_1d(1)
 
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF
@@ -239,10 +239,12 @@ CONTAINS
             !
             IF( ln_icedA )    CALL ice_thd_da                       ! --- Lateral melting --- !
             !
-            PRINT*,'MASS AT 3',SUM(rho_s_1d * dh_s_1d)
+            PRINT*,'MASS AT 3',SUM(rho_s_1d(1,:) * dh_s_1d(1,:))* a_i_1d(1)
 
                               CALL ice_thd_1d2d( jl, 2 )            ! --- Change units of e_i, e_s from J/m3 to J/m2 --- !
             !                                                       ! --- & Move to 2D arrays --- !
+            PRINT*,'rho_s AFTER 1D2D',rho_s
+
          ENDIF
          !
       END DO
@@ -357,13 +359,18 @@ CONTAINS
       INTEGER, INTENT(in) ::   kl   ! index of the ice category
       INTEGER, INTENT(in) ::   kn   ! 1= from 2D to 1D   ;   2= from 1D to 2D
       !
-      INTEGER ::   jk   ! dummy loop indices
+      INTEGER ::   jk,ji   ! dummy loop indices
       !!-----------------------------------------------------------------------
       !
       SELECT CASE( kn )
       !                    !---------------------!
       CASE( 1 )            !==  from 2D to 1D  ==!
          !                 !---------------------!
+         !IF(ln_isbaes) THEN
+         !   ! Recompute the mass and the volume, which are the variables that will be advected later on
+         !      rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s (:,:,:,:) 
+         !ENDIF
+         PRINT*,'RHO 1D2D',rho_s
          CALL tab_2d_1d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
          CALL tab_2d_1d( npti, nptidx(1:npti), h_i_1d (1:npti), h_i (:,:,kl)     )
@@ -451,6 +458,8 @@ CONTAINS
             CALL tab_2d_1d( npti, nptidx(1:npti), lwc_s_1d (1:npti,jk), lwc_s (:,:,jk,kl) )
             CALL tab_2d_1d( npti, nptidx(1:npti), dh_s_1d (1:npti,jk), dh_s (:,:,jk,kl) )
             CALL tab_2d_1d( npti, nptidx(1:npti), dv_s_1d (1:npti,jk), dv_s (:,:,jk,kl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), rhov_s_1d (1:npti,jk), rhov_s (:,:,jk,kl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), ov_s_1d (1:npti,jk), ov_s (:,:,jk,kl) )
          END DO
    
          CALL tab_2d_1d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti),  slp_isbaes         )
@@ -507,11 +516,20 @@ CONTAINS
          sv_i_1d(1:npti) = s_i_1d (1:npti) * v_i_1d (1:npti)
          oa_i_1d(1:npti) = o_i_1d (1:npti) * a_i_1d (1:npti)
 
-         IF(ln_isbaes) THEN 
+         IF(ln_isbaes) THEN
+            ! Recompute the mass and the volume, which are the variables that will be advected later on
             DO jk = 1, nlay_s
                dv_s_1d (1:npti,jk) = dh_s_1d (1:npti,jk) * a_i_1d (1:npti) 
+               rhov_s_1d (1:npti,jk) = rho_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
+               ov_s_1d (1:npti,jk) = o_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
+               DO ji = 1, npti 
+                  v_s_1d (ji) = SUM(dv_s_1d (ji,:))
+               END DO
+!               WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d(1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d(1:npti,jk)
+
             END DO
          ENDIF
+         PRINT*,'DH', dh_s_1d
 
          CALL tab_1d_2d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_1d_2d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
@@ -599,6 +617,8 @@ CONTAINS
             CALL tab_1d_2d( npti, nptidx(1:npti), lwc_s_1d(1:npti,jk), lwc_s(:,:,jk,kl)    )
             CALL tab_1d_2d( npti, nptidx(1:npti), dh_s_1d(1:npti,jk), dh_s(:,:,jk,kl)    )
             CALL tab_1d_2d( npti, nptidx(1:npti), dv_s_1d(1:npti,jk), dv_s(:,:,jk,kl)    )
+            CALL tab_1d_2d( npti, nptidx(1:npti), rhov_s_1d(1:npti,jk), rhov_s(:,:,jk,kl)    )
+            CALL tab_1d_2d( npti, nptidx(1:npti), ov_s_1d(1:npti,jk), ov_s(:,:,jk,kl)    )
          END DO
 
          CALL tab_1d_2d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti),  slp_isbaes        )

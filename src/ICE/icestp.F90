@@ -171,6 +171,8 @@ CONTAINS
                                         CALL ice_var_agg(1)           ! at_i for coupling
                                         CALL store_fields             ! Store now ice values
          !
+         PRINT*,'rho_s AFTER GLOOOOOOOO',rho_s
+
          !------------------------------------------------------!
          ! --- Thermodynamical coupling with the atmosphere --- !
          !------------------------------------------------------!
