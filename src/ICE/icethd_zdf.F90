@@ -63,7 +63,11 @@ CONTAINS
       !                             !-------------!      
       CASE( np_BL99 )               ! BL99 solver !
          !                          !-------------!
+#if defined key_isbaes
          IF( ln_snwext .OR. ln_isbaes ) THEN ! snow in detached mode
+#else
+         IF( ln_snwext ) THEN ! snow in detached mode
+#endif                 
             IF( .NOT.ln_cndflx ) THEN                           ! No conduction flux ==> default option
                CALL ice_thd_zdf_BL99_snwext( np_cnd_OFF, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )
             ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option

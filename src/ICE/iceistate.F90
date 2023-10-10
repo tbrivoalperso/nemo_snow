@@ -37,10 +37,13 @@ MODULE iceistate
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
    USE fldread        ! read input fields
-   
+
+#if defined key_isbaes   
    USE MODI_SNOW3L
    USE MODE_SNOW3L   ! For isba-es
    USE MODD_CSTS
+#endif
+
 # if defined key_agrif
    USE agrif_oce
    USE agrif_ice_interp 
@@ -110,7 +113,8 @@ CONTAINS
       !! ** Notes   : o_i, t_su, t_s, t_i, sz_i must be filled everywhere, even
       !!              where there is no ice
       !!--------------------------------------------------------------------
-      USE MODE_SNOW3L
+      
+      !USE MODE_SNOW3L
 
       INTEGER, INTENT(in) :: kt            ! time step 
       INTEGER, INTENT(in) :: Kbb, Kmm, Kaa ! ocean time level indices
@@ -176,16 +180,19 @@ CONTAINS
       v_s (:,:,:) = 0._wp
       sv_i(:,:,:) = 0._wp
       oa_i(:,:,:) = 0._wp
-      ov_s(:,:,:,:) = 0._wp
       !
       h_i (:,:,:) = 0._wp
       h_s (:,:,:) = 0._wp
       s_i (:,:,:) = 0._wp
       o_i (:,:,:) = 0._wp
+
+#if defined key_isbaes
+      ov_s(:,:,:,:) = 0._wp
       o_s (:,:,:,:) = 0._wp
       albs_isbaes(:,:,:) = 0._wp
       albi_isbaes(:,:,:) = 0._wp
       cnd_i_isbaes(:,:,:) = rcnd_i 
+#endif
       !
       ! melt ponds
       a_ip     (:,:,:) = 0._wp
@@ -374,15 +381,18 @@ CONTAINS
             CALL tab_2d_3d( npti, nptidx(1:npti), zaip_2d  , a_ip   )
             CALL tab_2d_3d( npti, nptidx(1:npti), zhip_2d  , h_ip   )
             CALL tab_2d_3d( npti, nptidx(1:npti), zhil_2d  , h_il   )
+
             ! deallocate temporary arrays
             DEALLOCATE( zhi_2d, zhs_2d, zai_2d , &
                &        zti_2d, zts_2d, ztsu_2d, zsi_2d, zaip_2d, zhip_2d, zhil_2d )
+
+#if defined key_isbaes
             ! For ISBA-ES
             DO jk = 1, nlay_s
                dh_s(:,:,jk,:) = h_s(:,:,:) * r1_nlay_s
                dv_s(:,:,jk,:) = dh_s(:,:,jk,:) * a_i(:,:,:)
             END DO
-
+#endif
             ! calculate extensive and intensive variables
             CALL ice_var_salprof ! for sz_i
             DO jl = 1, jpl
@@ -396,7 +406,7 @@ CONTAINS
             DO jl = 1, jpl
                DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
                   t_s(ji,jj,jk,jl) = zts_3d(ji,jj,jl)
-
+#if defined key_isbaes
                   rho_s(ji,jj,jk,jl) = rhos
                    
                   IF(ln_isbaes) THEN
@@ -419,12 +429,11 @@ CONTAINS
                      &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
  
                   ENDIF
-
+#else
+               e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+                 &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )            
+#endif         
                END_3D
-               PRINT*,'e_s istate',e_s
-               PRINT*,'t_s istate',t_s
-               PRINT*,'rho_s istate',rho_s
-               PRINT*,'lwc_s istate',lwc_s
             END DO
             !
             DO jl = 1, jpl

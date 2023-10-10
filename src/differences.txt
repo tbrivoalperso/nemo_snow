@@ -1,0 +1,1366 @@
+Seulement dans ICE: differences.txt
+diff ICE/ice1d.F90 ../../nemo_snwext/nemo/src/ICE/ice1d.F90
+35c35
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qsr_ice_1d 
+---
+>    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qsr_ice_1d  
+128,129c128
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   o_i_1d       !:
+< 
+---
+>    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   o_i_1d        !:
+161,163c160
+< 
+< 
+< #if defined key_isbaes
+---
+>    
+165,197c162,163
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rho_s_1d      !:    Snow density per unit volume  
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   swe_s_1d      !:    Snow water equivalent (kg m-2)  
+<  
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   ov_s_1d       !: Snow age times volume
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   o_s_1d        !: Snow age
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   dh_s_1d        !: Snow layer thicknesses
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   dv_s_1d        !: Snow layer volume
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rhov_s_1d        !: Snow layer density X volume
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   lwc_s_1d        !: Snow liquid water content
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   albs_isbaes_1d        !: Snow albedo
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   albi_isbaes_1d        !: Ice albedo
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   cnd_i_isbaes_1d        !: Conductivity of the 1st ice layer
+< 
+< 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   slp_isbaes_1d        !: Sea-level pressure
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   tair_isbaes_1d        !: Air T°
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qair_isbaes_1d        !: Air humidity 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wndm_isbaes_1d        !: Wind speed module 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   rho_air_isbaes_1d        !: air density
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   rain_isbaes_1d        !: rain rate
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   snow_isbaes_1d        !: snow rate
+< 
+< 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qsr_ice_isbaes_1d ! For isbaes use 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qns_ice_isbaes_1d ! For isbaes use 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qlw_ice_isbaes_1d ! For isbaes use 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qlwdwn_ice_isbaes_1d ! For isbaes use
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qsb_ice_isbaes_1d ! For isbaes use 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qla_ice_isbaes_1d ! For isbaes use 
+< 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   glamt_1d ! For isbaes use 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   gphit_1d ! For isbaes use 
+< #endif
+---
+>    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rho_s_1d      !:    Snow density per unit volume   
+> 
+228c194
+<       INTEGER ::   ierr(10), ii
+---
+>       INTEGER ::   ierr(9), ii
+285d250
+< 
+288,296d252
+< 
+< #if defined key_isbaes
+<       ii = ii + 1
+<       ALLOCATE( swe_s_1d(jpij,nlay_s), albs_isbaes_1d(jpij), albi_isbaes_1d(jpij), cnd_i_isbaes_1d(jpij), o_s_1d(jpij,nlay_s), lwc_s_1d(jpij,nlay_s),  &
+<          &     dh_s_1d(jpij,nlay_s),dv_s_1d(jpij,nlay_s),rhov_s_1d(jpij,nlay_s),ov_s_1d(jpij,nlay_s),                                                      & 
+<          &      tair_isbaes_1d(jpij), qair_isbaes_1d(jpij), slp_isbaes_1d(jpij), wndm_isbaes_1d(jpij), rain_isbaes_1d(jpij),   & 
+<          &      snow_isbaes_1d(jpij), qsr_ice_isbaes_1d(jpij), qns_ice_isbaes_1d(jpij), qlwdwn_ice_isbaes_1d(jpij), qlw_ice_isbaes_1d(jpij),          & 
+<          &      qla_ice_isbaes_1d(jpij), qsb_ice_isbaes_1d(jpij), rho_air_isbaes_1d(jpij), glamt_1d(jpij), gphit_1d(jpij), STAT=ierr(ii) )
+< #endif
+diff ICE/icealb.F90 ../../nemo_snwext/nemo/src/ICE/icealb.F90
+18c18
+<    USE ice, ONLY: jpl, ln_isbaes, albs_isbaes, albi_isbaes ! sea-ice: number of categories, snow & ice albedo
+---
+>    USE ice, ONLY: jpl ! sea-ice: number of categories
+158,166c158,161
+< 
+<             IF( ln_isbaes ) THEN ! If coupled with isba-es, the snow albedo comes from isba-es
+<                   zalb_snw = albs_isbaes(ji,jj,jl)
+<             ELSE        
+<                IF( pt_su(ji,jj,jl) < rt0 ) THEN
+<                   zalb_snw = rn_alb_sdry - ( rn_alb_sdry - zalb_ice ) * EXP( - ph_snw(ji,jj,jl) * z1_c3 )
+<                ELSE
+<                   zalb_snw = rn_alb_smlt - ( rn_alb_smlt - zalb_ice ) * EXP( - ph_snw(ji,jj,jl) * z1_c4 )
+<                ENDIF
+---
+>             IF( pt_su(ji,jj,jl) < rt0 ) THEN
+>                zalb_snw = rn_alb_sdry - ( rn_alb_sdry - zalb_ice ) * EXP( - ph_snw(ji,jj,jl) * z1_c3 )
+>             ELSE
+>                zalb_snw = rn_alb_smlt - ( rn_alb_smlt - zalb_ice ) * EXP( - ph_snw(ji,jj,jl) * z1_c4 )
+168,170d162
+< 
+<             albi_isbaes(ji,jj,jl) = zalb_ice ! Save ice albedo for ISBA-ES
+< 
+diff ICE/icectl.F90 ../../nemo_snwext/nemo/src/ICE/icectl.F90
+94,98c94
+<       IF(.NOT. ln_isbaes) THEN
+<           ztmp3(:,:,1) = SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
+<       ELSE
+<           ztmp3(:,:,1) = SUM( v_i * rhoi + SUM(rhov_s ,dim=3) + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
+<       ENDIF
+---
+>       ztmp3(:,:,1) = SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
+107c103
+<       ztmp3(:,:,6) = ( hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_difs + hfx_opw + hfx_snw &                     ! heat
+---
+>       ztmp3(:,:,6) = ( hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_difs + hfx_opw + hfx_snw &                                ! heat
+110,148d105
+<       !PRINT*,'hfx_sum',hfx_sum
+<       !PRINT*,'hfx_bom',hfx_bom
+<       !PRINT*,'hfx_bog',hfx_bog
+<       !PRINT*,'hfx_dif',hfx_dif
+<       !PRINT*,'hfx_difs',hfx_difs
+<       !PRINT*,'hfx_opw',hfx_opw
+<       !PRINT*,'hfx_snw',hfx_snw
+<       !PRINT*,'hfx_thd',hfx_thd
+<       !PRINT*,'hfx_dyn',hfx_dyn
+<       !PRINT*,'hfx_res',hfx_res
+<       !PRINT*,'hfx_sub',hfx_sub
+<       !PRINT*,'hfx_spr',hfx_spr
+<       PRINT*,'wfx_bog',wfx_bog 
+<       PRINT*,'wfx_bom',wfx_bom 
+<       PRINT*,'wfx_sum',wfx_sum 
+<       PRINT*,'wfx_sni',wfx_sni 
+<       PRINT*,'wfx_opw',wfx_opw 
+<       PRINT*,'wfx_res',wfx_res 
+<       PRINT*,'wfx_dyn',wfx_dyn 
+<       PRINT*,'wfx_lam',wfx_lam 
+<       PRINT*,'wfx_pnd',wfx_pnd 
+<       PRINT*,'wfx_snw_sni',wfx_snw_sni 
+<       PRINT*,'wfx_snw_sum',wfx_snw_sum 
+<       PRINT*,'wfx_snw_dyn',wfx_snw_dyn 
+<       PRINT*,'wfx_snw_sub',wfx_snw_sub 
+<       PRINT*,'wfx_ice_sub',wfx_ice_sub 
+<       PRINT*,'wfx_spr',wfx_spr 
+<       !PRINT*,'sfx_bri',sfx_bri
+<       !PRINT*,'sfx_bog',sfx_bog
+<       !PRINT*,'sfx_bom',sfx_bom
+<       !PRINT*,'sfx_sum',sfx_sum
+<       !PRINT*,'sfx_sni',sfx_sni
+<       !PRINT*,'sfx_opw',sfx_opw
+<       !PRINT*,'sfx_res',sfx_res
+<       !PRINT*,'sfx_res',sfx_res
+<       !PRINT*,'sfx_dyn',sfx_dyn
+<       !PRINT*,'sfx_sub',sfx_sub
+<       !PRINT*,'sfx_lam',sfx_lam
+< 
+151d107
+<       PRINT*,'SUM v_s * rho_s',SUM(rho_s * dh_s ,dim=3) * a_i, 'icount=',icount
+168,175c124
+<          PRINT*,'ROUTINE:', cd_routine
+<          PRINT*,'Diag mass delta',( zchk3(1) - pdiag_v ) /e1e2t!* r1_Dt_ice
+<          PRINT*,'Diag heat delta',( zchk3(3) - pdiag_t ) /e1e2t!* r1_Dt_ice
+<          PRINT*,'Diag salt delta',( zchk3(2) - pdiag_s ) /e1e2t!* r1_Dt_ice
+<          PRINT*,'Diag mass 2',( zchk3(4) - pdiag_fv )/ (r1_Dt_ice* e1e2t)  
+<          PRINT*,'Diag heat 2',( zchk3(6) - pdiag_ft )/ (r1_Dt_ice* e1e2t)
+<          PRINT*,'Diag salt 2',( zchk3(5) - pdiag_fs )/ (r1_Dt_ice* e1e2t)
+<          PRINT*,'diff mass',zdiag_mass
+---
+> 
+185,186c134
+<          PRINT*,'rchk_m * rn_icechk_glo * zchk3(10)',rchk_m * rn_icechk_glo * zchk3(10)
+<      
+---
+>          
+293,298c241,242
+<          
+<          IF(.NOT. ln_isbaes) THEN
+<              pdiag_v = SUM( v_i  * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 )
+<          ELSE
+<              pdiag_v = SUM( v_i  * rhoi + SUM(rhov_s ,dim=3) + ( v_ip + v_il ) * rhow, dim=3 )
+<          ENDIF
+---
+> 
+>          pdiag_v = SUM( v_i  * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 )
+312c256
+<          IF(.NOT. ln_isbaes) THEN
+---
+> 
+314,323c258,261
+<             zdiag_mass =   ( SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
+<                &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
+<                &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
+<                &         - pdiag_fv
+<          ELSE
+<             zdiag_mass =   ( SUM( v_i * rhoi + SUM(rhov_s , dim=3)  + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
+<                &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
+<                &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
+<                &         - pdiag_fv
+<          ENDIF
+---
+>          zdiag_mass =   ( SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
+>             &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
+>             &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
+>             &         - pdiag_fv
+diff ICE/ice.F90 ../../nemo_snwext/nemo/src/ICE/ice.F90
+205,207c205
+<    LOGICAL , PUBLIC ::   ln_snwext       ! flag to activate external snow routines 
+<    LOGICAL , PUBLIC ::   ln_isbaes       ! flag to activate isba-es coupling
+< 
+---
+>    LOGICAL , PUBLIC ::   ln_snwext       ! heat in the leads is used to melt sea-ice before warming the ocean
+363d360
+< 
+375d371
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   rhom_s        !: mean snw density over all categories (kg/m3)
+386a383
+>    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   rho_s           !: Snow density         [kg/m3]
+469,483d465
+<    !!----------------------------------------------------------------------
+<    !! * Extra variables for ISBA-ES coupling
+<    !!----------------------------------------------------------------------
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   albs_isbaes   !: snow albedo computed by isba-es
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   albi_isbaes   !: ice albedo read by isba-es 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   cnd_i_isbaes   !: Conductivity of the first ice layer
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   rho_s           !: Snow density         [kg/m3]
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   swe_s           !: Snow layer(s) liquid Water Equivalent (SWE:kg m-2) 
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   o_s           !: Snow Age                             (s)
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   lwc_s        !: Snow liquid water content   (m)
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   ov_s          !: Snow Age times volume              (s)
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   dh_s           !: Snow layer thickness                          (m)
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   dv_s           !: Snow layer volume per unit area               (m)
+<    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   rhov_s           !: Snow layer density X olume per unit area               (m)
+< 
+537c519
+<          &      et_i (jpi,jpj) , et_s (jpi,jpj) , tm_i(jpi,jpj) , tm_s(jpi,jpj) ,rhom_s(jpi,jpj),  &
+---
+>          &      et_i (jpi,jpj) , et_s (jpi,jpj) , tm_i(jpi,jpj) , tm_s(jpi,jpj) ,  &
+592,593c574
+<       ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) ,swe_s(jpi,jpj,nlay_s,jpl) , o_s(jpi,jpj,nlay_s,jpl), lwc_s(jpi,jpj,nlay_s,jpl), ov_s(jpi,jpj,nlay_s,jpl), albs_isbaes(jpi,jpj,jpl), & 
+<                 & albi_isbaes(jpi,jpj,jpl),cnd_i_isbaes(jpi,jpj,jpl), dh_s(jpi,jpj,nlay_s,jpl),dv_s(jpi,jpj,nlay_s,jpl),rhov_s(jpi,jpj,nlay_s,jpl), STAT=ierr(ii) )
+---
+>       ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) , STAT=ierr(ii) )
+diff ICE/iceistate.F90 ../../nemo_snwext/nemo/src/ICE/iceistate.F90
+40,43c40
+<    
+<    USE MODI_SNOW3L
+<    USE MODE_SNOW3L   ! For isba-es
+<    USE MODD_CSTS
+---
+> 
+113,114d109
+<       USE MODE_SNOW3L
+< 
+127,132d121
+< 
+<       ! Isba-es parameters (should be put in another routine)
+<       REAL(wp), PARAMETER       :: XLMTT=333700.0
+<       REAL(wp), PARAMETER       :: XRHOLW=1000.
+<       REAL(wp), PARAMETER       :: XCI=2.106E+3
+<       REAL(wp) ::  ZSCAP
+179d167
+<       ov_s(:,:,:,:) = 0._wp
+185,188d172
+<       o_s (:,:,:,:) = 0._wp
+<       albs_isbaes(:,:,:) = 0._wp
+<       albi_isbaes(:,:,:) = 0._wp
+<       cnd_i_isbaes(:,:,:) = rcnd_i 
+376a361
+> 
+380,384d364
+<             ! For ISBA-ES
+<             DO jk = 1, nlay_s
+<                dh_s(:,:,jk,:) = h_s(:,:,:) * r1_nlay_s
+<                dv_s(:,:,jk,:) = dh_s(:,:,jk,:) * a_i(:,:,:)
+<             END DO
+399,418c379
+< 
+<                   rho_s(ji,jj,jk,jl) = rhos
+<                    
+<                   IF(ln_isbaes) THEN
+<                           ZSCAP     = rho_s(ji,jj,jk,jl) * XCI  ! In isba-es, capacity = rho x cst, with cst=XCI
+<                           swe_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dh_s(ji,jj,jk,jl)
+<                           lwc_s(ji,jj,jk,jl) = MAX(0.0,t_s(ji,jj,jk,jl)-rt0)*ZSCAP*dh_s(ji,jj,jk,jl)/(XLMTT*XRHOLW)
+<                           e_s(ji,jj,jk,jl) =  dh_s(ji,jj,jk,jl)*( ZSCAP*(t_s(ji,jj,jk,jl)-rt0)- XLMTT*rho_s(ji,jj,jk,jl)) + &
+<                           & XLMTT*XRHOLW*lwc_s(ji,jj,jk,jl) !* a_i(ji,jk,jl) ! En J / m2
+<                           rhov_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dv_s(ji,jj,jk,jl)
+<                           !e_s(ji,jj,jk,jl) = e_s(ji,jj,jk,jl) * dh_s_1d(1:npti,jk) * a_i_1d(1:npti)
+<                           !e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+<                      !&               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
+<                           PRINT*,'e_s SI3 style',zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+<                      &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
+< 
+<                   ELSE
+<                           lwc_s(ji,jj,jk,jl) = 0.
+<                           swe_s(ji,jj,jk,jl) = 0. 
+<                           e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+---
+>                   e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+420,422c381,382
+<  
+<                   ENDIF
+< 
+---
+>                   ! Initialise rho_s (not used yet, but will be for ISBA-ES)
+>                   rho_s(ji,jj,jk,jl) = rhos 
+424,427d383
+<                PRINT*,'e_s istate',e_s
+<                PRINT*,'t_s istate',t_s
+<                PRINT*,'rho_s istate',rho_s
+<                PRINT*,'lwc_s istate',lwc_s
+diff ICE/iceitd.F90 ../../nemo_snwext/nemo/src/ICE/iceitd.F90
+419,422d418
+<       REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   zdv_s_2d
+<       REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   zrhov_s_2d
+<       REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   zov_s_2d
+< 
+438,442d433
+<             IF(ln_isbaes) THEN
+<                CALL tab_2d_1d( npti, nptidx(1:npti), zdv_s_2d(1:npti,jk,jl), dv_s(:,:,jk,jl) )
+<                CALL tab_2d_1d( npti, nptidx(1:npti), zrhov_s_2d(1:npti,jk,jl), rhov_s(:,:,jk,jl) )
+<                CALL tab_2d_1d( npti, nptidx(1:npti), zov_s_2d(1:npti,jk,jl), ov_s(:,:,jk,jl) )
+<             ENDIF   
+538,586d528
+<          IF(ln_isbaes) THEN
+< 
+<             DO jk = 1, nlay_s         !--- Snow volume
+<                DO ji = 1, npti
+<                   !
+<                   jl1 = kdonor(ji,jl)
+<                   !
+<                   IF( jl1 > 0 ) THEN
+<                      IF(jl1 == jl) THEN  ;  jl2 = jl+1
+<                      ELSE                ;  jl2 = jl
+<                      ENDIF
+<                      ztrans             = zdv_s_2d(ji,jk,jl1) * zworkv(ji)
+<                      zdv_s_2d(ji,jk,jl1) = zdv_s_2d(ji,jk,jl1) - ztrans
+<                      zdv_s_2d(ji,jk,jl2) = zdv_s_2d(ji,jk,jl2) + ztrans
+<                   ENDIF
+<                END DO
+<             END DO
+<             DO jk = 1, nlay_s         !--- Snow mass 
+<                DO ji = 1, npti
+<                   !
+<                   jl1 = kdonor(ji,jl)
+<                   !
+<                   IF( jl1 > 0 ) THEN
+<                      IF(jl1 == jl) THEN  ;  jl2 = jl+1
+<                      ELSE                ;  jl2 = jl
+<                      ENDIF
+<                      ztrans             = zrhov_s_2d(ji,jk,jl1) * zworkv(ji)
+<                      zrhov_s_2d(ji,jk,jl1) = zrhov_s_2d(ji,jk,jl1) - ztrans
+<                      zrhov_s_2d(ji,jk,jl2) = zrhov_s_2d(ji,jk,jl2) + ztrans
+<                   ENDIF
+<                END DO
+<             END DO
+<             DO jk = 1, nlay_s         !--- Snow age
+<                DO ji = 1, npti
+<                   !
+<                   jl1 = kdonor(ji,jl)
+<                   !
+<                   IF( jl1 > 0 ) THEN
+<                      IF(jl1 == jl) THEN  ;  jl2 = jl+1
+<                      ELSE                ;  jl2 = jl
+<                      ENDIF
+<                      ztrans             = zov_s_2d(ji,jk,jl1) * zworkv(ji)
+<                      zov_s_2d(ji,jk,jl1) = zov_s_2d(ji,jk,jl1) - ztrans
+<                      zov_s_2d(ji,jk,jl2) = zov_s_2d(ji,jk,jl2) + ztrans
+<                   ENDIF
+<                END DO
+<             END DO
+< 
+<          ENDIF
+647,651d588
+<             IF(ln_isbaes) THEN
+<                CALL tab_1d_2d( npti, nptidx(1:npti), zdv_s_2d(1:npti,jk,jl), dv_s(:,:,jk,jl) )
+<                CALL tab_1d_2d( npti, nptidx(1:npti), zrhov_s_2d(1:npti,jk,jl), rhov_s(:,:,jk,jl) )
+<                CALL tab_1d_2d( npti, nptidx(1:npti), zov_s_2d(1:npti,jk,jl), ov_s(:,:,jk,jl) )
+<             ENDIF
+diff ICE/icesbc.F90 ../../nemo_snwext/nemo/src/ICE/icesbc.F90
+30d29
+<    USE sbcdcy
+123d121
+<       INTEGER             ::   jl
+133,157d130
+< 
+<       IF(ln_isbaes) THEN ! Save atmospheric variables for isbaes use
+<         !                                     ! ========================== !
+<         DO jl = 1, jpl                        !  Loop over ice categories  !
+<         !                                  ! ========================== !
+<               
+<           qsr_ice_isbaes(:,:,jl) = sf(jp_qsr  )%fnow(:,:,1)
+<           IF( MOD( kt - 1, nn_fsbc ) == 0 )   THEN
+<              qlwdwn_ice_isbaes(:,:,jl)   = sf(jp_qlw )%fnow(:,:,1)
+<              IF( ln_dm2dc ) THEN
+<                 qsr_ice_isbaes(:,:,jl) = sbc_dcy( sf(jp_qsr)%fnow(:,:,1) )
+<              ELSE
+<                 qsr_ice_isbaes(:,:,jl) =          sf(jp_qsr)%fnow(:,:,1)
+<              ENDIF
+<              rain_isbaes(:,:,jl)  = sf(jp_prec)%fnow(:,:,1) * rn_pfac
+<              snow_isbaes(:,:,jl)  = sf(jp_snow)%fnow(:,:,1) * rn_pfac
+<           ENDIF
+<         ENDDO
+< 
+<         tair_isbaes(:,:) = sf(jp_tair)%fnow(:,:,1)    !#LB: should it be POTENTIAL temperature (theta_air_zt) instead ????
+<         qair_isbaes(:,:) = q_air_zt(:,:)
+<         wndm_isbaes(:,:) = SQRT(sf(jp_wndi)%fnow(:,:,1) **2 + sf(jp_wndj)%fnow(:,:,1)**2)
+<         slp_isbaes(:,:)  = sf(jp_slp )%fnow(:,:,1)
+<       ENDIF
+< 
+diff ICE/icestp.F90 ../../nemo_snwext/nemo/src/ICE/icestp.F90
+192d191
+<          
+diff ICE/icethd_dh.F90 ../../nemo_snwext/nemo/src/ICE/icethd_dh.F90
+31,32d30
+<    USE MODE_SNOW3L    ! For isbaes
+< 
+45c43
+<    SUBROUTINE ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )
+---
+>    SUBROUTINE ice_thd_dh( zq_rema, zevap_rema, zh_s, ze_s )
+71d68
+<       REAL(wp), DIMENSION(jpij), INTENT(in)    ::   isnow       ! presence of snow or not
+123c120
+<       IF( .NOT. (ln_snwext) )  CALL snw_thd_dh(isnow, zq_rema, zevap_rema, zh_s, ze_s)
+---
+>       IF( .NOT. ln_snwext )  CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
+141c138
+<       IF( ln_snwext .OR. ln_isbaes) THEN
+---
+>       IF( ln_snwext) THEN
+148,154c145,146
+<                IF(ln_isbaes) THEN
+<                   zh_s(ji,jk) = dh_s_1d(ji,jk) 
+<                   ze_s(ji,jk) = e_s_1d(ji,jk)
+<                ELSE        
+<                   zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
+<                   ze_s(ji,jk) = e_s_1d(ji,jk)
+<                ENDIF
+---
+>                zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
+>                ze_s(ji,jk) = e_s_1d(ji,jk)
+400,409c392,393
+<                hfx_res_1d(ji) = hfx_res_1d(ji) - e_s_1d(ji,jk) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+<                IF( ln_isbaes) THEN
+<                    ! Mass flux is computed from 3D density arrays instead of constant density
+<                    wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk)        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+< 
+<                    dh_s_1d(ji,jk) = 0._wp
+<                    swe_s_1d(ji,jk) = 0._wp
+<                ELSE
+<                     wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+<                ENDIF
+---
+>                hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+>                wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+413c397
+<                e_s_1d  (ji,jk) = 0._wp
+---
+>                ze_s  (ji,jk) = 0._wp
+415,416d398
+<                dh_s_1d(ji,jk) = 0._wp
+<                rhov_s_1d(ji,jk) = 0._wp
+420,442d401
+<       IF(.NOT. ln_isbaes) THEN
+<          ! Snow load on ice
+<          ! -----------------
+<          ! When snow load exceeds Archimede's limit and sst is positive,
+<          ! snow-ice formation (next bloc) can lead to negative ice enthalpy.
+<          ! Therefore we consider here that this excess of snow falls into the ocean
+<          zdeltah(1:npti) = h_s_1d(1:npti) + h_i_1d(1:npti) * (rhoi-rho0) * r1_rhos
+<          DO jk = 0, nlay_s
+<             DO ji = 1, npti
+<                IF( zdeltah(ji) > 0._wp .AND. sst_1d(ji) > 0._wp ) THEN
+<                   ! snow layer thickness that falls into the ocean
+<                   zdum = MIN( zdeltah(ji) , zh_s(ji,jk) )
+<                   ! mass & energy loss to the ocean
+<                   hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+<                   wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+<                   ! update thickness and energy
+<                   h_s_1d(ji)    = MAX( 0._wp, h_s_1d(ji)  - zdum )
+<                   zh_s  (ji,jk) = MAX( 0._wp, zh_s(ji,jk) - zdum )
+<                   ! update snow thickness that still has to fall
+<                   zdeltah(ji)   = MAX( 0._wp, zdeltah(ji) - zdum )
+<                ENDIF
+<             END DO
+<          END DO
+444,449c403,409
+<          ! Snow-Ice formation
+<          ! ------------------
+<          ! When snow load exceeds Archimede's limit, snow-ice interface goes down under sea-level,
+<          ! flooding of seawater transforms snow into ice. Thickness that is transformed is dh_snowice (positive for the ice)
+<          z1_rho = 1._wp / ( rhos+rho0-rhoi )
+<          zdeltah(1:npti) = 0._wp
+---
+>       ! Snow load on ice
+>       ! -----------------
+>       ! When snow load exceeds Archimede's limit and sst is positive,
+>       ! snow-ice formation (next bloc) can lead to negative ice enthalpy.
+>       ! Therefore we consider here that this excess of snow falls into the ocean
+>       zdeltah(1:npti) = h_s_1d(1:npti) + h_i_1d(1:npti) * (rhoi-rho0) * r1_rhos
+>       DO jk = 0, nlay_s
+451,468c411,421
+<             !
+<             dh_snowice(ji) = MAX( 0._wp , ( rhos * h_s_1d(ji) + (rhoi-rho0) * h_i_1d(ji) ) * z1_rho )
+< 
+<             h_i_1d(ji)    = h_i_1d(ji) + dh_snowice(ji)
+<             h_s_1d(ji)    = h_s_1d(ji) - dh_snowice(ji)
+< 
+<             ! Contribution to energy flux to the ocean [J/m2], >0 (if sst<0)
+<             zfmdt          = ( rhos - rhoi ) * dh_snowice(ji)    ! <0
+<             zEw            = rcp * sst_1d(ji)
+<             zQm            = zfmdt * zEw
+< 
+<             hfx_thd_1d(ji) = hfx_thd_1d(ji) + zEw        * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Heat flux
+<             sfx_sni_1d(ji) = sfx_sni_1d(ji) + sss_1d(ji) * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Salt flux
+< 
+<             ! Case constant salinity in time: virtual salt flux to keep salinity constant
+<             IF( nn_icesal /= 2 )  THEN
+<                sfx_bri_1d(ji) = sfx_bri_1d(ji) - sss_1d(ji) * zfmdt                 * a_i_1d(ji) * r1_Dt_ice  &  ! put back sss_m     into the ocean
+<                   &                            - s_i_1d(ji) * dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice     ! and get  rn_icesal from the ocean
+---
+>             IF( zdeltah(ji) > 0._wp .AND. sst_1d(ji) > 0._wp ) THEN
+>                ! snow layer thickness that falls into the ocean
+>                zdum = MIN( zdeltah(ji) , zh_s(ji,jk) )
+>                ! mass & energy loss to the ocean
+>                hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+>                wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+>                ! update thickness and energy
+>                h_s_1d(ji)    = MAX( 0._wp, h_s_1d(ji)  - zdum )
+>                zh_s  (ji,jk) = MAX( 0._wp, zh_s(ji,jk) - zdum )
+>                ! update snow thickness that still has to fall
+>                zdeltah(ji)   = MAX( 0._wp, zdeltah(ji) - zdum )
+469a423,424
+>          END DO
+>       END DO
+471,473c426,434
+<             ! Mass flux: All snow is thrown in the ocean, and seawater is taken to replace the volume
+<             wfx_sni_1d    (ji) = wfx_sni_1d    (ji) - dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice
+<             wfx_snw_sni_1d(ji) = wfx_snw_sni_1d(ji) + dh_snowice(ji) * rhos * a_i_1d(ji) * r1_Dt_ice
+---
+>       ! Snow-Ice formation
+>       ! ------------------
+>       ! When snow load exceeds Archimede's limit, snow-ice interface goes down under sea-level,
+>       ! flooding of seawater transforms snow into ice. Thickness that is transformed is dh_snowice (positive for the ice)
+>       z1_rho = 1._wp / ( rhos+rho0-rhoi )
+>       zdeltah(1:npti) = 0._wp
+>       DO ji = 1, npti
+>          !
+>          dh_snowice(ji) = MAX( 0._wp , ( rhos * h_s_1d(ji) + (rhoi-rho0) * h_i_1d(ji) ) * z1_rho )
+475,477c436,437
+<             ! update thickness
+<             zh_i(ji,0)  = zh_i(ji,0) + dh_snowice(ji)
+<             zdeltah(ji) =              dh_snowice(ji)
+---
+>          h_i_1d(ji)    = h_i_1d(ji) + dh_snowice(ji)
+>          h_s_1d(ji)    = h_s_1d(ji) - dh_snowice(ji)
+479,481c439,451
+<             ! update heat content (J.m-2) and layer thickness
+<             h_i_old (ji,0) = h_i_old (ji,0) + dh_snowice(ji)
+<             eh_i_old(ji,0) = eh_i_old(ji,0) + zfmdt * zEw           ! 1st part (sea water enthalpy)
+---
+>          ! Contribution to energy flux to the ocean [J/m2], >0 (if sst<0)
+>          zfmdt          = ( rhos - rhoi ) * dh_snowice(ji)    ! <0
+>          zEw            = rcp * sst_1d(ji)
+>          zQm            = zfmdt * zEw
+> 
+>          hfx_thd_1d(ji) = hfx_thd_1d(ji) + zEw        * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Heat flux
+>          sfx_sni_1d(ji) = sfx_sni_1d(ji) + sss_1d(ji) * zfmdt * a_i_1d(ji) * r1_Dt_ice ! Salt flux
+> 
+>          ! Case constant salinity in time: virtual salt flux to keep salinity constant
+>          IF( nn_icesal /= 2 )  THEN
+>             sfx_bri_1d(ji) = sfx_bri_1d(ji) - sss_1d(ji) * zfmdt                 * a_i_1d(ji) * r1_Dt_ice  &  ! put back sss_m     into the ocean
+>                &                            - s_i_1d(ji) * dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice     ! and get  rn_icesal from the ocean
+>          ENDIF
+482a453,473
+>          ! Mass flux: All snow is thrown in the ocean, and seawater is taken to replace the volume
+>          wfx_sni_1d    (ji) = wfx_sni_1d    (ji) - dh_snowice(ji) * rhoi * a_i_1d(ji) * r1_Dt_ice
+>          wfx_snw_sni_1d(ji) = wfx_snw_sni_1d(ji) + dh_snowice(ji) * rhos * a_i_1d(ji) * r1_Dt_ice
+> 
+>          ! update thickness
+>          zh_i(ji,0)  = zh_i(ji,0) + dh_snowice(ji)
+>          zdeltah(ji) =              dh_snowice(ji)
+> 
+>          ! update heat content (J.m-2) and layer thickness
+>          h_i_old (ji,0) = h_i_old (ji,0) + dh_snowice(ji)
+>          eh_i_old(ji,0) = eh_i_old(ji,0) + zfmdt * zEw           ! 1st part (sea water enthalpy)
+> 
+>       END DO
+>       !
+>       DO jk = nlay_s, 0, -1   ! flooding of snow starts from the base
+>          DO ji = 1, npti
+>             zdum           = MIN( zdeltah(ji), zh_s(ji,jk) )     ! amount of snw that floods, > 0
+>             zh_s(ji,jk)    = MAX( 0._wp, zh_s(ji,jk) - zdum )    ! remove some snow thickness
+>             eh_i_old(ji,0) = eh_i_old(ji,0) + zdum * ze_s(ji,jk) ! 2nd part (snow enthalpy)
+>             ! update dh_snowice
+>             zdeltah(ji)    = MAX( 0._wp, zdeltah(ji) - zdum )
+484,505c475,487
+<          !
+<          DO jk = nlay_s, 0, -1   ! flooding of snow starts from the base
+<             DO ji = 1, npti
+<                zdum           = MIN( zdeltah(ji), zh_s(ji,jk) )     ! amount of snw that floods, > 0
+<                zh_s(ji,jk)    = MAX( 0._wp, zh_s(ji,jk) - zdum )    ! remove some snow thickness
+<                eh_i_old(ji,0) = eh_i_old(ji,0) + zdum * ze_s(ji,jk) ! 2nd part (snow enthalpy)
+<                ! update dh_snowice
+<                zdeltah(ji)    = MAX( 0._wp, zdeltah(ji) - zdum )
+<             END DO
+<          END DO
+<          !
+<          !
+< !!!$         ! --- Update snow diags --- !
+< !!!$         !!clem: this is wrong. dh_s_tot is not used anyway
+< !!!$         DO ji = 1, npti
+< !!!$            dh_s_tot(ji) = dh_s_tot(ji) + dh_s_mlt(ji) + zdeltah(ji) + zdh_s_sub(ji) - dh_snowice(ji)
+< !!!$         END DO
+< !         !
+< !         !
+<          ! Remapping of snw enthalpy on a regular grid
+<          !--------------------------------------------
+<          CALL snw_ent( zh_s, ze_s, e_s_1d)
+---
+>       END DO
+>       !
+>       !
+> !!!$      ! --- Update snow diags --- !
+> !!!$      !!clem: this is wrong. dh_s_tot is not used anyway
+> !!!$      DO ji = 1, npti
+> !!!$         dh_s_tot(ji) = dh_s_tot(ji) + dh_s_mlt(ji) + zdeltah(ji) + zdh_s_sub(ji) - dh_snowice(ji)
+> !!!$      END DO
+> !      !
+> !      !
+>       ! Remapping of snw enthalpy on a regular grid
+>       !--------------------------------------------
+>       CALL snw_ent( zh_s, ze_s, e_s_1d)
+507,515c489,496
+<          ! recalculate t_s_1d from e_s_1d
+<          DO jk = 1, nlay_s
+<             DO ji = 1,npti
+<                IF( h_s_1d(ji) > 0._wp ) THEN
+<                   t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
+<                ELSE
+<                   t_s_1d(ji,jk) = rt0
+<                ENDIF
+<             END DO
+---
+>       ! recalculate t_s_1d from e_s_1d
+>       DO jk = 1, nlay_s
+>          DO ji = 1,npti
+>             IF( h_s_1d(ji) > 0._wp ) THEN
+>                t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
+>             ELSE
+>                t_s_1d(ji,jk) = rt0
+>             ENDIF
+517,518c498,500
+<       END IF
+<          ! Note: remapping of ice enthalpy is done in icethd.F90
+---
+>       END DO
+> 
+>       ! Note: remapping of ice enthalpy is done in icethd.F90
+526,533d507
+< 
+<       IF(ln_isbaes) THEN
+<          DO jk = 1, nlay_s
+<             WHERE( h_i_1d(1:npti) == 0._wp )
+<                dh_s_1d (1:npti,jk) = 0._wp ! ln_isbaes
+<             END WHERE
+<          END DO
+<       ENDIF
+diff ICE/icethd.F90 ../../nemo_snwext/nemo/src/ICE/icethd.F90
+22,23c22
+<       &                 qml_ice, qcn_ice, qtr_ice_top, slp_isbaes, tair_isbaes, qair_isbaes, wndm_isbaes, rain_isbaes, &
+<       &                 snow_isbaes, qsr_ice_isbaes, qns_ice_isbaes, qlw_ice_isbaes, qlwdwn_ice_isbaes, qsb_ice_isbaes, qla_ice_isbaes, rho_air_isbaes
+---
+>       &                 qml_ice, qcn_ice, qtr_ice_top
+46a46
+>    
+95,96d94
+<       REAL(wp), DIMENSION(jpij)          ::   ZP_RADXS    ! Radiation transmited through the snow (bottom layer only)
+< 
+105,108d102
+<       REAL(wp), DIMENSION(jpij) ::   zm_ini      !
+<       REAL(wp), DIMENSION(jpij) ::   zm2_ini      ! 
+<       REAL(wp), DIMENSION(jpij) ::   zdm      ! 
+<       REAL(wp), DIMENSION(jpij) ::   zdm2      ! 
+154,158d147
+<       IF( ln_isbaes ) THEN
+<          IF( ln_virtual_itd ) CALL ctl_stop( 'ln_virtual_itd not yet compatible with ln_isbaes=T')
+<          IF( ln_cndflx ) CALL ctl_stop(' ln_cndflx and/or ln_cndemulate are not yet compatible with ln_isbaes=T')
+<          IF( nn_flxdist /= -1 ) CALL ctl_stop(' ln_isbaes=T not compatible with ln_flxdist yes')
+<       ENDIF
+176,177d164
+<             PRINT*,'h_i before thd ', h_i(1,1,:)
+< 
+193,194d179
+<             !
+<             !PRINT*,'MASS AT 0',SUM(rho_s_1d(1,:) * dh_s_1d(1,:))* a_i_1d(1)
+195a181
+>             !
+209,214d194
+< 
+< #if defined key_isbaes
+<             ELSEIF( ln_isbaes ) THEN
+<                CALL ice_var_snwfra( h_s_1d(1:npti), za_s_fra(1:npti) )
+<                CALL SNOW3L_SI3(npti,nlay_s,1, rn_Dt, za_s_fra(1:npti), isnow, ZP_RADXS, zq_rema, zevap_rema)
+< #endif           
+216,226c196
+< #if defined key_isbaes
+<             DO ji = 1, npti
+<                    IF(ln_isbaes) THEN
+<                        IF (isnow(ji) == 0._wp) THEN
+<                            zradtr_s(ji,nlay_s) = qtr_ice_top_1d(ji)
+<                        ELSE
+<                            zradtr_s(:,nlay_s) = ZP_RADXS(:)
+<                        ENDIF
+<                    ENDIF
+<              END DO
+< #endif           
+---
+> 
+232c202
+<                               CALL ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
+---
+>                               CALL ice_thd_dh( zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
+363c333
+<       INTEGER ::   jk,ji   ! dummy loop indices
+---
+>       INTEGER ::   jk   ! dummy loop indices
+370,374d339
+<          !IF(ln_isbaes) THEN
+<          !   ! Recompute the mass and the volume, which are the variables that will be advected later on
+<          !      rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s (:,:,:,:) 
+<          !ENDIF
+<          !PRINT*,'RHO 1D2D',rho_s
+453,485d417
+< #if defined key_isbaes
+<          ! ISBA-ES variables
+<          DO jk = 1, nlay_s
+<             CALL tab_2d_1d( npti, nptidx(1:npti), rho_s_1d(1:npti,jk), rho_s(:,:,jk,kl)    )
+<             CALL tab_2d_1d( npti, nptidx(1:npti), swe_s_1d(1:npti,jk), swe_s(:,:,jk,kl)    )
+<             CALL tab_2d_1d( npti, nptidx(1:npti), o_s_1d (1:npti,jk), o_s (:,:,jk,kl) )
+<             CALL tab_2d_1d( npti, nptidx(1:npti), lwc_s_1d (1:npti,jk), lwc_s (:,:,jk,kl) )
+<             CALL tab_2d_1d( npti, nptidx(1:npti), dh_s_1d (1:npti,jk), dh_s (:,:,jk,kl) )
+<             CALL tab_2d_1d( npti, nptidx(1:npti), dv_s_1d (1:npti,jk), dv_s (:,:,jk,kl) )
+<             CALL tab_2d_1d( npti, nptidx(1:npti), rhov_s_1d (1:npti,jk), rhov_s (:,:,jk,kl) )
+<             CALL tab_2d_1d( npti, nptidx(1:npti), ov_s_1d (1:npti,jk), ov_s (:,:,jk,kl) )
+<          END DO
+<    
+<          CALL tab_2d_1d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti),  slp_isbaes         )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), tair_isbaes_1d    (1:npti), tair_isbaes        )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), qair_isbaes_1d    (1:npti), qair_isbaes        )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), wndm_isbaes_1d    (1:npti), wndm_isbaes        )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), rain_isbaes_1d    (1:npti), rain_isbaes(:,:,kl)        )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), snow_isbaes_1d    (1:npti), snow_isbaes(:,:,kl)        )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), albi_isbaes_1d    (1:npti), albi_isbaes (:,:,kl)       )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), albs_isbaes_1d    (1:npti), albs_isbaes (:,:,kl)       )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), cnd_i_isbaes_1d   (1:npti), cnd_i_isbaes(:,:,kl)       )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), glamt_1d    (1:npti), glamt       )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), gphit_1d    (1:npti), gphit       )
+< 
+<          CALL tab_2d_1d( npti, nptidx(1:npti), rho_air_isbaes_1d    (1:npti), rho_air_isbaes       )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), qsr_ice_isbaes_1d    (1:npti), qsr_ice_isbaes(:,:,kl)       )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), qns_ice_isbaes_1d    (1:npti), qns_ice_isbaes(:,:,kl)       )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), qlw_ice_isbaes_1d    (1:npti), qlw_ice_isbaes(:,:,kl)       )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), qlwdwn_ice_isbaes_1d    (1:npti), qlwdwn_ice_isbaes(:,:,kl)       )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), qsb_ice_isbaes_1d (1:npti), qsb_ice_isbaes (:,:,kl) )
+<          CALL tab_2d_1d( npti, nptidx(1:npti), qla_ice_isbaes_1d (1:npti), qla_ice_isbaes (:,:,kl) )
+< #endif
+492,500c424
+< #if defined key_isbaes
+<          IF(ln_isbaes) THEN
+<                WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))     
+<             ELSE 
+<                WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s
+<             ENDIF
+< #else
+<          WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s 
+< #endif
+---
+>             WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s
+511,519c435
+< #if defined key_isbaes 
+<          IF(ln_isbaes) THEN
+<                e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !* dh_s_1d(1:npti,jk) !* a_i_1d(1:npti) 
+<             ELSE
+<                e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
+<             ENDIF
+< #else
+<          e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
+< #endif
+---
+>             e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
+528,542d443
+< #if defined key_isbaes
+<          IF(ln_isbaes) THEN
+<             ! Recompute the mass and the volume, which are the variables that will be advected later on
+<             DO jk = 1, nlay_s
+<                dv_s_1d (1:npti,jk) = dh_s_1d (1:npti,jk) * a_i_1d (1:npti) 
+<                rhov_s_1d (1:npti,jk) = rho_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
+<                ov_s_1d (1:npti,jk) = o_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
+<                DO ji = 1, npti 
+<                   v_s_1d (ji) = SUM(dv_s_1d (ji,:))
+<                END DO
+< !               WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d(1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d(1:npti,jk)
+< 
+<             END DO
+<          ENDIF
+< #endif
+620,654d520
+< 
+< #if defined key_isbaes         
+<          ! ISBA-ES variables
+<          DO jk = 1, nlay_s
+<             CALL tab_1d_2d( npti, nptidx(1:npti), rho_s_1d(1:npti,jk), rho_s(:,:,jk,kl)    )
+<             CALL tab_1d_2d( npti, nptidx(1:npti), swe_s_1d(1:npti,jk), swe_s(:,:,jk,kl)    )
+<             CALL tab_1d_2d( npti, nptidx(1:npti), o_s_1d(1:npti,jk), o_s(:,:,jk,kl)    )
+<             CALL tab_1d_2d( npti, nptidx(1:npti), lwc_s_1d(1:npti,jk), lwc_s(:,:,jk,kl)    )
+<             CALL tab_1d_2d( npti, nptidx(1:npti), dh_s_1d(1:npti,jk), dh_s(:,:,jk,kl)    )
+<             CALL tab_1d_2d( npti, nptidx(1:npti), dv_s_1d(1:npti,jk), dv_s(:,:,jk,kl)    )
+<             CALL tab_1d_2d( npti, nptidx(1:npti), rhov_s_1d(1:npti,jk), rhov_s(:,:,jk,kl)    )
+<             CALL tab_1d_2d( npti, nptidx(1:npti), ov_s_1d(1:npti,jk), ov_s(:,:,jk,kl)    )
+<          END DO
+< 
+<          CALL tab_1d_2d( npti, nptidx(1:npti), slp_isbaes_1d    (1:npti),  slp_isbaes        )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), tair_isbaes_1d    (1:npti), tair_isbaes       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), qair_isbaes_1d    (1:npti), qair_isbaes       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), wndm_isbaes_1d    (1:npti), wndm_isbaes       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), rain_isbaes_1d    (1:npti), rain_isbaes(:,:,kl)       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), snow_isbaes_1d    (1:npti), snow_isbaes(:,:,kl)       )
+< 
+<          CALL tab_1d_2d( npti, nptidx(1:npti), albi_isbaes_1d    (1:npti), albi_isbaes(:,:,kl)       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), albs_isbaes_1d    (1:npti), albs_isbaes(:,:,kl)       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), cnd_i_isbaes_1d    (1:npti), cnd_i_isbaes(:,:,kl)       )
+< 
+<          CALL tab_1d_2d( npti, nptidx(1:npti), rho_air_isbaes_1d    (1:npti), rho_air_isbaes       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), qsr_ice_isbaes_1d    (1:npti), qsr_ice_isbaes(:,:,kl)       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), qns_ice_isbaes_1d    (1:npti), qns_ice_isbaes(:,:,kl)       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), qlw_ice_isbaes_1d    (1:npti), qlw_ice_isbaes(:,:,kl)       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), qlwdwn_ice_isbaes_1d    (1:npti), qlwdwn_ice_isbaes(:,:,kl)       )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), qsb_ice_isbaes_1d(1:npti), qsb_ice_isbaes(:,:,kl)    )
+<          CALL tab_1d_2d( npti, nptidx(1:npti), qla_ice_isbaes_1d(1:npti), qla_ice_isbaes(:,:,kl)    )
+< 
+<          !
+< #endif
+680,682d545
+< #if defined key_isbaes
+<       NAMELIST/namthd/ ln_icedH, ln_icedA, ln_icedO, ln_icedS, ln_leadhfx, ln_snwext, ln_isbaes
+< #else
+684c547
+< #endif
+---
+> 
+704,706c567
+< #if defined key_isbaes
+<          WRITE(numout,*) '      Use isba-es for snow (T) or not (F)                                  ln_isbaes =  ', ln_isbaes
+< #endif
+---
+> 
+diff ICE/icethd_zdf_bl99_snwext.F90 ../../nemo_snwext/nemo/src/ICE/icethd_zdf_bl99_snwext.F90
+136c136
+<       !REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zkappa_s    ! Kappa factor in the snow
+---
+>       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zkappa_s    ! Kappa factor in the snow
+184,195c184,195
+<          
+<          ! snow thickness
+<          IF( h_s_1d(ji) > 0._wp ) THEN
+< 
+<             zh_s  (ji) = MAX( zh_min , h_s_1d(ji) ) * r1_nlay_s ! set a minimum thickness for conduction
+<             z1_h_s(ji) = 1._wp / zh_s(ji)                       !       it must be very small
+<         !    isnow (ji) = 1._wp
+<          ELSE
+<          !   zh_s  (ji) = 0._wp
+<             z1_h_s(ji) = 0._wp
+<          !   isnow (ji) = 0._wp
+<          ENDIF
+---
+>       !   IF( ln_snwext ) THEN ! TEST 
+>       !      ! snow thickness
+>       !      IF( h_s_1d(ji) > 0._wp ) THEN
+>       !         zh_s  (ji) = MAX( zh_min , h_s_1d(ji) ) * r1_nlay_s ! set a minimum thickness for conduction
+>       !         z1_h_s(ji) = 1._wp / zh_s(ji)                       !       it must be very small
+>       !         isnow (ji) = 1._wp
+>       !      ELSE
+>       !         zh_s  (ji) = 0._wp
+>       !         z1_h_s(ji) = 0._wp
+>       !         isnow (ji) = 0._wp
+>       !      ENDIF
+>       !   ENDIF
+288,292c288
+<          IF(ln_isbaes) THEN ! Save thermal conductivity of the 1st ice layer for isbaes
+<              DO ji = 1, npti    
+<                 cnd_i_isbaes_1d(ji) = ztcond_i_cp(ji,0)
+<              END DO
+<          ENDIF
+---
+> 
+299d294
+< 
+326,337c321,331
+< 
+<          !DO jk = 0, nlay_s-1
+<          !   DO ji = 1, npti
+<          !      IF ( .NOT. l_T_converged(ji) ) &
+<          !         zkappa_s(ji,jk) = zghe(ji) * rn_cnd_s * z1_h_s(ji)
+<          !   END DO
+<          !END DO
+<          !DO ji = 1, npti   ! Snow-ice interface
+<          !   IF ( .NOT. l_T_converged(ji) ) &
+<          !      zkappa_s(ji,nlay_s) = isnow(ji) * zghe(ji) * rn_cnd_s * ztcond_i(ji,0) &
+<          !         &                            / ( 0.5_wp * ( ztcond_i(ji,0) * zh_s(ji) + rn_cnd_s * zh_i(ji) ) )
+<          !END DO
+---
+>          DO jk = 0, nlay_s-1
+>             DO ji = 1, npti
+>                IF ( .NOT. l_T_converged(ji) ) &
+>                   zkappa_s(ji,jk) = zghe(ji) * rn_cnd_s * z1_h_s(ji)
+>             END DO
+>          END DO
+>          DO ji = 1, npti   ! Snow-ice interface
+>             IF ( .NOT. l_T_converged(ji) ) &
+>                zkappa_s(ji,nlay_s) = isnow(ji) * zghe(ji) * rn_cnd_s * ztcond_i(ji,0) &
+>                   &                            / ( 0.5_wp * ( ztcond_i(ji,0) * zh_s(ji) + rn_cnd_s * zh_i(ji) ) )
+>          END DO
+348,355c342,349
+<          !DO ji = 1, npti   ! Snow-ice interface
+<          !   IF ( .NOT. l_T_converged(ji) ) THEN
+<          !      ! Calculate combined surface snow and ice conductivity to pass through the coupler (met-office)
+<          !      zkappa_comb(ji) = isnow_comb(ji) * zkappa_s(ji,0) + ( 1._wp - isnow_comb(ji) ) * zkappa_i(ji,0)
+<          !      ! If there is snow then use the same snow-ice interface conductivity for the top layer of ice
+<          !      !IF( h_s_1d(ji) > 0._wp )   zkappa_i(ji,0) = zkappa_s(ji,nlay_s)
+<          !  ENDIF
+<          !END DO
+---
+>          DO ji = 1, npti   ! Snow-ice interface
+>             IF ( .NOT. l_T_converged(ji) ) THEN
+>                ! Calculate combined surface snow and ice conductivity to pass through the coupler (met-office)
+>                zkappa_comb(ji) = isnow_comb(ji) * zkappa_s(ji,0) + ( 1._wp - isnow_comb(ji) ) * zkappa_i(ji,0)
+>                ! If there is snow then use the same snow-ice interface conductivity for the top layer of ice
+>                !IF( h_s_1d(ji) > 0._wp )   zkappa_i(ji,0) = zkappa_s(ji,nlay_s)
+>            ENDIF
+>          END DO
+631c625,626
+<             IF(isnow(ji) == 0._wp) qcn_ice_top_1d(ji) = - ( 1._wp - isnow(ji) ) * zkappa_i(ji,0) * zg1  * ( t_i_1d(ji,1) - t_su_1d(ji) )
+---
+>             IF(isnow(ji) == 0._wp) qcn_ice_top_1d(ji) = -           isnow(ji)   * zkappa_s(ji,0) * zg1s * ( t_s_1d(ji,1) - t_su_1d(ji) ) &
+>                &                 - ( 1._wp - isnow(ji) ) * zkappa_i(ji,0) * zg1  * ( t_i_1d(ji,1) - t_su_1d(ji) )
+697,698c692,693
+<             !cnd_ice_1d(ji) = 2._wp * zkappa_comb(ji)
+<             cnd_ice_1d(ji) = 2._wp * zkappa_i(ji,0)
+---
+>             cnd_ice_1d(ji) = 2._wp * zkappa_comb(ji)
+>             !!cnd_ice_1d(ji) = 2._wp * zkappa_i(ji,0)
+diff ICE/icethd_zdf.F90 ../../nemo_snwext/nemo/src/ICE/icethd_zdf.F90
+66c66
+<          IF( ln_snwext .OR. ln_isbaes ) THEN ! snow in detached mode
+---
+>          IF( ln_snwext ) THEN ! snow in detached mode
+diff ICE/icevar.F90 ../../nemo_snwext/nemo/src/ICE/icevar.F90
+66,67d65
+<    USE MODE_SNOW3L   ! For isba-es
+< 
+167d164
+<          rhom_s(:,:) = 0._wp
+173,178c170
+<                IF(ln_isbaes) THEN
+<                    tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
+<                    rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
+<                ELSE        
+<                    tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
+<                ENDIF
+---
+>                tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
+218,223d209
+<       REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) :: ZSCAP ! for ln_isbaes
+<       REAL(wp), PARAMETER       :: XLMTT=333700.0 ! isba_es parameter
+<       REAL(wp), PARAMETER       :: XTT=273.16 ! isba_es parameter
+<       REAL(wp), PARAMETER       :: XSNOWDMIN=0.000001 ! isba_es parameter
+<       REAL(wp), PARAMETER       :: XCI=2.106E+3
+< 
+307,333c293,300
+<       IF(ln_isbaes) THEN
+<          DO jk = 1, nlay_s
+< 
+<             WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
+<                dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)    
+<                rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
+<                o_s(:,:,jk,:) = ov_s(:,:,jk,:) / dv_s(:,:,jk,:)
+<                !t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
+<                !     &                MIN( r1_rcpi * ( -(1 / rho_s(:,:,jk,:)) * ( e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) ) + rLfus ) , 0._wp ) )
+<                ZSCAP(:,:,jk,:)     = rho_s(:,:,jk,:) * XCI
+< 
+<                t_s(:,:,jk,:) = XTT + MIN(1.0, dh_s(:,:,jk,:)/XSNOWDMIN)*( ((e_s(:,:,jk,:)/MAX(XSNOWDMIN,dh_s(:,:,jk,:)))  &
+<                &    + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) )
+<             ELSEWHERE                           !--- no ice
+<                t_s(:,:,jk,:) = rt0
+<             END WHERE
+<          END DO
+<       ELSE
+<          DO jk = 1, nlay_s
+<             WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
+<                t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
+<                     &                MIN( r1_rcpi * ( -r1_rhos * ( e_s(:,:,jk,:) / v_s(:,:,:) * zlay_s ) + rLfus ) , 0._wp ) )
+<             ELSEWHERE                           !--- no ice
+<                t_s(:,:,jk,:) = rt0
+<             END WHERE
+<          END DO
+<       ENDIF
+---
+>       DO jk = 1, nlay_s
+>          WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
+>             t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
+>                  &                MIN( r1_rcpi * ( -r1_rhos * ( e_s(:,:,jk,:) / v_s(:,:,:) * zlay_s ) + rLfus ) , 0._wp ) )
+>          ELSEWHERE                           !--- no ice
+>             t_s(:,:,jk,:) = rt0
+>          END WHERE
+>       END DO
+720,724c687
+<       IF(ln_isbaes) THEN 
+<               WHERE( pe_s (1:npti,:,:) > 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be <= 0
+<       ELSE
+<               WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+<       ENDIF                
+---
+>       WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+1323c1286
+<       IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
+---
+>       IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
+1337c1300
+<       IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
+---
+>       IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
+1351c1314
+<       IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
+---
+>       IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
+diff ICE/icewri.F90 ../../nemo_snwext/nemo/src/ICE/icewri.F90
+126d125
+<       IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn )      ! snw mean density 
+diff ICE/snwthd_dh.F90 ../../nemo_snwext/nemo/src/ICE/snwthd_dh.F90
+39c39
+<    SUBROUTINE snw_thd_dh( isnow, zq_rema, zevap_rema , zh_s, ze_s)
+---
+>    SUBROUTINE snw_thd_dh( zq_rema, zevap_rema , zh_s, ze_s)
+65d64
+<       REAL(wp), DIMENSION(jpij), INTENT(in) ::   isnow       ! presence of snow or not (used only if ln_isbaes=T)
+83,86c82,84
+<       IF(.NOT. ln_isbaes) THEN
+<           zq_rema(1:npti)    = 0._wp
+<           zevap_rema(1:npti) = 0._wp
+<       ENDIF
+---
+>       zq_rema(1:npti)    = 0._wp
+>       zevap_rema(1:npti) = 0._wp
+> 
+102c100,135
+<       IF(.NOT. ln_isbaes) THEN
+---
+>       IF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN
+>          !
+>          DO ji = 1, npti
+>             zq_top(ji)     = MAX( 0._wp, qml_ice_1d(ji) * rDt_ice )
+>          END DO
+>          !
+>       ELSE
+>          !
+>          DO ji = 1, npti
+>             zdum           = qns_ice_1d(ji) + qsr_ice_1d(ji) - qtr_ice_top_1d(ji) - qcn_ice_top_1d(ji)
+>             qml_ice_1d(ji) = zdum * MAX( 0._wp , SIGN( 1._wp, t_su_1d(ji) - rt0 ) )
+>             zq_top(ji)     = MAX( 0._wp, qml_ice_1d(ji) * rDt_ice )
+>          END DO
+>          !
+>       ENDIF
+>       !
+>       !                       ! ============ !
+>       !                       !     Snow     !
+>       !                       ! ============ !
+>       !
+>       ! Internal melting
+>       ! ----------------
+>       ! IF snow temperature is above freezing point, THEN snow melts (should not happen but sometimes it does)
+>       DO jk = 1, nlay_s
+>          DO ji = 1, npti
+>             IF( t_s_1d(ji,jk) > rt0 ) THEN
+>                hfx_res_1d    (ji) = hfx_res_1d    (ji) - ze_s(ji,jk) * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice   ! heat flux to the ocean [W.m-2], < 0
+>                wfx_snw_sum_1d(ji) = wfx_snw_sum_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice   ! mass flux
+>                ! updates
+>                dh_s_mlt(ji)    =             dh_s_mlt(ji) - zh_s(ji,jk)
+>                h_s_1d  (ji)    = MAX( 0._wp, h_s_1d  (ji) - zh_s(ji,jk) )
+>                zh_s    (ji,jk) = 0._wp
+>                ze_s    (ji,jk) = 0._wp
+>             END IF
+>          END DO
+>       END DO
+104,234c137,140
+<          IF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN
+<             !
+<             DO ji = 1, npti
+<                zq_top(ji)     = MAX( 0._wp, qml_ice_1d(ji) * rDt_ice )
+<             END DO
+<             !
+<          ELSE
+<             !
+<             DO ji = 1, npti
+<                zdum           = qns_ice_1d(ji) + qsr_ice_1d(ji) - qtr_ice_top_1d(ji) - qcn_ice_top_1d(ji)
+<                qml_ice_1d(ji) = zdum * MAX( 0._wp , SIGN( 1._wp, t_su_1d(ji) - rt0 ) )
+<                zq_top(ji)     = MAX( 0._wp, qml_ice_1d(ji) * rDt_ice )
+<             END DO
+<             !
+<          ENDIF
+<           !
+<           !                       ! ============ !
+<           !                       !     Snow     !
+<           !                       ! ============ !
+<           !
+<           ! Internal melting
+<           ! ----------------
+<           ! IF snow temperature is above freezing point, THEN snow melts (should not happen but sometimes it does)
+<           DO jk = 1, nlay_s
+<              DO ji = 1, npti
+<                 IF( t_s_1d(ji,jk) > rt0 ) THEN
+<                    hfx_res_1d    (ji) = hfx_res_1d    (ji) - ze_s(ji,jk) * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice   ! heat flux to the ocean [W.m-2], < 0
+<                    wfx_snw_sum_1d(ji) = wfx_snw_sum_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice   ! mass flux
+<                    ! updates
+<                    dh_s_mlt(ji)    =             dh_s_mlt(ji) - zh_s(ji,jk)
+<                    h_s_1d  (ji)    = MAX( 0._wp, h_s_1d  (ji) - zh_s(ji,jk) )
+<                    zh_s    (ji,jk) = 0._wp
+<                    ze_s    (ji,jk) = 0._wp
+<                 END IF
+<              END DO
+<           END DO
+<     
+<          IF( .NOT. ln_snwext ) THEN ! Nb: this part of the code is the same as in the snwthd_snwfl routine. We keep it here to be consistent with 4.2.stable version
+<              ! Snow precipitation
+<              !-------------------
+<              CALL ice_var_snwblow( 1._wp - at_i_1d(1:npti), zsnw(1:npti) )   ! snow distribution over ice after wind blowing
+<     
+<              DO ji = 1, npti
+<                 IF( sprecip_1d(ji) > 0._wp ) THEN
+<                    zh_s(ji,0) = zsnw(ji) * sprecip_1d(ji) * rDt_ice * r1_rhos / at_i_1d(ji)   ! thickness of precip
+<                    ze_s(ji,0) = MAX( 0._wp, - qprec_ice_1d(ji) )                              ! enthalpy of the precip (>0, J.m-3)
+<                    !
+<                    hfx_spr_1d(ji) = hfx_spr_1d(ji) + ze_s(ji,0) * zh_s(ji,0) * a_i_1d(ji) * r1_Dt_ice   ! heat flux from snow precip (>0, W.m-2)
+<                    wfx_spr_1d(ji) = wfx_spr_1d(ji) - rhos       * zh_s(ji,0) * a_i_1d(ji) * r1_Dt_ice   ! mass flux, <0
+<                    !
+<                    ! update thickness
+<                    h_s_1d(ji) = h_s_1d(ji) + zh_s(ji,0)
+<                 ENDIF
+<              END DO
+<           ENDIF
+<           ! Snow melting
+<           ! ------------
+<           ! If heat still available (zq_top > 0)
+<           ! then all snw precip has been melted and we need to melt more snow
+<           DO jk = 0, nlay_s
+<              DO ji = 1, npti
+<                 IF( zh_s(ji,jk) > 0._wp .AND. zq_top(ji) > 0._wp ) THEN
+<                    !
+<                    rswitch = MAX( 0._wp , SIGN( 1._wp , ze_s(ji,jk) - epsi20 ) )
+<                    zdum    = - rswitch * zq_top(ji) / MAX( ze_s(ji,jk), epsi20 )   ! thickness change
+<                    zdum    = MAX( zdum , - zh_s(ji,jk) )                           ! bound melting
+<     
+<                    hfx_snw_1d    (ji) = hfx_snw_1d    (ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice   ! heat used to melt snow(W.m-2, >0)
+<                    wfx_snw_sum_1d(ji) = wfx_snw_sum_1d(ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice   ! snow melting only = water into the ocean
+<     
+<                    ! updates available heat + thickness
+<                    dh_s_mlt(ji)    =              dh_s_mlt(ji)    + zdum
+<                    zq_top  (ji)    = MAX( 0._wp , zq_top  (ji)    + zdum * ze_s(ji,jk) )
+<                    h_s_1d  (ji)    = MAX( 0._wp , h_s_1d  (ji)    + zdum )
+<                    zh_s    (ji,jk) = MAX( 0._wp , zh_s    (ji,jk) + zdum )
+<     !!$               IF( zh_s(ji,jk) == 0._wp )   ze_s(ji,jk) = 0._wp
+<     
+<                    !
+<                 ENDIF
+<              END DO
+<           END DO
+<           DO ji = 1, npti
+<                    zq_rema (ji) = zq_top (ji) ! remaining heat at the end of the routine in J.m-2 (used to melt ice later on)
+<           END DO
+<     
+<           ! Snow sublimation
+<           !-----------------
+<           ! qla_ice is always >=0 (upwards), heat goes to the atmosphere, therefore snow sublimates
+<           !    comment: not counted in mass/heat exchange in iceupdate.F90 since this is an exchange with atm. (not ocean)
+<           zdeltah   (1:npti) = 0._wp ! total snow thickness that sublimates, < 0
+<           zevap_rema(1:npti) = 0._wp
+<           DO ji = 1, npti
+<              zdeltah   (ji) = MAX( - evap_ice_1d(ji) * r1_rhos * rDt_ice, - h_s_1d(ji) )   ! amount of snw that sublimates, < 0
+<              zevap_rema(ji) = evap_ice_1d(ji) * rDt_ice + zdeltah(ji) * rhos               ! remaining evap in kg.m-2 (used for ice sublimation later on)
+<           END DO
+<     
+<           DO jk = 0, nlay_s
+<              DO ji = 1, npti
+<                 zdum = MAX( -zh_s(ji,jk), zdeltah(ji) ) ! snow layer thickness that sublimates, < 0
+<                 !
+<                 hfx_sub_1d    (ji) = hfx_sub_1d    (ji) + ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! Heat flux of snw that sublimates [W.m-2], < 0
+<                 wfx_snw_sub_1d(ji) = wfx_snw_sub_1d(ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! Mass flux by sublimation
+<     
+<                 ! update thickness
+<                 h_s_1d(ji)    = MAX( 0._wp , h_s_1d(ji)    + zdum )
+<                 zh_s  (ji,jk) = MAX( 0._wp , zh_s  (ji,jk) + zdum )
+<     !!$            IF( zh_s(ji,jk) == 0._wp )   ze_s(ji,jk) = 0._wp
+<     
+<                 ! update sublimation left
+<                 zdeltah(ji) = MIN( zdeltah(ji) - zdum, 0._wp )
+<              END DO
+<           END DO
+<     
+<          IF( ln_snwext ) THEN
+<        
+<             ! Remapping of snw enthalpy on a regular grid
+<             !--------------------------------------------
+<              CALL snw_ent( zh_s, ze_s, e_s_1d)
+<        
+<              ! recalculate t_s_1d from e_s_1d
+<              DO jk = 1, nlay_s
+<                 DO ji = 1,npti
+<                    IF( h_s_1d(ji) > 0._wp ) THEN
+<                       t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
+<                    ELSE
+<                       t_s_1d(ji,jk) = rt0
+<                    ENDIF
+<                 END DO
+<              END DO
+<        
+<           ENDIF
+---
+>      IF( .NOT. ln_snwext ) THEN ! Nb: this part of the code is the same as in the snwthd_snwfl routine. We keep it here to be consistent with 4.2.stable version
+>          ! Snow precipitation
+>          !-------------------
+>          CALL ice_var_snwblow( 1._wp - at_i_1d(1:npti), zsnw(1:npti) )   ! snow distribution over ice after wind blowing
+236c142,175
+<       ELSE ! ln_isbaes
+---
+>          DO ji = 1, npti
+>             IF( sprecip_1d(ji) > 0._wp ) THEN
+>                zh_s(ji,0) = zsnw(ji) * sprecip_1d(ji) * rDt_ice * r1_rhos / at_i_1d(ji)   ! thickness of precip
+>                ze_s(ji,0) = MAX( 0._wp, - qprec_ice_1d(ji) )                              ! enthalpy of the precip (>0, J.m-3)
+>                !
+>                hfx_spr_1d(ji) = hfx_spr_1d(ji) + ze_s(ji,0) * zh_s(ji,0) * a_i_1d(ji) * r1_Dt_ice   ! heat flux from snow precip (>0, W.m-2)
+>                wfx_spr_1d(ji) = wfx_spr_1d(ji) - rhos       * zh_s(ji,0) * a_i_1d(ji) * r1_Dt_ice   ! mass flux, <0
+>                !
+>                ! update thickness
+>                h_s_1d(ji) = h_s_1d(ji) + zh_s(ji,0)
+>             ENDIF
+>          END DO
+>       ENDIF
+>       ! Snow melting
+>       ! ------------
+>       ! If heat still available (zq_top > 0)
+>       ! then all snw precip has been melted and we need to melt more snow
+>       DO jk = 0, nlay_s
+>          DO ji = 1, npti
+>             IF( zh_s(ji,jk) > 0._wp .AND. zq_top(ji) > 0._wp ) THEN
+>                !
+>                rswitch = MAX( 0._wp , SIGN( 1._wp , ze_s(ji,jk) - epsi20 ) )
+>                zdum    = - rswitch * zq_top(ji) / MAX( ze_s(ji,jk), epsi20 )   ! thickness change
+>                zdum    = MAX( zdum , - zh_s(ji,jk) )                           ! bound melting
+> 
+>                hfx_snw_1d    (ji) = hfx_snw_1d    (ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice   ! heat used to melt snow(W.m-2, >0)
+>                wfx_snw_sum_1d(ji) = wfx_snw_sum_1d(ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice   ! snow melting only = water into the ocean
+> 
+>                ! updates available heat + thickness
+>                dh_s_mlt(ji)    =              dh_s_mlt(ji)    + zdum
+>                zq_top  (ji)    = MAX( 0._wp , zq_top  (ji)    + zdum * ze_s(ji,jk) )
+>                h_s_1d  (ji)    = MAX( 0._wp , h_s_1d  (ji)    + zdum )
+>                zh_s    (ji,jk) = MAX( 0._wp , zh_s    (ji,jk) + zdum )
+> !!$               IF( zh_s(ji,jk) == 0._wp )   ze_s(ji,jk) = 0._wp
+238,245c177,198
+<          ! If there is no snow, the evaporation and heat flux at ice surface are computed here
+<          IF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN
+<             !
+<             DO ji = 1, npti
+<                IF(isnow(ji) == 0._wp) zq_top(ji)     = MAX( 0._wp, qml_ice_1d(ji) * rDt_ice ) ! overwise it comes from isbaes
+<             END DO
+<             !
+<          ELSE
+---
+>                !
+>             ENDIF
+>          END DO
+>       END DO
+>       DO ji = 1, npti
+>                zq_rema (ji) = zq_top (ji) ! remaining heat at the end of the routine in J.m-2 (used to melt ice later on)
+>       END DO
+> 
+>       ! Snow sublimation
+>       !-----------------
+>       ! qla_ice is always >=0 (upwards), heat goes to the atmosphere, therefore snow sublimates
+>       !    comment: not counted in mass/heat exchange in iceupdate.F90 since this is an exchange with atm. (not ocean)
+>       zdeltah   (1:npti) = 0._wp ! total snow thickness that sublimates, < 0
+>       zevap_rema(1:npti) = 0._wp
+>       DO ji = 1, npti
+>          zdeltah   (ji) = MAX( - evap_ice_1d(ji) * r1_rhos * rDt_ice, - h_s_1d(ji) )   ! amount of snw that sublimates, < 0
+>          zevap_rema(ji) = evap_ice_1d(ji) * rDt_ice + zdeltah(ji) * rhos               ! remaining evap in kg.m-2 (used for ice sublimation later on)
+>       END DO
+> 
+>       DO jk = 0, nlay_s
+>          DO ji = 1, npti
+>             zdum = MAX( -zh_s(ji,jk), zdeltah(ji) ) ! snow layer thickness that sublimates, < 0
+247,251c200,225
+<             DO ji = 1, npti
+<                IF(isnow(ji) == 0._wp) THEN ! overwise it comes from isbaes
+<                    zdum           = qns_ice_1d(ji) + qsr_ice_1d(ji) - qtr_ice_top_1d(ji) - qcn_ice_top_1d(ji)
+<                    qml_ice_1d(ji) = zdum * MAX( 0._wp , SIGN( 1._wp, t_su_1d(ji) - rt0 ) )
+<                    zq_top(ji)     = MAX( 0._wp, qml_ice_1d(ji) * rDt_ice )
+---
+>             hfx_sub_1d    (ji) = hfx_sub_1d    (ji) + ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! Heat flux of snw that sublimates [W.m-2], < 0
+>             wfx_snw_sub_1d(ji) = wfx_snw_sub_1d(ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! Mass flux by sublimation
+> 
+>             ! update thickness
+>             h_s_1d(ji)    = MAX( 0._wp , h_s_1d(ji)    + zdum )
+>             zh_s  (ji,jk) = MAX( 0._wp , zh_s  (ji,jk) + zdum )
+> !!$            IF( zh_s(ji,jk) == 0._wp )   ze_s(ji,jk) = 0._wp
+> 
+>             ! update sublimation left
+>             zdeltah(ji) = MIN( zdeltah(ji) - zdum, 0._wp )
+>          END DO
+>       END DO
+> 
+>      IF( ln_snwext ) THEN
+>    
+>         ! Remapping of snw enthalpy on a regular grid
+>         !--------------------------------------------
+>          CALL snw_ent( zh_s, ze_s, e_s_1d)
+>    
+>          ! recalculate t_s_1d from e_s_1d
+>          DO jk = 1, nlay_s
+>             DO ji = 1,npti
+>                IF( h_s_1d(ji) > 0._wp ) THEN
+>                   t_s_1d(ji,jk) = rt0 + ( - e_s_1d(ji,jk) * r1_rhos * r1_rcpi + rLfus * r1_rcpi )
+>                ELSE
+>                   t_s_1d(ji,jk) = rt0
+254,261d227
+<             !
+<          ENDIF
+< 
+<          DO ji = 1,npti
+<             IF(isnow(ji) == 0._wp) THEN
+<                 zevap_rema(ji) = evap_ice_1d(ji) * rDt_ice
+<                 zq_rema (ji) = zq_top (ji)
+<             ENDIF
+263c229,231
+<       ENDIF ! ln_isbaes
+---
+>    
+>       ENDIF
+> 
+diff ICE/snwthd.F90 ../../nemo_snwext/nemo/src/ICE/snwthd.F90
+54,56c54
+<       !! ** Action : - call snw_thd_snwfl (changes in height & enthalpy due to 
+<       !!               snowfall)
+<       !!             - call snw_thd_zdf ( vertical diffusion of heat in snow)
+---
+>       !! ** Action : - call snw_thd_zdf ( vertical diffusion of heat in snow)
+58c56
+<       !!               melt / sublimation 
+---
+>       !!               snowfall / melt / sublimation 
+132c130
+<       IF( ln_icedH )   CALL snw_thd_dh(isnow, zq_rema, zevap_rema, zh_s, ze_s)
+---
+>       IF( ln_icedH )   CALL snw_thd_dh( zq_rema, zevap_rema, zh_s, ze_s)
+diff ICE/snwthd_zdf.F90 ../../nemo_snwext/nemo/src/ICE/snwthd_zdf.F90
+532a533
+> 
+diff ICE/snwvar.F90 ../../nemo_snwext/nemo/src/ICE/snwvar.F90
+79,83c79
+<             IF(ln_isbaes) THEN
+<                e_s_1d(ji,jk) = rho_s_1d(ji,jk) * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )
+<             ELSE        
+<                e_s_1d(ji,jk) = rhos * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )
+<             ENDIF
+---
+>             e_s_1d(ji,jk) = rhos * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )

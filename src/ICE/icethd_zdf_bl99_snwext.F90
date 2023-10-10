@@ -285,18 +285,19 @@ CONTAINS
             END DO
             !
          ENDIF
+#if defined key_isbaes
          IF(ln_isbaes) THEN ! Save thermal conductivity of the 1st ice layer for isbaes
              DO ji = 1, npti    
                 cnd_i_isbaes_1d(ji) = ztcond_i_cp(ji,0)
              END DO
          ENDIF
+#endif
          ! Variable used after iterations
          ! Value must be frozen after convergence for MPP independance reason
          DO ji = 1, npti
             IF ( .NOT. l_T_converged(ji) ) &
                ztcond_i(ji,:) = MAX( zkimin, ztcond_i_cp(ji,:) )
          END DO
-
          !
          !--- G(he) : enhancement of thermal conductivity in mono-category case
          ! Computation of effective thermal conductivity G(h)

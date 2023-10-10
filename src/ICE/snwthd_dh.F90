@@ -80,10 +80,15 @@ CONTAINS
 
       !!------------------------------------------------------------------
       ! Initialise remaining heat and mass fluxes after melt and sublimation
+#if defined key_isbaes
       IF(.NOT. ln_isbaes) THEN
           zq_rema(1:npti)    = 0._wp
           zevap_rema(1:npti) = 0._wp
       ENDIF
+#else
+      zq_rema(1:npti)    = 0._wp
+      zevap_rema(1:npti) = 0._wp
+#endif
       !
       ! initialize snw layer thicknesses and enthalpies
       zh_s(1:npti,0) = 0._wp
@@ -99,8 +104,9 @@ CONTAINS
       !                       ! Available heat for surface ablation !
       !                       ! ============================================== !
       !
+#if defined key_isbaes      
       IF(.NOT. ln_isbaes) THEN
-
+#endif
          IF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN
             !
             DO ji = 1, npti
@@ -232,7 +238,7 @@ CONTAINS
              END DO
        
           ENDIF
-
+#if defined key_isbaes
       ELSE ! ln_isbaes
 
          ! If there is no snow, the evaporation and heat flux at ice surface are computed here
@@ -260,7 +266,9 @@ CONTAINS
                 zq_rema (ji) = zq_top (ji)
             ENDIF
          END DO
+         
       ENDIF ! ln_isbaes
+#endif
       !
       !
    END SUBROUTINE snw_thd_dh

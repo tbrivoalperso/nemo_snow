@@ -435,11 +435,13 @@ CONTAINS
       DO jl = 1, jpl
          DO jk = 1, nlay_s
             CALL tab_2d_1d( npti, nptidx(1:npti), ze_s_2d(1:npti,jk,jl), e_s(:,:,jk,jl) )
+#if defined key_isbaes            
             IF(ln_isbaes) THEN
                CALL tab_2d_1d( npti, nptidx(1:npti), zdv_s_2d(1:npti,jk,jl), dv_s(:,:,jk,jl) )
                CALL tab_2d_1d( npti, nptidx(1:npti), zrhov_s_2d(1:npti,jk,jl), rhov_s(:,:,jk,jl) )
                CALL tab_2d_1d( npti, nptidx(1:npti), zov_s_2d(1:npti,jk,jl), ov_s(:,:,jk,jl) )
-            ENDIF   
+            ENDIF
+#endif   
          END DO
          DO jk = 1, nlay_i
             CALL tab_2d_1d( npti, nptidx(1:npti), ze_i_2d(1:npti,jk,jl), e_i(:,:,jk,jl) )
@@ -535,6 +537,7 @@ CONTAINS
             END DO
          END DO
          !
+#if defined key_isbaes         
          IF(ln_isbaes) THEN
 
             DO jk = 1, nlay_s         !--- Snow volume
@@ -584,6 +587,7 @@ CONTAINS
             END DO
 
          ENDIF
+#endif         
          DO jk = 1, nlay_i         !--- Ice heat content
             DO ji = 1, npti
                !
@@ -607,7 +611,7 @@ CONTAINS
       !-------------------
       ! clem: The transfer between one category to another can lead to very small negative values (-1.e-20)
       !       because of truncation error ( i.e. 1. - 1. /= 0 )
-      !CALL ice_var_roundoff( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d )
+      CALL ice_var_roundoff( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d )
 
       ! at_i must be <= rn_amax
       zworka(1:npti) = SUM( a_i_2d(1:npti,:), dim=2 )
@@ -644,11 +648,13 @@ CONTAINS
       DO jl = 1, jpl
          DO jk = 1, nlay_s
             CALL tab_1d_2d( npti, nptidx(1:npti), ze_s_2d(1:npti,jk,jl), e_s(:,:,jk,jl) )
+#if defined key_isbaes
             IF(ln_isbaes) THEN
                CALL tab_1d_2d( npti, nptidx(1:npti), zdv_s_2d(1:npti,jk,jl), dv_s(:,:,jk,jl) )
                CALL tab_1d_2d( npti, nptidx(1:npti), zrhov_s_2d(1:npti,jk,jl), rhov_s(:,:,jk,jl) )
                CALL tab_1d_2d( npti, nptidx(1:npti), zov_s_2d(1:npti,jk,jl), ov_s(:,:,jk,jl) )
             ENDIF
+#endif
          END DO
          DO jk = 1, nlay_i
             CALL tab_1d_2d( npti, nptidx(1:npti), ze_i_2d(1:npti,jk,jl), e_i(:,:,jk,jl) )

@@ -106,7 +106,6 @@ CONTAINS
          !                          !-----------------------------------------------------
       ENDIF
       !
-      PRINT*,'h_i in cor',h_i
       ! controls
       IF( sn_cfctl%l_prtctl ) &
          &                 CALL ice_prt3D   ('icecor')                                                             ! prints

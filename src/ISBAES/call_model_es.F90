@@ -530,7 +530,7 @@ DO JJ=1,KSIZE1
 
 ENDDO
 
-
+PRINT*,'zevap rema',zevap_rema
 PRINT*,'H after snow3l', h_s_1d(1)
 PRINT*,'T° after snow3l',t_s_1d(1,:)
 PRINT*,'Mass difference', zdm *a_i_1d * r1_Dt_ice

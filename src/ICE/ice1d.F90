@@ -158,7 +158,9 @@ MODULE ice1D
    
    ! Variables for snow external routines (ln_snwext=T)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qcn_snw_bot_1d
-   
+
+
+#if defined key_isbaes
    ! Variables needed for ISBA-ES coupling
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rho_s_1d      !:    Snow density per unit volume  
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   swe_s_1d      !:    Snow water equivalent (kg m-2)  
@@ -192,7 +194,7 @@ MODULE ice1D
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   glamt_1d ! For isbaes use 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   gphit_1d ! For isbaes use 
-
+#endif
    ! 
    !!----------------------
    !! * 2D Module variables
@@ -200,7 +202,7 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   a_i_2d 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   v_i_2d 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   v_s_2d 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   oa_i_2d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   oa_i_2d 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   sv_i_2d 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   a_ip_2d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   v_ip_2d 
@@ -223,7 +225,7 @@ CONTAINS
       !!                ***  ROUTINE ice1D_alloc ***
       !!---------------------------------------------------------------------!
       INTEGER ::   ice1D_alloc   ! return value
-      INTEGER ::   ierr(9), ii
+      INTEGER ::   ierr(10), ii
       !!---------------------------------------------------------------------!
       ierr(:) = 0
 
@@ -258,12 +260,12 @@ CONTAINS
          &      dh_i_sub(jpij) , dh_s_mlt(jpij) , dh_snowice(jpij) , s_i_1d  (jpij) , s_i_new (jpij) ,  &
          &      a_ip_1d (jpij) , v_ip_1d (jpij) , v_i_1d    (jpij) , v_s_1d  (jpij) , v_il_1d (jpij) ,  &
          &      h_il_1d (jpij) , h_ip_1d (jpij) ,                                                       &
-         &      sv_i_1d (jpij) , oa_i_1d (jpij) , o_i_1d    (jpij), STAT=ierr(ii) )
+         &      sv_i_1d (jpij) , oa_i_1d (jpij) , o_i_1d    (jpij) , STAT=ierr(ii) )
       !
       ii = ii + 1
       ALLOCATE( t_s_1d  (jpij,nlay_s)     , t_i_1d (jpij,nlay_i)     , sz_i_1d(jpij,nlay_i) ,  &            
-         &      e_i_1d  (jpij,nlay_i)     , e_s_1d (jpij,nlay_s)     , rho_s_1d(jpij,nlay_s),  &
-         &      swe_s_1d(jpij,nlay_s), eh_i_old(jpij,0:nlay_i+1) , h_i_old(jpij,0:nlay_i+1) , STAT=ierr(ii) )
+         &      e_i_1d  (jpij,nlay_i)     , e_s_1d (jpij,nlay_s) ,     &
+         &      eh_i_old(jpij,0:nlay_i+1) , h_i_old(jpij,0:nlay_i+1) , STAT=ierr(ii) )
       !
       ii = ii + 1
       ALLOCATE( qcn_ice_bot_1d(jpij) , qcn_ice_top_1d(jpij) , STAT=ierr(ii) )
@@ -280,12 +282,19 @@ CONTAINS
          &      a_ip_2d(jpij,jpl) , v_ip_2d(jpij,jpl) , t_su_2d(jpij,jpl) , v_il_2d(jpij,jpl) ,  &
          &      STAT=ierr(ii) )
 
+
        ii = ii + 1
-      ALLOCATE( qcn_snw_bot_1d(jpij), albs_isbaes_1d(jpij), albi_isbaes_1d(jpij), cnd_i_isbaes_1d(jpij), o_s_1d(jpij,nlay_s), lwc_s_1d(jpij,nlay_s),  &
+      ALLOCATE( qcn_snw_bot_1d(jpij) , STAT=ierr(ii) )
+
+#if defined key_isbaes
+      ii = ii + 1
+      ALLOCATE( swe_s_1d(jpij,nlay_s), albs_isbaes_1d(jpij), albi_isbaes_1d(jpij), cnd_i_isbaes_1d(jpij),          &
+         &     rho_s_1d(jpij,nlay_s), o_s_1d(jpij,nlay_s), lwc_s_1d(jpij,nlay_s),  &
          &     dh_s_1d(jpij,nlay_s),dv_s_1d(jpij,nlay_s),rhov_s_1d(jpij,nlay_s),ov_s_1d(jpij,nlay_s),                                                      & 
          &      tair_isbaes_1d(jpij), qair_isbaes_1d(jpij), slp_isbaes_1d(jpij), wndm_isbaes_1d(jpij), rain_isbaes_1d(jpij),   & 
          &      snow_isbaes_1d(jpij), qsr_ice_isbaes_1d(jpij), qns_ice_isbaes_1d(jpij), qlwdwn_ice_isbaes_1d(jpij), qlw_ice_isbaes_1d(jpij),          & 
          &      qla_ice_isbaes_1d(jpij), qsb_ice_isbaes_1d(jpij), rho_air_isbaes_1d(jpij), glamt_1d(jpij), gphit_1d(jpij), STAT=ierr(ii) )
+#endif
 
       ice1D_alloc = MAXVAL( ierr(:) )
       IF( ice1D_alloc /= 0 )   CALL ctl_stop( 'STOP',  'ice1D_alloc: failed to allocate arrays.'  )

@@ -120,7 +120,9 @@ CONTAINS
       !!-------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt     ! ocean time step
       INTEGER, INTENT(in) ::   ksbc   ! flux formulation (user defined, bulk or Pure Coupled)
+#if defined key_isbaes
       INTEGER             ::   jl
+#endif
       !!--------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('icesbc')
@@ -130,7 +132,7 @@ CONTAINS
          WRITE(numout,*)'ice_sbc_flx: Surface boundary condition for sea ice (flux)'
          WRITE(numout,*)'~~~~~~~~~~~~~~~'
       ENDIF
-
+#if defined key_isbaes
       IF(ln_isbaes) THEN ! Save atmospheric variables for isbaes use
         !                                     ! ========================== !
         DO jl = 1, jpl                        !  Loop over ice categories  !
@@ -154,7 +156,7 @@ CONTAINS
         wndm_isbaes(:,:) = SQRT(sf(jp_wndi)%fnow(:,:,1) **2 + sf(jp_wndj)%fnow(:,:,1)**2)
         slp_isbaes(:,:)  = sf(jp_slp )%fnow(:,:,1)
       ENDIF
-
+#endif
       !                     !== ice albedo ==!
       CALL ice_alb( t_su, h_i, h_s, ln_pnd_alb, a_ip_eff, h_ip, cloud_fra, alb_ice )
       !

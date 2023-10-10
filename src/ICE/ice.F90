@@ -204,7 +204,6 @@ MODULE ice
    LOGICAL , PUBLIC ::   ln_leadhfx       ! heat in the leads is used to melt sea-ice before warming the ocean
    LOGICAL , PUBLIC ::   ln_snwext       ! flag to activate external snow routines 
    LOGICAL , PUBLIC ::   ln_isbaes       ! flag to activate isba-es coupling
-
    LOGICAL , PUBLIC ::   ln_fcond       ! heat in the leads is used to melt sea-ice before warming the ocean
    
    !
@@ -360,7 +359,6 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sv_i          !: Sea-Ice Bulk salinity * volume per area (pss.m)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   o_i           !: Sea-Ice Age                             (s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   oa_i          !: Sea-Ice Age times ice area              (s)
-
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   bv_i          !: brine volume
 
    !! Variables summed over all categories, or associated to all the ice in a single grid cell
@@ -466,6 +464,8 @@ MODULE ice
    !! * Extra diagnotics for external snow (ln_snwext=T)
    !!----------------------------------------------------------------------
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_snw_bot   !: Conduction flux at snow / ice interface (W/m2)
+
+#if defined key_isbaes
    !!----------------------------------------------------------------------
    !! * Extra variables for ISBA-ES coupling
    !!----------------------------------------------------------------------
@@ -480,7 +480,7 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   dh_s           !: Snow layer thickness                          (m)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   dv_s           !: Snow layer volume per unit area               (m)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   rhov_s           !: Snow layer density X olume per unit area               (m)
-
+#endif
    !
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
@@ -586,12 +586,12 @@ CONTAINS
       ii = ii + 1 
       ALLOCATE( qcn_snw_bot(jpi,jpj,jpl), STAT = ierr(ii) )
 
-
+#if defined key_isbaes
       ! Variables needed for ISBA-ES coupling
       ii = ii + 1
       ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) ,swe_s(jpi,jpj,nlay_s,jpl) , o_s(jpi,jpj,nlay_s,jpl), lwc_s(jpi,jpj,nlay_s,jpl), ov_s(jpi,jpj,nlay_s,jpl), albs_isbaes(jpi,jpj,jpl), & 
                 & albi_isbaes(jpi,jpj,jpl),cnd_i_isbaes(jpi,jpj,jpl), dh_s(jpi,jpj,nlay_s,jpl),dv_s(jpi,jpj,nlay_s,jpl),rhov_s(jpi,jpj,nlay_s,jpl), STAT=ierr(ii) )
- 
+#endif
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )
       !

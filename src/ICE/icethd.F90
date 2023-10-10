@@ -173,6 +173,8 @@ CONTAINS
 
          IF( npti > 0 ) THEN  ! If there is no ice, do nothing.
             !
+            PRINT*,'h_i before thd ', h_i(1,1,:)
+
                               CALL ice_thd_1d2d( jl, 1 )            ! --- Move to 1D arrays --- !
             !                                                       ! --- & Change units of e_i, e_s from J/m2 to J/m3 --- !
             !
@@ -189,6 +191,8 @@ CONTAINS
             
             qcn_snw_bot_1d(1:npti)     = 0._wp
             !
+            !PRINT*,'MASS AT 0',SUM(rho_s_1d(1,:) * dh_s_1d(1,:))* a_i_1d(1)
+
             ! Theo : Here We call the new snow_thd routine which compute: 
             ! - The T° equation in the snow (snw_thd_zdf)
             ! - Snowfall / melt and associated mass and heat changes (snw_thd_dh)
@@ -209,7 +213,7 @@ CONTAINS
                CALL SNOW3L_SI3(npti,nlay_s,1, rn_Dt, za_s_fra(1:npti), isnow, ZP_RADXS, zq_rema, zevap_rema)
 #endif           
             ENDIF
-
+#if defined key_isbaes
             DO ji = 1, npti
                    IF(ln_isbaes) THEN
                        IF (isnow(ji) == 0._wp) THEN
@@ -219,14 +223,13 @@ CONTAINS
                        ENDIF
                    ENDIF
              END DO
-           
+#endif           
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
                              CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
             !
             IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
                               CALL ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
-            PRINT*,'MASS AT 2',SUM(rho_s_1d(1,:) * dh_s_1d(1,:))* a_i_1d(1)
 
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF
@@ -238,13 +241,10 @@ CONTAINS
                &              CALL ice_thd_mono                     ! --- Extra lateral melting if virtual_itd --- !
             !
             IF( ln_icedA )    CALL ice_thd_da                       ! --- Lateral melting --- !
-            !
-            PRINT*,'MASS AT 3',SUM(rho_s_1d(1,:) * dh_s_1d(1,:))* a_i_1d(1)
 
+            !
                               CALL ice_thd_1d2d( jl, 2 )            ! --- Change units of e_i, e_s from J/m3 to J/m2 --- !
             !                                                       ! --- & Move to 2D arrays --- !
-            PRINT*,'rho_s AFTER 1D2D',rho_s
-
          ENDIF
          !
       END DO
@@ -370,7 +370,7 @@ CONTAINS
          !   ! Recompute the mass and the volume, which are the variables that will be advected later on
          !      rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s (:,:,:,:) 
          !ENDIF
-         PRINT*,'RHO 1D2D',rho_s
+         !PRINT*,'RHO 1D2D',rho_s
          CALL tab_2d_1d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
          CALL tab_2d_1d( npti, nptidx(1:npti), h_i_1d (1:npti), h_i (:,:,kl)     )
@@ -449,7 +449,7 @@ CONTAINS
          ! to update ice age
          CALL tab_2d_1d( npti, nptidx(1:npti), o_i_1d (1:npti), o_i (:,:,kl) )
          CALL tab_2d_1d( npti, nptidx(1:npti), oa_i_1d(1:npti), oa_i(:,:,kl) )
-
+#if defined key_isbaes
          ! ISBA-ES variables
          DO jk = 1, nlay_s
             CALL tab_2d_1d( npti, nptidx(1:npti), rho_s_1d(1:npti,jk), rho_s(:,:,jk,kl)    )
@@ -481,18 +481,22 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), qlwdwn_ice_isbaes_1d    (1:npti), qlwdwn_ice_isbaes(:,:,kl)       )
          CALL tab_2d_1d( npti, nptidx(1:npti), qsb_ice_isbaes_1d (1:npti), qsb_ice_isbaes (:,:,kl) )
          CALL tab_2d_1d( npti, nptidx(1:npti), qla_ice_isbaes_1d (1:npti), qla_ice_isbaes (:,:,kl) )
-
+#endif
          !
          ! --- Change units of e_i, e_s from J/m2 to J/m3 --- !
          DO jk = 1, nlay_i
             WHERE( h_i_1d(1:npti)>0._wp ) e_i_1d(1:npti,jk) = e_i_1d(1:npti,jk) / (h_i_1d(1:npti) * a_i_1d(1:npti)) * nlay_i
          END DO
          DO jk = 1, nlay_s
-            IF(ln_isbaes) THEN
+#if defined key_isbaes
+         IF(ln_isbaes) THEN
                WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))     
             ELSE 
                WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s
             ENDIF
+#else
+         WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s 
+#endif
          END DO
          !
          !                 !---------------------!
@@ -503,11 +507,15 @@ CONTAINS
             e_i_1d(1:npti,jk) = e_i_1d(1:npti,jk) * h_i_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_i
          END DO
          DO jk = 1, nlay_s
-            IF(ln_isbaes) THEN
+#if defined key_isbaes 
+         IF(ln_isbaes) THEN
                e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !* dh_s_1d(1:npti,jk) !* a_i_1d(1:npti) 
             ELSE
                e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
             ENDIF
+#else
+         e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
+#endif
          END DO
          !
          ! Change thickness to volume (replaces routine ice_var_eqv2glo)
@@ -516,6 +524,7 @@ CONTAINS
          sv_i_1d(1:npti) = s_i_1d (1:npti) * v_i_1d (1:npti)
          oa_i_1d(1:npti) = o_i_1d (1:npti) * a_i_1d (1:npti)
 
+#if defined key_isbaes
          IF(ln_isbaes) THEN
             ! Recompute the mass and the volume, which are the variables that will be advected later on
             DO jk = 1, nlay_s
@@ -529,8 +538,7 @@ CONTAINS
 
             END DO
          ENDIF
-         PRINT*,'DH', dh_s_1d
-
+#endif
          CALL tab_1d_2d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_1d_2d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
          CALL tab_1d_2d( npti, nptidx(1:npti), h_i_1d (1:npti), h_i (:,:,kl)     )
@@ -608,7 +616,8 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), v_s_1d (1:npti), v_s (:,:,kl) )
          CALL tab_1d_2d( npti, nptidx(1:npti), sv_i_1d(1:npti), sv_i(:,:,kl) )
          CALL tab_1d_2d( npti, nptidx(1:npti), oa_i_1d(1:npti), oa_i(:,:,kl) )
-         
+
+#if defined key_isbaes         
          ! ISBA-ES variables
          DO jk = 1, nlay_s
             CALL tab_1d_2d( npti, nptidx(1:npti), rho_s_1d(1:npti,jk), rho_s(:,:,jk,kl)    )
@@ -641,7 +650,7 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), qla_ice_isbaes_1d(1:npti), qla_ice_isbaes(:,:,kl)    )
 
          !
-
+#endif
          ! check convergence of heat diffusion scheme
          IF( ln_zdf_chkcvg ) THEN
             CALL tab_1d_2d( npti, nptidx(1:npti), tice_cvgerr_1d(1:npti), ztice_cvgerr(:,:,kl) )
@@ -668,7 +677,6 @@ CONTAINS
       INTEGER  ::   ios   ! Local integer output status for namelist read
       !!
       NAMELIST/namthd/ ln_icedH, ln_icedA, ln_icedO, ln_icedS, ln_leadhfx, ln_snwext, ln_isbaes
-
       !!-------------------------------------------------------------------
       !
       READ  ( numnam_ice_ref, namthd, IOSTAT = ios, ERR = 901)
@@ -688,8 +696,9 @@ CONTAINS
          WRITE(numout,*) '      activate gravity drainage and flushing (T) or not (F)                ln_icedS   = ', ln_icedS
          WRITE(numout,*) '      heat in the leads is used to melt sea-ice before warming the ocean   ln_leadhfx = ', ln_leadhfx
          WRITE(numout,*) '      Snow thermodynamics treated separately from sea-ice (T) or not (F)   ln_snwext =  ', ln_snwext
+#if defined key_isbaes
          WRITE(numout,*) '      Use isba-es for snow (T) or not (F)                                  ln_isbaes =  ', ln_isbaes
-
+#endif
  ENDIF
       !
                        CALL ice_thd_zdf_init   ! set ice heat diffusion parameters

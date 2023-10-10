@@ -63,8 +63,9 @@ MODULE icevar
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
 
+#if defined key_isbaes   
    USE MODE_SNOW3L   ! For isba-es
-
+#endif
    IMPLICIT NONE
    PRIVATE
 
@@ -170,12 +171,17 @@ CONTAINS
                tm_i(:,:) = tm_i(:,:) + r1_nlay_i * t_i (:,:,jk,jl) * v_i(:,:,jl) * z1_vt_i(:,:)
             END DO
             DO jk = 1, nlay_s
+#if defined key_isbaes            
                IF(ln_isbaes) THEN
                    tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
                    rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
                ELSE        
                    tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
                ENDIF
+#else
+
+               tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
+#endif
             END DO
          END DO
          !
@@ -304,10 +310,9 @@ CONTAINS
       ! Snow temperature   [K]   (with a minimum value (rt0 - 100.))
       !--------------------
       zlay_s = REAL( nlay_s , wp )
+#if defined key_isbaes      
       IF(ln_isbaes) THEN
          DO jk = 1, nlay_s
-            PRINT*,'dh_sGLOOOO 1 ',dh_s
-            PRINT*,'RHOV',rhov_s
 
             WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
                dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)    
@@ -322,7 +327,6 @@ CONTAINS
             ELSEWHERE                           !--- no ice
                t_s(:,:,jk,:) = rt0
             END WHERE
-            PRINT*,'dh_sGLOOOO 2',dh_s
          END DO
       ELSE
          DO jk = 1, nlay_s
@@ -334,6 +338,16 @@ CONTAINS
             END WHERE
          END DO
       ENDIF
+#else
+      DO jk = 1, nlay_s
+         WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
+            t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
+                 &                MIN( r1_rcpi * ( -r1_rhos * ( e_s(:,:,jk,:) / v_s(:,:,:) * zlay_s ) + rLfus ) , 0._wp ) )
+         ELSEWHERE                           !--- no ice
+            t_s(:,:,jk,:) = rt0
+         END WHERE
+      END DO
+#endif
       !
       ! integrated values
       vt_i (:,:) = SUM( v_i , dim=3 )
@@ -720,11 +734,15 @@ CONTAINS
       WHERE( psv_i(1:npti,:)   < 0._wp )   psv_i(1:npti,:)   = 0._wp   ! sv_i must be >= 0
       WHERE( poa_i(1:npti,:)   < 0._wp )   poa_i(1:npti,:)   = 0._wp   ! oa_i must be >= 0
       WHERE( pe_i (1:npti,:,:) < 0._wp )   pe_i (1:npti,:,:) = 0._wp   !  e_i must be >= 0
+#if defined key_isbaes
       IF(ln_isbaes) THEN 
               WHERE( pe_s (1:npti,:,:) > 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be <= 0
       ELSE
               WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
-      ENDIF                
+      ENDIF
+#else
+      WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+#endif
       IF( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
          WHERE( pa_ip(1:npti,:) < 0._wp )    pa_ip(1:npti,:)   = 0._wp   ! a_ip must be >= 0
          WHERE( pv_ip(1:npti,:) < 0._wp )    pv_ip(1:npti,:)   = 0._wp   ! v_ip must be >= 0
@@ -1323,7 +1341,11 @@ CONTAINS
    SUBROUTINE ice_var_snwfra_3d( ph_s, pa_s_fra )
       REAL(wp), DIMENSION(:,:,:), INTENT(in   ) ::   ph_s        ! snow thickness
       REAL(wp), DIMENSION(:,:,:), INTENT(  out) ::   pa_s_fra    ! ice fraction covered by snow
+#if defined key_isbaes      
       IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
+#else
+      IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
+#endif              
          WHERE( ph_s > 0._wp ) ; pa_s_fra = 1._wp
          ELSEWHERE             ; pa_s_fra = 0._wp
          END WHERE
@@ -1337,7 +1359,11 @@ CONTAINS
    SUBROUTINE ice_var_snwfra_2d( ph_s, pa_s_fra )
       REAL(wp), DIMENSION(:,:), INTENT(in   ) ::   ph_s        ! snow thickness
       REAL(wp), DIMENSION(:,:), INTENT(  out) ::   pa_s_fra    ! ice fraction covered by snow
+#if defined key_isbaes
       IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
+#else
+      IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
+#endif
          WHERE( ph_s > 0._wp ) ; pa_s_fra = 1._wp
          ELSEWHERE             ; pa_s_fra = 0._wp
          END WHERE
@@ -1351,7 +1377,11 @@ CONTAINS
    SUBROUTINE ice_var_snwfra_1d( ph_s, pa_s_fra )
       REAL(wp), DIMENSION(:), INTENT(in   ) ::   ph_s        ! snow thickness
       REAL(wp), DIMENSION(:), INTENT(  out) ::   pa_s_fra    ! ice fraction covered by snow
+#if defined key_isbaes      
       IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
+#else
+      IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
+#endif              
          WHERE( ph_s > 0._wp ) ; pa_s_fra = 1._wp
          ELSEWHERE             ; pa_s_fra = 0._wp
          END WHERE

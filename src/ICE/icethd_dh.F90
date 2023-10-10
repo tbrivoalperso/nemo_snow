@@ -28,7 +28,9 @@ MODULE icethd_dh
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
 
+#if defined key_isbaes   
    USE MODE_SNOW3L    ! For isbaes
+#endif
 
    IMPLICIT NONE
    PRIVATE
@@ -138,13 +140,17 @@ CONTAINS
          END DO
       END DO
       !
+#if defined key_isbaes      
       IF( ln_snwext .OR. ln_isbaes) THEN
-              
+#else
+     IF( ln_snwext) THEN
+#endif
          ! initialize snw layer thicknesses and enthalpies
          zh_s(1:npti,0) = 0._wp
          ze_s(1:npti,0) = 0._wp
          DO jk = 1, nlay_s
             DO ji = 1, npti
+#if defined key_isbaes            
                IF(ln_isbaes) THEN
                   zh_s(ji,jk) = dh_s_1d(ji,jk) 
                   ze_s(ji,jk) = e_s_1d(ji,jk)
@@ -152,6 +158,10 @@ CONTAINS
                   zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
                   ze_s(ji,jk) = e_s_1d(ji,jk)
                ENDIF
+#else
+               zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
+               ze_s(ji,jk) = e_s_1d(ji,jk)
+#endif
             END DO
          END DO
       ENDIF
@@ -398,6 +408,7 @@ CONTAINS
             IF( h_i_1d(ji) == 0._wp ) THEN
                ! mass & energy loss to the ocean
                hfx_res_1d(ji) = hfx_res_1d(ji) - e_s_1d(ji,jk) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+#if defined key_isbaes
                IF( ln_isbaes) THEN
                    ! Mass flux is computed from 3D density arrays instead of constant density
                    wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk)        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
@@ -407,18 +418,26 @@ CONTAINS
                ELSE
                     wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
                ENDIF
-
-               wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-
-               ! update thickness and energy
                h_s_1d(ji)    = 0._wp
                e_s_1d  (ji,jk) = 0._wp
                zh_s  (ji,jk) = 0._wp
                dh_s_1d(ji,jk) = 0._wp
+               rhov_s_1d(ji,jk) = 0._wp
+
+#else
+               wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+
+               ! update thickness and energy
+               h_s_1d(ji)    = 0._wp
+               ze_s  (ji,jk) = 0._wp
+               zh_s  (ji,jk) = 0._wp
+#endif
             ENDIF
          END DO
       END DO
+#if defined key_isbaes
       IF(.NOT. ln_isbaes) THEN
+#endif
          ! Snow load on ice
          ! -----------------
          ! When snow load exceeds Archimede's limit and sst is positive,
@@ -515,7 +534,9 @@ CONTAINS
                ENDIF
             END DO
          END DO
+#if defined key_isbaes
       END IF
+#endif
          ! Note: remapping of ice enthalpy is done in icethd.F90
 
       ! --- ensure that a_i = 0 & h_s = 0 where h_i = 0 ---
@@ -524,7 +545,7 @@ CONTAINS
          h_s_1d (1:npti) = 0._wp
          t_su_1d(1:npti) = rt0
       END WHERE
-
+#if defined key_isbaes
       IF(ln_isbaes) THEN
          DO jk = 1, nlay_s
             WHERE( h_i_1d(1:npti) == 0._wp )
@@ -532,7 +553,7 @@ CONTAINS
             END WHERE
          END DO
       ENDIF
-
+#endif
    END SUBROUTINE ice_thd_dh
 
 #else
