@@ -191,6 +191,7 @@ CONTAINS
          IF( ln_icethd )                CALL ice_thd( kt )            ! -- Ice thermodynamics
          !
                                         CALL diag_trends( 2 )         ! record thermo trends
+
                                         CALL ice_var_glo2eqv          ! necessary calls (at least for coupling)
                                         CALL ice_var_agg( 2 )         ! necessary calls (at least for coupling)
          !

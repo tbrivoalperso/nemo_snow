@@ -22,6 +22,7 @@ MODULE icethd
       &                 qml_ice, qcn_ice, qtr_ice_top, slp_isbaes, tair_isbaes, qair_isbaes, wndm_isbaes, rain_isbaes, &
       &                 snow_isbaes, qsr_ice_isbaes, qns_ice_isbaes, qlw_ice_isbaes, qlwdwn_ice_isbaes, qsb_ice_isbaes, qla_ice_isbaes, rho_air_isbaes
    USE snwthd        ! snow thermodynamics
+   USE snwthd_iceconv
    USE ice1D          ! sea-ice: thermodynamics variables
    USE icethd_zdf     ! sea-ice: vertical heat diffusion
    USE icethd_dh      ! sea-ice: ice-snow growth and melt
@@ -101,6 +102,13 @@ CONTAINS
       REAL(wp), DIMENSION(jpij) ::   zevap_rema  ! ice fraction covered by snow
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zh_s  ! Thicknesses of the snow layers (m) 
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   ze_s  ! Snow enthalpy per unit volume of the snow layers 
+      
+      ! Variables for snow to ice conversion
+      REAL(wp), DIMENSION(jpij) ::   thickness_si  ! Thickness removed to snow by snow to ice conversion (m) 
+      REAL(wp), DIMENSION(jpij) ::   mass_si       ! Mass removed to snow by snow to ice conversion (kg)      
+      REAL(wp), DIMENSION(jpij) ::   enthalpy_si   ! Enthalpy removed to snow by snow to ice conversion (J/m2) 
+
+
       REAL(wp), DIMENSION(jpij)          ::   zq_ini      ! diag errors on heat
       REAL(wp), DIMENSION(jpij) ::   zm_ini      !
       REAL(wp), DIMENSION(jpij) ::   zm2_ini      ! 
@@ -173,7 +181,6 @@ CONTAINS
 
          IF( npti > 0 ) THEN  ! If there is no ice, do nothing.
             !
-            PRINT*,'h_i before thd ', h_i(1,1,:)
 
                               CALL ice_thd_1d2d( jl, 1 )            ! --- Move to 1D arrays --- !
             !                                                       ! --- & Change units of e_i, e_s from J/m2 to J/m3 --- !
@@ -190,12 +197,15 @@ CONTAINS
             ze_s(1:npti, 0:nlay_s) = 0._wp ; 
             
             qcn_snw_bot_1d(1:npti)     = 0._wp
+            thickness_si(1:npti) = 0._wp
+            enthalpy_si(1:npti) = 0._wp
+            mass_si(1:npti) = 0._wp
             !
-            !PRINT*,'MASS AT 0',SUM(rho_s_1d(1,:) * dh_s_1d(1,:))* a_i_1d(1)
 
             ! Theo : Here We call the new snow_thd routine which compute: 
             ! - The T° equation in the snow (snw_thd_zdf)
             ! - Snowfall / melt and associated mass and heat changes (snw_thd_dh)
+
             IF( ln_snwext )  THEN 
                 CALL snw_thd( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, &
                                           zq_rema, zevap_rema, zh_s, ze_s )       ! Snow thermodynamics (detached mode)
@@ -206,11 +216,18 @@ CONTAINS
                 ! - isnow => presence of snow (1) or not (0) at time=t
                 ! - zq_rema, zevap_rema => remaining heat and mass fluxes after snowfall / melt
                 ! - zh_s, ze_s => non-remapped thickness and enthalpy profiles after snowfall / melt                
-
+                !CALL snw_thd_iceconv( isnow, thickness_si, mass_si, enthalpy_si ) 
 #if defined key_isbaes
             ELSEIF( ln_isbaes ) THEN
+                    
                CALL ice_var_snwfra( h_s_1d(1:npti), za_s_fra(1:npti) )
                CALL SNOW3L_SI3(npti,nlay_s,1, rn_Dt, za_s_fra(1:npti), isnow, ZP_RADXS, zq_rema, zevap_rema)
+
+               !Convert back J/m2 in J/m3 
+               DO jk = 1, nlay_s
+                  WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))
+               END DO
+              !CALL snw_thd_iceconv( isnow, thickness_si, mass_si, enthalpy_si )
 #endif           
             ENDIF
 #if defined key_isbaes
@@ -226,10 +243,13 @@ CONTAINS
 #endif           
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
-                             CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
+            CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
             !
+
             IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
-                              CALL ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
+                              PRINT*,'here',kt
+
+                              CALL ice_thd_dh( isnow, zq_rema, zevap_rema, thickness_si, mass_si, enthalpy_si, zh_s, ze_s )    ! Ice-Snow thickness
 
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF
@@ -243,8 +263,12 @@ CONTAINS
             IF( ln_icedA )    CALL ice_thd_da                       ! --- Lateral melting --- !
 
             !
+            PRINT*,'e_s_ after thd',SUM(e_s_1d(1,:) )
+            PRINT*,'e_i_ after thd',SUM(e_i_1d(1,:) * h_i_1d(1) * r1_nlay_i)
+
                               CALL ice_thd_1d2d( jl, 2 )            ! --- Change units of e_i, e_s from J/m3 to J/m2 --- !
             !                                                       ! --- & Move to 2D arrays --- !
+            PRINT*,'HERE3',e_s
          ENDIF
          !
       END DO
@@ -272,6 +296,7 @@ CONTAINS
          ENDIF
       END_2D
       CALL lbc_lnk( 'icethd', u_ice, 'U', -1.0_wp, v_ice, 'V', -1.0_wp )
+
       !
       ! convergence tests
       IF( ln_zdf_chkcvg ) THEN
@@ -370,7 +395,6 @@ CONTAINS
          !   ! Recompute the mass and the volume, which are the variables that will be advected later on
          !      rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s (:,:,:,:) 
          !ENDIF
-         !PRINT*,'RHO 1D2D',rho_s
          CALL tab_2d_1d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
          CALL tab_2d_1d( npti, nptidx(1:npti), h_i_1d (1:npti), h_i (:,:,kl)     )
@@ -490,12 +514,14 @@ CONTAINS
          DO jk = 1, nlay_s
 #if defined key_isbaes
          IF(ln_isbaes) THEN
+                 ! Conversion is done after isbaes  
                WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))     
             ELSE 
                WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s
             ENDIF
 #else
          WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s 
+         dh_s_1d(1:npti,jk) = h_s_1d(1:npti) * r1_nlay_s ! Initialise dh_s_1d
 #endif
          END DO
          !
@@ -509,7 +535,7 @@ CONTAINS
          DO jk = 1, nlay_s
 #if defined key_isbaes 
          IF(ln_isbaes) THEN
-               e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !* dh_s_1d(1:npti,jk) !* a_i_1d(1:npti) 
+               e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * dh_s_1d(1:npti,jk) * a_i_1d(1:npti) 
             ELSE
                e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
             ENDIF

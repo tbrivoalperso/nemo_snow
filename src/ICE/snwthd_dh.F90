@@ -143,7 +143,6 @@ CONTAINS
                 END IF
              END DO
           END DO
-    
          IF( .NOT. ln_snwext ) THEN ! Nb: this part of the code is the same as in the snwthd_snwfl routine. We keep it here to be consistent with 4.2.stable version
              ! Snow precipitation
              !-------------------
@@ -183,11 +182,11 @@ CONTAINS
                    h_s_1d  (ji)    = MAX( 0._wp , h_s_1d  (ji)    + zdum )
                    zh_s    (ji,jk) = MAX( 0._wp , zh_s    (ji,jk) + zdum )
     !!$               IF( zh_s(ji,jk) == 0._wp )   ze_s(ji,jk) = 0._wp
-    
                    !
                 ENDIF
              END DO
           END DO
+
           DO ji = 1, npti
                    zq_rema (ji) = zq_top (ji) ! remaining heat at the end of the routine in J.m-2 (used to melt ice later on)
           END DO
@@ -202,14 +201,14 @@ CONTAINS
              zdeltah   (ji) = MAX( - evap_ice_1d(ji) * r1_rhos * rDt_ice, - h_s_1d(ji) )   ! amount of snw that sublimates, < 0
              zevap_rema(ji) = evap_ice_1d(ji) * rDt_ice + zdeltah(ji) * rhos               ! remaining evap in kg.m-2 (used for ice sublimation later on)
           END DO
-    
+
           DO jk = 0, nlay_s
              DO ji = 1, npti
                 zdum = MAX( -zh_s(ji,jk), zdeltah(ji) ) ! snow layer thickness that sublimates, < 0
                 !
                 hfx_sub_1d    (ji) = hfx_sub_1d    (ji) + ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! Heat flux of snw that sublimates [W.m-2], < 0
                 wfx_snw_sub_1d(ji) = wfx_snw_sub_1d(ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! Mass flux by sublimation
-    
+ 
                 ! update thickness
                 h_s_1d(ji)    = MAX( 0._wp , h_s_1d(ji)    + zdum )
                 zh_s  (ji,jk) = MAX( 0._wp , zh_s  (ji,jk) + zdum )
@@ -219,7 +218,7 @@ CONTAINS
                 zdeltah(ji) = MIN( zdeltah(ji) - zdum, 0._wp )
              END DO
           END DO
-    
+ 
          IF( ln_snwext ) THEN
        
             ! Remapping of snw enthalpy on a regular grid

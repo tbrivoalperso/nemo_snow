@@ -110,12 +110,11 @@ CONTAINS
       ! computed from the surface ice or snow T° at time=t+1, regardless of the
       ! presence of snow or not at time=t.
       ! 
+      
       IF( ln_icedH )   CALL snw_thd_snwfl ! Change in snow thickness and enthalpy due to snowfall 
-
       !------------------
       ! 2) Thermodynamics 
       !------------------
-
       IF( .NOT.ln_cndflx ) THEN                           ! No conduction flux ==> default option
          CALL snw_thd_zdf( np_cnd_OFF, zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow)
       ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN   ! Conduction flux as surface boundary condition ==> Met Office default option
@@ -128,7 +127,6 @@ CONTAINS
       !------------------
       ! 3) Snow melt & sublimation 
       !------------------
-
       IF( ln_icedH )   CALL snw_thd_dh(isnow, zq_rema, zevap_rema, zh_s, ze_s)
       !
       !

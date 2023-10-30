@@ -78,7 +78,7 @@ CONTAINS
          DO ji = 1, npti
 #if defined key_isbaes
             IF(ln_isbaes) THEN
-               e_s_1d(ji,jk) = rho_s_1d(ji,jk) * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )
+               e_s_1d(ji,jk) = - rho_s_1d(ji,jk) * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )
             ELSE        
                e_s_1d(ji,jk) = rhos * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )
             ENDIF

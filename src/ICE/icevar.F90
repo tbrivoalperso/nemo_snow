@@ -322,8 +322,8 @@ CONTAINS
                !     &                MIN( r1_rcpi * ( -(1 / rho_s(:,:,jk,:)) * ( e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) ) + rLfus ) , 0._wp ) )
                ZSCAP(:,:,jk,:)     = rho_s(:,:,jk,:) * XCI
 
-               t_s(:,:,jk,:) = XTT + MIN(1.0, dh_s(:,:,jk,:)/XSNOWDMIN)*( ((e_s(:,:,jk,:)/MAX(XSNOWDMIN,dh_s(:,:,jk,:)))  &
-               &    + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) )
+               t_s(:,:,jk,:) = XTT + MIN(1.0, dh_s(:,:,jk,:)/XSNOWDMIN)*( (( - e_s(:,:,jk,:)/MAX(XSNOWDMIN,dh_s(:,:,jk,:)))  &
+               &    + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) ) ! Minus factor for enthalpy to match SI3 conventions
             ELSEWHERE                           !--- no ice
                t_s(:,:,jk,:) = rt0
             END WHERE

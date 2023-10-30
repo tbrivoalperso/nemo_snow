@@ -398,7 +398,6 @@ PSNREFREEZ    (:) = 0.0
 ! and it is updated at the end of this routine.
 !
 PSNOWDZ(:,:) = PSNOWSWE(:,:)/PSNOWRHO(:,:)
-PRINT*,'SUM DZ', SUM(PSNOWDZ(1,:))
 !
 INI          = SIZE(PSNOWSWE(:,:),1)
 INLVLS       = SIZE(PSNOWSWE(:,:),2)    ! total snow layers
@@ -448,7 +447,6 @@ ENDDO
 !
 !*       2.     Snowfall
 !               --------
-PRINT*,'SUM DZ 0',SUM(PSNOWDZ(1,:))
 
 !
 ! Caluclate uppermost density and thickness changes due to snowfall,
@@ -480,12 +478,9 @@ ENDWHERE
 !
 ! Mass/Heat redistribution:
 !
-PRINT*,'RHO bef',PSNOWRHO(1,:)
 
 CALL SNOW3LTRANSF(ZSNOW,PSNOWDZ,ZSNOWDZN,PSNOWRHO,PSNOWHEAT,PSNOWAGE)
-PRINT*,'RHO aft',PSNOWRHO(1,:)
 
-PRINT*,'SUM DZ 1',SUM(PSNOWDZ(1,:))
 
 !
 !
@@ -505,11 +500,11 @@ PSNOWLIQ(:,:)  = MAX(0.0,ZSNOWTEMP(:,:)-XTT)*ZSCAP(:,:)*                  &
 !
 ZSNOWTEMP(:,:) = MIN(XTT,ZSNOWTEMP(:,:))
 !
+PRINT*,'T° diag at the begining',ZSNOWTEMP(:,:)
 !
 !*       5.     Snow Compaction
 !               ---------------
 !
-PRINT*,'PSNOWLIQ',PSNOWLIQ
 ! Calculate snow density: compaction/aging: density increases
 !
 CALL SNOW3LCOMPACTN(PTSTEP,PSNOWRHO,PSNOWDZ,ZSNOWTEMP,ZSNOW,PSNOWLIQ)
@@ -523,7 +518,6 @@ ENDIF
 !
 ! Update snow heat content (J/m2):
 !
-PRINT*,'SUM DZ COMPAC',SUM(PSNOWDZ(1,:))
 
 ZSCAP(:,:)     = SNOW3LSCAP(PSNOWRHO)
 PSNOWHEAT(:,:) = PSNOWDZ(:,:)*( ZSCAP(:,:)*(ZSNOWTEMP(:,:)-XTT)        &
@@ -645,10 +639,8 @@ CALL SNOW3LGONE(PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                            &
 !
 ZSNOWLIQ0(:,:) = PSNOWLIQ(:,:) ! save liquid water profile before update
 !
-PRINT*,'SUM DZ GONE',SUM(PSNOWDZ(1,:))
 
 CALL SNOW3LMELT(PTSTEP,ZSCAP,ZSNOWTEMP,PSNOWDZ,PSNOWRHO,PSNOWLIQ,ZMELTXS)  
-PRINT*,'SUM DZ MELT',SUM(PSNOWDZ(1,:))
 
 !
 !
@@ -853,6 +845,10 @@ PSNOWSFCH(:) = PDELHEATN_SFC(:)+PDELPHASEN_SFC(:)-PSWNETSNOWS(:)-PLWNETSNOW(:) &
 ! surface error = PDELHEATN_SFC(:)-PSNOWSFCH(:)+PSWNETSNOW(:)-PSWNETSNOWS(:)-PGFLUXSNOW(:)+PRESTOREN(:)
 !
 !
+PRINT*,'T° diag at the endd',XTT + ( ((PSNOWHEAT(:,:)/PSNOWDZ(:,:))                   &
+                   + XLMTT*PSNOWRHO(:,:))/ZSCAP(:,:) )
+!
+
 !
 CONTAINS
 !
