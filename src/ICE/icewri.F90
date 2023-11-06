@@ -97,7 +97,15 @@ CONTAINS
       !
       ! general fields
       IF( iom_use('icemass' ) )   CALL iom_put( 'icemass', vt_i * rhoi * zmsk00 )                                           ! Ice mass per cell area
+#if defined key_isbaes
+      IF(ln_isbaes) THEN
+         IF( iom_use('snwmass' ) )   CALL iom_put( 'snwmass', SUM(SUM(rhov_s, DIM=3),DIM=3) * zmsksn )                                  ! Snow mass per cell area    
+      ELSE
+#endif
       IF( iom_use('snwmass' ) )   CALL iom_put( 'snwmass', vt_s * rhos * zmsksn )                                           ! Snow mass per cell area
+#if defined key_isbaes
+      ENDIF
+#endif
       IF( iom_use('iceconc' ) )   CALL iom_put( 'iceconc', at_i        * zmsk00 )                                           ! ice concentration
       IF( iom_use('icevolu' ) )   CALL iom_put( 'icevolu', vt_i        * zmsk00 )                                           ! ice volume = mean ice thickness over the cell
       IF( iom_use('icethic' ) )   CALL iom_put( 'icethic', hm_i        * zmsk00 )                                           ! ice thickness

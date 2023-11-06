@@ -500,7 +500,6 @@ PSNOWLIQ(:,:)  = MAX(0.0,ZSNOWTEMP(:,:)-XTT)*ZSCAP(:,:)*                  &
 !
 ZSNOWTEMP(:,:) = MIN(XTT,ZSNOWTEMP(:,:))
 !
-PRINT*,'T° diag at the begining',ZSNOWTEMP(:,:)
 !
 !*       5.     Snow Compaction
 !               ---------------
@@ -509,6 +508,7 @@ PRINT*,'T° diag at the begining',ZSNOWTEMP(:,:)
 !
 CALL SNOW3LCOMPACTN(PTSTEP,PSNOWRHO,PSNOWDZ,ZSNOWTEMP,ZSNOW,PSNOWLIQ)
 !
+!PSNOWRHO(:,:) = 330. 
 ! Snow compaction and metamorphism due to drift
 !
 IF (HSNOWDRIFT == 'DFLT') THEN
@@ -845,8 +845,6 @@ PSNOWSFCH(:) = PDELHEATN_SFC(:)+PDELPHASEN_SFC(:)-PSWNETSNOWS(:)-PLWNETSNOW(:) &
 ! surface error = PDELHEATN_SFC(:)-PSNOWSFCH(:)+PSWNETSNOW(:)-PSWNETSNOWS(:)-PGFLUXSNOW(:)+PRESTOREN(:)
 !
 !
-PRINT*,'T° diag at the endd',XTT + ( ((PSNOWHEAT(:,:)/PSNOWDZ(:,:))                   &
-                   + XLMTT*PSNOWRHO(:,:))/ZSCAP(:,:) )
 !
 
 !
@@ -1874,6 +1872,7 @@ WHERE(PSNOWDZ > 0.0)
 !
    PSNOWDZ(:,:)    = PSNOWDZ(:,:)*ZCMPRSFACT(:,:)
    PSNOWRHO(:,:)   = ZSNOWLWE(:,:)*XRHOLW/PSNOWDZ(:,:)
+!   PSNOWRHO(:,:)   = 330. 
 !
 ! Make sure maximum density is not surpassed! If it is, lower the density
 ! and increase the snow thickness accordingly:
@@ -1881,6 +1880,8 @@ WHERE(PSNOWDZ > 0.0)
    ZCMPRSFACT(:,:) = MAX(XRHOLI, PSNOWRHO(:,:))/XRHOLI
    PSNOWDZ(:,:)    = PSNOWDZ(:,:)*ZCMPRSFACT(:,:)
    PSNOWRHO(:,:)   = ZSNOWLWE(:,:)*XRHOLW/PSNOWDZ(:,:)
+!   PSNOWRHO(:,:)   = 330. 
+
 !
 !
 ! 2. Add snow melt to current snow liquid water content:
@@ -2071,6 +2072,7 @@ ENDDO
 !
 ZWORK    (:,:) = MAX(XSNOWDZMIN,ZSNOWDZ(:,:))
 ZSNOWRHO (:,:) = ZSNOWRHO(:,:)+(ZSNOWLIQ(:,:)-PSNOWLIQ(:,:))*XRHOLW/ZWORK(:,:)  
+!œZSNOWRHO (:,:) = 330. 
 ZSCAP    (:,:) = SNOW3LSCAP(ZSNOWRHO(:,:))
 ZSNOWTEMP(:,:) = XTT +(((ZSNOWHEAT(:,:)/ZWORK(:,:))+XLMTT*ZSNOWRHO(:,:))/ZSCAP(:,:))
 ZSNOWLIQ (:,:) = MAX(0.0,ZSNOWTEMP(:,:)-XTT)*ZSCAP(:,:)*ZSNOWDZ(:,:)/(XLMTT*XRHOLW)  

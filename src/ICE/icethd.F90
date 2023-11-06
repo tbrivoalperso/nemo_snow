@@ -219,10 +219,10 @@ CONTAINS
                 !CALL snw_thd_iceconv( isnow, thickness_si, mass_si, enthalpy_si ) 
 #if defined key_isbaes
             ELSEIF( ln_isbaes ) THEN
-                    
+               PRINT*,'h_s_1d bef',h_s_1d              
                CALL ice_var_snwfra( h_s_1d(1:npti), za_s_fra(1:npti) )
                CALL SNOW3L_SI3(npti,nlay_s,1, rn_Dt, za_s_fra(1:npti), isnow, ZP_RADXS, zq_rema, zevap_rema)
-
+               PRINT*,'h_s_1d aft',h_s_1d
                !Convert back J/m2 in J/m3 
                DO jk = 1, nlay_s
                   WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))
@@ -285,6 +285,8 @@ CONTAINS
       !
                               CALL ice_cor( kt , 2 )                ! --- Corrections --- !
       !
+      !IF(thickness_si(1) > 0.) STOP
+
       oa_i(:,:,:) = oa_i(:,:,:) + a_i(:,:,:) * rDt_ice              ! --- Ice natural aging incrementation
       !
       DO_2D( 0, 0, 0, 0 )                                           ! --- Ice velocity corrections

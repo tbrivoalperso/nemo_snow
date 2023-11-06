@@ -3019,6 +3019,7 @@ DO JJ=1,INLVLS
 !       Calculate snow density:
         ZSNOWRHO2(JI,JJ) = PSNOWRHO(JI,JJ) + PSNOWRHO(JI,JJ)*PTSTEP &
                          * ( (XG*ZSMASS(JI,JJ)/ZVISCOCITY(JI,JJ)) )
+!        ZSNOWRHO2(JI,JJ) = 330. 
 !       
 !       Conserve mass by decreasing grid thicknesses in response to density increases
         PSNOWDZ(JI,JJ) = PSNOWDZ(JI,JJ)*(PSNOWRHO(JI,JJ)/ZSNOWRHO2(JI,JJ))  

@@ -212,7 +212,7 @@ CONTAINS
 #if defined key_isbaes                  
                   IF(ln_isbaes) THEN
                       enthalpy_si(ji)  = enthalpy_si(ji)  + dh_snowice(ji,jk) * e_s_1d(ji,jk) 
-                      ze_s(ji,jk) = ze_s(ji,jk) - dh_snowice(ji,jk) * e_s_1d(ji,jk) 
+                      !ze_s(ji,jk) = ze_s(ji,jk) - dh_snowice(ji,jk) * e_s_1d(ji,jk) 
                       mass_snow(ji,jk)     = mass_snow(ji,jk)     * ( 1.0 - zfrac ) 
                   ELSE    
                       enthalpy_si(ji)  = enthalpy_si(ji)  + dh_snowice(ji,jk) * e_s_1d(ji,jk)    

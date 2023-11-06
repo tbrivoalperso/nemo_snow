@@ -419,9 +419,17 @@ CONTAINS
 !      IF(.NOT. ln_isbaes) THEN
 !#endif
          PRINT*,'MASS 1', SUM(rho_s_1d(1,:) * dh_s_1d(1,:) * a_i_1d(1))
+         PRINT*,'enthalpy before snowice', SUM(e_s_1d(1,:))
+         DO ji = 1, npti
+            ! We initialise thickness_si, mass_si, enthalpy_si here so that a ln_snwiceconv could be easily added
+            mass_si(ji) = 0; enthalpy_si(ji) = 0; thickness_si(ji) = 0; ! fields sent to sea ice model
+         END DO
+
          CALL snw_thd_iceconv( isnow, zh_s, ze_s, thickness_si, mass_si, enthalpy_si )
+         PRINT*,'enthalpy after snowice', SUM(e_s_1d(1,:))
+
          PRINT*,'MASS 2', SUM(rho_s_1d(1,:) * dh_s_1d(1,:) * a_i_1d(1))
-         PRINT*,'mass_si',mass_si
+         PRINT*,'thickness_si, mass_si, enthalpy_si', thickness_si(1), mass_si(1), enthalpy_si(1)
          ! Snow-Ice formation
          ! ------------------
          ! When snow load exceeds Archimede's limit, snow-ice interface goes down under sea-level,
