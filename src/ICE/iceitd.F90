@@ -436,11 +436,9 @@ CONTAINS
          DO jk = 1, nlay_s
             CALL tab_2d_1d( npti, nptidx(1:npti), ze_s_2d(1:npti,jk,jl), e_s(:,:,jk,jl) )
 #if defined key_isbaes            
-            IF(ln_isbaes) THEN
-               CALL tab_2d_1d( npti, nptidx(1:npti), zdv_s_2d(1:npti,jk,jl), dv_s(:,:,jk,jl) )
-               CALL tab_2d_1d( npti, nptidx(1:npti), zrhov_s_2d(1:npti,jk,jl), rhov_s(:,:,jk,jl) )
-               CALL tab_2d_1d( npti, nptidx(1:npti), zov_s_2d(1:npti,jk,jl), ov_s(:,:,jk,jl) )
-            ENDIF
+            CALL tab_2d_1d( npti, nptidx(1:npti), zdv_s_2d(1:npti,jk,jl), dv_s(:,:,jk,jl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), zrhov_s_2d(1:npti,jk,jl), rhov_s(:,:,jk,jl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), zov_s_2d(1:npti,jk,jl), ov_s(:,:,jk,jl) )
 #endif   
          END DO
          DO jk = 1, nlay_i
@@ -538,7 +536,6 @@ CONTAINS
          END DO
          !
 #if defined key_isbaes         
-         IF(ln_isbaes) THEN
 
             DO jk = 1, nlay_s         !--- Snow volume
                DO ji = 1, npti
@@ -586,7 +583,6 @@ CONTAINS
                END DO
             END DO
 
-         ENDIF
 #endif         
          DO jk = 1, nlay_i         !--- Ice heat content
             DO ji = 1, npti
@@ -649,11 +645,9 @@ CONTAINS
          DO jk = 1, nlay_s
             CALL tab_1d_2d( npti, nptidx(1:npti), ze_s_2d(1:npti,jk,jl), e_s(:,:,jk,jl) )
 #if defined key_isbaes
-            IF(ln_isbaes) THEN
-               CALL tab_1d_2d( npti, nptidx(1:npti), zdv_s_2d(1:npti,jk,jl), dv_s(:,:,jk,jl) )
-               CALL tab_1d_2d( npti, nptidx(1:npti), zrhov_s_2d(1:npti,jk,jl), rhov_s(:,:,jk,jl) )
-               CALL tab_1d_2d( npti, nptidx(1:npti), zov_s_2d(1:npti,jk,jl), ov_s(:,:,jk,jl) )
-            ENDIF
+            CALL tab_1d_2d( npti, nptidx(1:npti), zdv_s_2d(1:npti,jk,jl), dv_s(:,:,jk,jl) )
+            CALL tab_1d_2d( npti, nptidx(1:npti), zrhov_s_2d(1:npti,jk,jl), rhov_s(:,:,jk,jl) )
+            CALL tab_1d_2d( npti, nptidx(1:npti), zov_s_2d(1:npti,jk,jl), ov_s(:,:,jk,jl) )
 #endif
          END DO
          DO jk = 1, nlay_i

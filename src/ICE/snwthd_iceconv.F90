@@ -104,13 +104,8 @@ CONTAINS
          DO jk = 1, nlay_s
             DO ji = 1, npti
 #if defined key_isbaes            
-               IF(ln_isbaes) THEN
-                  zh_s(ji,jk) = dh_s_1d(ji,jk)
-                  ze_s(ji,jk) = e_s_1d(ji,jk)
-               ELSE
-                  zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
-                  ze_s(ji,jk) = e_s_1d(ji,jk)
-               ENDIF
+               zh_s(ji,jk) = dh_s_1d(ji,jk)
+               ze_s(ji,jk) = e_s_1d(ji,jk)
 #else
                zh_s(ji,jk) = h_s_1d(ji) * r1_nlay_s
                ze_s(ji,jk) = e_s_1d(ji,jk)
@@ -120,24 +115,17 @@ CONTAINS
       ENDIF
 
       DO ji = 1, npti      
+         DO jk = nlay_s, 1, -1
 #if defined key_isbaes
-         DO jk = nlay_s, 1, -1
-            IF(ln_isbaes) THEN
-               mass_snow(ji,jk) = rho_s_1d(ji,jk) * dh_s_1d(ji,jk)
-               zrhos(ji,jk) = rho_s_1d(ji,jk)
-            ELSE
-               mass_snow(ji,jk) = rhos * h_s_1d(ji) * r1_nlay_s !* a_i_1d(ji)
-               zrhos(ji,jk) = rhos
-            ENDIF
-               zm_s(ji,jk) = mass_snow(ji,jk)                ! pseudo snow mass
-         END DO
+            mass_snow(ji,jk) = rho_s_1d(ji,jk) * dh_s_1d(ji,jk)
+            zrhos(ji,jk) = rho_s_1d(ji,jk)
+            zm_s(ji,jk) = mass_snow(ji,jk)                ! pseudo snow mass
 #else
-         DO jk = nlay_s, 1, -1
             mass_snow(ji,jk) = rhos * h_s_1d(ji) * r1_nlay_s !* a_i_1d(ji)
             zrhos(ji,jk) = rhos
             zm_s(ji,jk) = mass_snow(ji,jk)                ! pseudo snow mass
-         END DO
 #endif
+         END DO
       END DO
 
 #if defined key_isbaes
@@ -146,17 +134,13 @@ CONTAINS
       ! When snow load exceeds Archimede's limit and sst is positive,
       ! snow-ice formation (next bloc) can lead to negative ice enthalpy.
       ! Therefore we consider here that this excess of snow falls into the ocean
-      IF(ln_isbaes) THEN
-         DO ji = 1, npti
-             IF(h_s_1d(ji) > 0.00000000000000001) THEN
-                zdeltah(ji) = h_s_1d(ji) + h_i_1d(ji) * (rhoi-rho0) * (1._wp / (SUM(rho_s_1d(ji,:)*dh_s_1d(ji,:))/h_s_1d(ji)))
-             ELSE
-                zdeltah(ji) = 0._wp
-             ENDIF
-         END DO
-      ELSE
-         zdeltah(1:npti) = h_s_1d(1:npti) + h_i_1d(1:npti) * (rhoi-rho0) * r1_rhos
-      ENDIF
+      DO ji = 1, npti
+          IF(h_s_1d(ji) > 0.00000000000000001) THEN
+             zdeltah(ji) = h_s_1d(ji) + h_i_1d(ji) * (rhoi-rho0) * (1._wp / (SUM(rho_s_1d(ji,:)*dh_s_1d(ji,:))/h_s_1d(ji)))
+          ELSE
+             zdeltah(ji) = 0._wp
+          ENDIF
+      END DO
 #else
       zdeltah(1:npti) = h_s_1d(1:npti) + h_i_1d(1:npti) * (rhoi-rho0) * r1_rhos
 #endif
@@ -169,13 +153,9 @@ CONTAINS
                hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
 
 #if defined key_isbaes
-               IF(ln_isbaes) THEN
-                  wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk)        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-                  ! update thickness and energy
-                  e_s_1d(ji,jk)= MAX( 0._wp, e_s_1d(ji,jk) - (zdum / dh_s_1d(ji,jk))  * e_s_1d(ji,jk))
-               ELSE
-                  wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-               ENDIF
+               wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk)        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+               ! update thickness and energy
+               e_s_1d(ji,jk)= MAX( 0._wp, e_s_1d(ji,jk) - (zdum / dh_s_1d(ji,jk))  * e_s_1d(ji,jk))
 #else
                wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
 #endif
@@ -210,13 +190,11 @@ CONTAINS
 
                   mass_si(ji)      = mass_si(ji)      + zfrac * mass_snow(ji,jk)
 #if defined key_isbaes                  
-                  IF(ln_isbaes) THEN
                       enthalpy_si(ji)  = enthalpy_si(ji)  + dh_snowice(ji,jk) * e_s_1d(ji,jk) 
                       !ze_s(ji,jk) = ze_s(ji,jk) - dh_snowice(ji,jk) * e_s_1d(ji,jk) 
                       mass_snow(ji,jk)     = mass_snow(ji,jk)     * ( 1.0 - zfrac ) 
-                  ELSE    
+#else
                       enthalpy_si(ji)  = enthalpy_si(ji)  + dh_snowice(ji,jk) * e_s_1d(ji,jk)    
-                  ENDIF
 #endif
 
                   !!! Update pseudo thickness and snow mass for layer jk (needed to converge to zero-freeboard)
@@ -233,22 +211,19 @@ CONTAINS
 
       DO ji = 1, npti
 #if defined key_isbaes      
-         IF(ln_isbaes) THEN
-            dh_s_1d(ji,1:nlay_s) = zh_s(ji,1:nlay_s)
-            h_s_1d(ji) = SUM(dh_s_1d(ji,:))
-            e_s_1d(ji,1:nlay_s) = ze_s(ji,1:nlay_s)
-            !rhov_s_1d(ji,1:nlay_s) = mass_snow(ji,1:nlay_s)
-         ELSE
-#endif            
+         dh_s_1d(ji,1:nlay_s) = zh_s(ji,1:nlay_s)
+         h_s_1d(ji) = SUM(dh_s_1d(ji,:))
+         e_s_1d(ji,1:nlay_s) = ze_s(ji,1:nlay_s)
+         !rhov_s_1d(ji,1:nlay_s) = mass_snow(ji,1:nlay_s)
+#else            
          h_s_1d(ji) = SUM(zh_s(ji,:))
          dh_s_1d(ji,1:nlay_s) = h_s_1d(ji) * r1_nlay_s
-#if defined key_isbaes      
-         ENDIF
 #endif         
       END DO
 
-            
-      IF(.NOT. ln_isbaes) THEN 
+#if defined key_isbaes      
+
+#else
          ! Remapping of snw enthalpy on a regular grid
          !--------------------------------------------
          CALL snw_ent( zh_s, ze_s, e_s_1d)
@@ -263,8 +238,7 @@ CONTAINS
                ENDIF
             END DO
          END DO
-      ENDIF
-      
+#endif      
 !      IF(h_s_1d(1) .ne. h_s_1d(9) ) STOP
 
    END SUBROUTINE snw_thd_iceconv

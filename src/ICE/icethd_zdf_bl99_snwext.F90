@@ -286,11 +286,10 @@ CONTAINS
             !
          ENDIF
 #if defined key_isbaes
-         IF(ln_isbaes) THEN ! Save thermal conductivity of the 1st ice layer for isbaes
+         ! Save thermal conductivity of the 1st ice layer for isbaes
              DO ji = 1, npti    
                 cnd_i_isbaes_1d(ji) = ztcond_i_cp(ji,0)
              END DO
-         ENDIF
 #endif
          ! Variable used after iterations
          ! Value must be frozen after convergence for MPP independance reason

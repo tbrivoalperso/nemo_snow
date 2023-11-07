@@ -62,7 +62,7 @@ CONTAINS
       !!              Vancoppenolle, Fichefet and Bitz, 2005, Geophys. Res. Let.
       !!              Vancoppenolle et al.,2009, Ocean Modelling
       !!------------------------------------------------------------------
-      REAL(wp), DIMENSION(jpij), INTENT(in) ::   isnow       ! presence of snow or not (used only if ln_isbaes=T)
+      REAL(wp), DIMENSION(jpij), INTENT(in) ::   isnow       ! presence of snow or not (used only if key_isbaes=T)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)
       REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(out) ::   zh_s      ! snw layer thickness (m) 
@@ -81,10 +81,7 @@ CONTAINS
       !!------------------------------------------------------------------
       ! Initialise remaining heat and mass fluxes after melt and sublimation
 #if defined key_isbaes
-      IF(.NOT. ln_isbaes) THEN
-          zq_rema(1:npti)    = 0._wp
-          zevap_rema(1:npti) = 0._wp
-      ENDIF
+     
 #else
       zq_rema(1:npti)    = 0._wp
       zevap_rema(1:npti) = 0._wp
@@ -105,8 +102,8 @@ CONTAINS
       !                       ! ============================================== !
       !
 #if defined key_isbaes      
-      IF(.NOT. ln_isbaes) THEN
-#endif
+
+#else
          IF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN
             !
             DO ji = 1, npti
@@ -237,9 +234,9 @@ CONTAINS
              END DO
        
           ENDIF
-#if defined key_isbaes
-      ELSE ! ln_isbaes
+#endif
 
+#if defined key_isbaes
          ! If there is no snow, the evaporation and heat flux at ice surface are computed here
          IF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN
             !
@@ -265,8 +262,6 @@ CONTAINS
                 zq_rema (ji) = zq_top (ji)
             ENDIF
          END DO
-         
-      ENDIF ! ln_isbaes
 #endif
       !
       !

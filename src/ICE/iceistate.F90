@@ -409,7 +409,6 @@ CONTAINS
 #if defined key_isbaes
                   rho_s(ji,jj,jk,jl) = rhos
                    
-                  IF(ln_isbaes) THEN
                           ZSCAP     = rho_s(ji,jj,jk,jl) * XCI  ! In isba-es, capacity = rho x cst, with cst=XCI
                           swe_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dh_s(ji,jj,jk,jl)
                           lwc_s(ji,jj,jk,jl) = MAX(0.0,t_s(ji,jj,jk,jl)-rt0)*ZSCAP*dh_s(ji,jj,jk,jl)/(XLMTT*XRHOLW)
@@ -422,13 +421,6 @@ CONTAINS
                           PRINT*,'e_s SI3 style',zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
                      &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
 
-                  ELSE
-                          lwc_s(ji,jj,jk,jl) = 0.
-                          swe_s(ji,jj,jk,jl) = 0. 
-                          e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
-                     &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
- 
-                  ENDIF
 #else
                e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
                  &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )            

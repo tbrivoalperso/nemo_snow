@@ -92,11 +92,7 @@ CONTAINS
       !
       ! -- quantities -- !
 #if defined key_isbaes
-      IF(.NOT. ln_isbaes) THEN
-          ztmp3(:,:,1) = SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
-      ELSE
-          ztmp3(:,:,1) = SUM( v_i * rhoi + SUM(rhov_s ,dim=3) + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
-      ENDIF
+      ztmp3(:,:,1) = SUM( v_i * rhoi + SUM(rhov_s ,dim=3) + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t        ! volume
 #else
       ztmp3(:,:,1) = SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t
 #endif
@@ -293,11 +289,7 @@ CONTAINS
       !
       IF( icount == 0 ) THEN
 #if defined key_isbaes         
-         IF(.NOT. ln_isbaes) THEN
-             pdiag_v = SUM( v_i  * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 )
-         ELSE
-             pdiag_v = SUM( v_i  * rhoi + SUM(rhov_s ,dim=3) + ( v_ip + v_il ) * rhow, dim=3 )
-         ENDIF
+         pdiag_v = SUM( v_i  * rhoi + SUM(rhov_s ,dim=3) + ( v_ip + v_il ) * rhow, dim=3 )
 #else
          pdiag_v = SUM( v_i  * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 )
 #endif
@@ -315,18 +307,10 @@ CONTAINS
 
       ELSEIF( icount == 1 ) THEN
 #if defined key_isbaes
-         IF(.NOT. ln_isbaes) THEN
-         ! -- mass diag -- !
-            zdiag_mass =   ( SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
-               &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
-               &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
-               &         - pdiag_fv
-         ELSE
-            zdiag_mass =   ( SUM( v_i * rhoi + SUM(rhov_s , dim=3)  + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
-               &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
-               &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
-               &         - pdiag_fv
-         ENDIF
+         zdiag_mass =   ( SUM( v_i * rhoi + SUM(rhov_s , dim=3)  + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
+            &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
+            &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
+            &         - pdiag_fv
 #else
          zdiag_mass =   ( SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_Dt_ice    &
             &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &

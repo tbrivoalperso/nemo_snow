@@ -217,29 +217,27 @@ CONTAINS
                 ! - zq_rema, zevap_rema => remaining heat and mass fluxes after snowfall / melt
                 ! - zh_s, ze_s => non-remapped thickness and enthalpy profiles after snowfall / melt                
                 !CALL snw_thd_iceconv( isnow, thickness_si, mass_si, enthalpy_si ) 
+             ENDIF
 #if defined key_isbaes
-            ELSEIF( ln_isbaes ) THEN
-               PRINT*,'h_s_1d bef',h_s_1d              
+            IF( ln_isbaes ) THEN
                CALL ice_var_snwfra( h_s_1d(1:npti), za_s_fra(1:npti) )
                CALL SNOW3L_SI3(npti,nlay_s,1, rn_Dt, za_s_fra(1:npti), isnow, ZP_RADXS, zq_rema, zevap_rema)
-               PRINT*,'h_s_1d aft',h_s_1d
                !Convert back J/m2 in J/m3 
                DO jk = 1, nlay_s
                   WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))
                END DO
               !CALL snw_thd_iceconv( isnow, thickness_si, mass_si, enthalpy_si )
-#endif           
-            ENDIF
-#if defined key_isbaes
-            DO ji = 1, npti
-                   IF(ln_isbaes) THEN
-                       IF (isnow(ji) == 0._wp) THEN
-                           zradtr_s(ji,nlay_s) = qtr_ice_top_1d(ji)
-                       ELSE
-                           zradtr_s(:,nlay_s) = ZP_RADXS(:)
-                       ENDIF
-                   ENDIF
-             END DO
+             ELSE
+                CALL ctl_stop( 'key_ibaes activated => Could not launch model without ln_isbaes off' )          
+             ENDIF
+
+             DO ji = 1, npti
+               IF (isnow(ji) == 0._wp) THEN
+                   zradtr_s(ji,nlay_s) = qtr_ice_top_1d(ji)
+               ELSE
+                   zradtr_s(:,nlay_s) = ZP_RADXS(:)
+               ENDIF
+            END DO
 #endif           
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
@@ -515,12 +513,8 @@ CONTAINS
          END DO
          DO jk = 1, nlay_s
 #if defined key_isbaes
-         IF(ln_isbaes) THEN
-                 ! Conversion is done after isbaes  
-               WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))     
-            ELSE 
-               WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s
-            ENDIF
+         ! Conversion is done after isbaes  
+         WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))     
 #else
          WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s 
          dh_s_1d(1:npti,jk) = h_s_1d(1:npti) * r1_nlay_s ! Initialise dh_s_1d
@@ -536,11 +530,7 @@ CONTAINS
          END DO
          DO jk = 1, nlay_s
 #if defined key_isbaes 
-         IF(ln_isbaes) THEN
                e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * dh_s_1d(1:npti,jk) * a_i_1d(1:npti) 
-            ELSE
-               e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
-            ENDIF
 #else
          e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) * h_s_1d(1:npti) * a_i_1d(1:npti) * r1_nlay_s
 #endif
@@ -553,19 +543,17 @@ CONTAINS
          oa_i_1d(1:npti) = o_i_1d (1:npti) * a_i_1d (1:npti)
 
 #if defined key_isbaes
-         IF(ln_isbaes) THEN
-            ! Recompute the mass and the volume, which are the variables that will be advected later on
-            DO jk = 1, nlay_s
-               dv_s_1d (1:npti,jk) = dh_s_1d (1:npti,jk) * a_i_1d (1:npti) 
-               rhov_s_1d (1:npti,jk) = rho_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
-               ov_s_1d (1:npti,jk) = o_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
-               DO ji = 1, npti 
-                  v_s_1d (ji) = SUM(dv_s_1d (ji,:))
-               END DO
-!               WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d(1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d(1:npti,jk)
-
+         ! Recompute the mass and the volume, which are the variables that will be advected later on
+         DO jk = 1, nlay_s
+            dv_s_1d (1:npti,jk) = dh_s_1d (1:npti,jk) * a_i_1d (1:npti) 
+            rhov_s_1d (1:npti,jk) = rho_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
+            ov_s_1d (1:npti,jk) = o_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
+            DO ji = 1, npti 
+               v_s_1d (ji) = SUM(dv_s_1d (ji,:))
             END DO
-         ENDIF
+!            WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d(1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d(1:npti,jk)
+
+         END DO
 #endif
          CALL tab_1d_2d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_1d_2d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
