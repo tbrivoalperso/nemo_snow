@@ -48,7 +48,7 @@ MODULE icectl
    ! thresold rates for conservation
    !    these values are changed by the namelist parameter rn_icechk, so that threshold = zchk * rn_icechk
    REAL(wp), PARAMETER ::   rchk_m   = 2.5e-7   ! kg/m2/s <=> 1e-6 m of ice per hour spuriously gained/lost
-   REAL(wp), PARAMETER ::   rchk_s   = 1000. ! 2.5e-6   ! g/m2/s  <=> 1e-6 m of ice per hour spuriously gained/lost (considering s=10g/kg)
+   REAL(wp), PARAMETER ::   rchk_s   = 2.5e-6   ! g/m2/s  <=> 1e-6 m of ice per hour spuriously gained/lost (considering s=10g/kg)
    REAL(wp), PARAMETER ::   rchk_t   = 7.5e-2   ! W/m2    <=> 1e-6 m of ice per hour spuriously gained/lost (considering Lf=3e5J/kg)
 
    ! for drift outputs
