@@ -416,6 +416,10 @@ CONTAINS
       REAL(wp), DIMENSION(jpij,jpl)        ::   zaTsfn           !  -    -
       REAL(wp), DIMENSION(jpij,nlay_i,jpl) ::   ze_i_2d
       REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   ze_s_2d
+      REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   zdv_s_2d
+      REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   zrhov_s_2d
+      REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   zov_s_2d
+
       !!------------------------------------------------------------------
 
       CALL tab_3d_2d( npti, nptidx(1:npti), h_i_2d (1:npti,1:jpl), h_i  )
@@ -431,6 +435,11 @@ CONTAINS
       DO jl = 1, jpl
          DO jk = 1, nlay_s
             CALL tab_2d_1d( npti, nptidx(1:npti), ze_s_2d(1:npti,jk,jl), e_s(:,:,jk,jl) )
+#if defined key_isbaes            
+            CALL tab_2d_1d( npti, nptidx(1:npti), zdv_s_2d(1:npti,jk,jl), dv_s(:,:,jk,jl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), zrhov_s_2d(1:npti,jk,jl), rhov_s(:,:,jk,jl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), zov_s_2d(1:npti,jk,jl), ov_s(:,:,jk,jl) )
+#endif   
          END DO
          DO jk = 1, nlay_i
             CALL tab_2d_1d( npti, nptidx(1:npti), ze_i_2d(1:npti,jk,jl), e_i(:,:,jk,jl) )
@@ -526,6 +535,55 @@ CONTAINS
             END DO
          END DO
          !
+#if defined key_isbaes         
+
+            DO jk = 1, nlay_s         !--- Snow volume
+               DO ji = 1, npti
+                  !
+                  jl1 = kdonor(ji,jl)
+                  !
+                  IF( jl1 > 0 ) THEN
+                     IF(jl1 == jl) THEN  ;  jl2 = jl+1
+                     ELSE                ;  jl2 = jl
+                     ENDIF
+                     ztrans             = zdv_s_2d(ji,jk,jl1) * zworkv(ji)
+                     zdv_s_2d(ji,jk,jl1) = zdv_s_2d(ji,jk,jl1) - ztrans
+                     zdv_s_2d(ji,jk,jl2) = zdv_s_2d(ji,jk,jl2) + ztrans
+                  ENDIF
+               END DO
+            END DO
+            DO jk = 1, nlay_s         !--- Snow mass 
+               DO ji = 1, npti
+                  !
+                  jl1 = kdonor(ji,jl)
+                  !
+                  IF( jl1 > 0 ) THEN
+                     IF(jl1 == jl) THEN  ;  jl2 = jl+1
+                     ELSE                ;  jl2 = jl
+                     ENDIF
+                     ztrans             = zrhov_s_2d(ji,jk,jl1) * zworkv(ji)
+                     zrhov_s_2d(ji,jk,jl1) = zrhov_s_2d(ji,jk,jl1) - ztrans
+                     zrhov_s_2d(ji,jk,jl2) = zrhov_s_2d(ji,jk,jl2) + ztrans
+                  ENDIF
+               END DO
+            END DO
+            DO jk = 1, nlay_s         !--- Snow age
+               DO ji = 1, npti
+                  !
+                  jl1 = kdonor(ji,jl)
+                  !
+                  IF( jl1 > 0 ) THEN
+                     IF(jl1 == jl) THEN  ;  jl2 = jl+1
+                     ELSE                ;  jl2 = jl
+                     ENDIF
+                     ztrans             = zov_s_2d(ji,jk,jl1) * zworkv(ji)
+                     zov_s_2d(ji,jk,jl1) = zov_s_2d(ji,jk,jl1) - ztrans
+                     zov_s_2d(ji,jk,jl2) = zov_s_2d(ji,jk,jl2) + ztrans
+                  ENDIF
+               END DO
+            END DO
+
+#endif         
          DO jk = 1, nlay_i         !--- Ice heat content
             DO ji = 1, npti
                !
@@ -586,6 +644,11 @@ CONTAINS
       DO jl = 1, jpl
          DO jk = 1, nlay_s
             CALL tab_1d_2d( npti, nptidx(1:npti), ze_s_2d(1:npti,jk,jl), e_s(:,:,jk,jl) )
+#if defined key_isbaes
+            CALL tab_1d_2d( npti, nptidx(1:npti), zdv_s_2d(1:npti,jk,jl), dv_s(:,:,jk,jl) )
+            CALL tab_1d_2d( npti, nptidx(1:npti), zrhov_s_2d(1:npti,jk,jl), rhov_s(:,:,jk,jl) )
+            CALL tab_1d_2d( npti, nptidx(1:npti), zov_s_2d(1:npti,jk,jl), ov_s(:,:,jk,jl) )
+#endif
          END DO
          DO jk = 1, nlay_i
             CALL tab_1d_2d( npti, nptidx(1:npti), ze_i_2d(1:npti,jk,jl), e_i(:,:,jk,jl) )

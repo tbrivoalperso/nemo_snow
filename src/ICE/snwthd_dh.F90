@@ -62,7 +62,7 @@ CONTAINS
       !!              Vancoppenolle, Fichefet and Bitz, 2005, Geophys. Res. Let.
       !!              Vancoppenolle et al.,2009, Ocean Modelling
       !!------------------------------------------------------------------
-      REAL(wp), DIMENSION(jpij), INTENT(in) ::   isnow       ! presence of snow or not (used only if ln_isbaes=T)
+      REAL(wp), DIMENSION(jpij), INTENT(in) ::   isnow       ! presence of snow or not (used only if key_isbaes=T)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)
       REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(out) ::   zh_s      ! snw layer thickness (m) 
@@ -80,10 +80,12 @@ CONTAINS
 
       !!------------------------------------------------------------------
       ! Initialise remaining heat and mass fluxes after melt and sublimation
-      IF(.NOT. ln_isbaes) THEN
-          zq_rema(1:npti)    = 0._wp
-          zevap_rema(1:npti) = 0._wp
-      ENDIF
+#if defined key_isbaes
+     
+#else
+      zq_rema(1:npti)    = 0._wp
+      zevap_rema(1:npti) = 0._wp
+#endif
       !
       ! initialize snw layer thicknesses and enthalpies
       zh_s(1:npti,0) = 0._wp
@@ -99,8 +101,9 @@ CONTAINS
       !                       ! Available heat for surface ablation !
       !                       ! ============================================== !
       !
-      IF(.NOT. ln_isbaes) THEN
+#if defined key_isbaes      
 
+#else
          IF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN
             !
             DO ji = 1, npti
@@ -137,7 +140,6 @@ CONTAINS
                 END IF
              END DO
           END DO
-    
          IF( .NOT. ln_snwext ) THEN ! Nb: this part of the code is the same as in the snwthd_snwfl routine. We keep it here to be consistent with 4.2.stable version
              ! Snow precipitation
              !-------------------
@@ -177,11 +179,11 @@ CONTAINS
                    h_s_1d  (ji)    = MAX( 0._wp , h_s_1d  (ji)    + zdum )
                    zh_s    (ji,jk) = MAX( 0._wp , zh_s    (ji,jk) + zdum )
     !!$               IF( zh_s(ji,jk) == 0._wp )   ze_s(ji,jk) = 0._wp
-    
                    !
                 ENDIF
              END DO
           END DO
+
           DO ji = 1, npti
                    zq_rema (ji) = zq_top (ji) ! remaining heat at the end of the routine in J.m-2 (used to melt ice later on)
           END DO
@@ -196,14 +198,14 @@ CONTAINS
              zdeltah   (ji) = MAX( - evap_ice_1d(ji) * r1_rhos * rDt_ice, - h_s_1d(ji) )   ! amount of snw that sublimates, < 0
              zevap_rema(ji) = evap_ice_1d(ji) * rDt_ice + zdeltah(ji) * rhos               ! remaining evap in kg.m-2 (used for ice sublimation later on)
           END DO
-    
+
           DO jk = 0, nlay_s
              DO ji = 1, npti
                 zdum = MAX( -zh_s(ji,jk), zdeltah(ji) ) ! snow layer thickness that sublimates, < 0
                 !
                 hfx_sub_1d    (ji) = hfx_sub_1d    (ji) + ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! Heat flux of snw that sublimates [W.m-2], < 0
                 wfx_snw_sub_1d(ji) = wfx_snw_sub_1d(ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! Mass flux by sublimation
-    
+ 
                 ! update thickness
                 h_s_1d(ji)    = MAX( 0._wp , h_s_1d(ji)    + zdum )
                 zh_s  (ji,jk) = MAX( 0._wp , zh_s  (ji,jk) + zdum )
@@ -213,7 +215,7 @@ CONTAINS
                 zdeltah(ji) = MIN( zdeltah(ji) - zdum, 0._wp )
              END DO
           END DO
-    
+ 
          IF( ln_snwext ) THEN
        
             ! Remapping of snw enthalpy on a regular grid
@@ -232,9 +234,9 @@ CONTAINS
              END DO
        
           ENDIF
+#endif
 
-      ELSE ! ln_isbaes
-
+#if defined key_isbaes
          ! If there is no snow, the evaporation and heat flux at ice surface are computed here
          IF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN
             !
@@ -260,7 +262,7 @@ CONTAINS
                 zq_rema (ji) = zq_top (ji)
             ENDIF
          END DO
-      ENDIF ! ln_isbaes
+#endif
       !
       !
    END SUBROUTINE snw_thd_dh

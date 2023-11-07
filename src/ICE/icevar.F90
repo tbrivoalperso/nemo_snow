@@ -63,8 +63,9 @@ MODULE icevar
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
 
+#if defined key_isbaes   
    USE MODE_SNOW3L   ! For isba-es
-
+#endif
    IMPLICIT NONE
    PRIVATE
 
@@ -170,12 +171,13 @@ CONTAINS
                tm_i(:,:) = tm_i(:,:) + r1_nlay_i * t_i (:,:,jk,jl) * v_i(:,:,jl) * z1_vt_i(:,:)
             END DO
             DO jk = 1, nlay_s
-               IF(ln_isbaes) THEN
-                   tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
-                   rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
-               ELSE        
-                   tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
-               ENDIF
+#if defined key_isbaes            
+               tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
+               rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
+#else
+
+               tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
+#endif
             END DO
          END DO
          !
@@ -215,12 +217,13 @@ CONTAINS
       REAL(wp), PARAMETER ::   zhl_max =  0.015_wp  ! pond lid thickness above which the ponds disappear from the albedo calculation
       REAL(wp), PARAMETER ::   zhl_min =  0.005_wp  ! pond lid thickness below which the full pond area is used in the albedo calculation
       REAL(wp), DIMENSION(jpi,jpj,jpl) ::   z1_a_i, z1_v_i, z1_a_ip, za_s_fra
-      REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) :: ZSCAP ! for ln_isbaes
+#if defined key_isbaes
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) :: ZSCAP ! 
       REAL(wp), PARAMETER       :: XLMTT=333700.0 ! isba_es parameter
       REAL(wp), PARAMETER       :: XTT=273.16 ! isba_es parameter
       REAL(wp), PARAMETER       :: XSNOWDMIN=0.000001 ! isba_es parameter
       REAL(wp), PARAMETER       :: XCI=2.106E+3
-
+#endif
       !!-------------------------------------------------------------------
 
 !!gm Question 2:  It is possible to define existence of sea-ice in a common way between
@@ -304,30 +307,32 @@ CONTAINS
       ! Snow temperature   [K]   (with a minimum value (rt0 - 100.))
       !--------------------
       zlay_s = REAL( nlay_s , wp )
-      IF(ln_isbaes) THEN
-         DO jk = 1, nlay_s
-            dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)
-            WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
-               !t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
-               !     &                MIN( r1_rcpi * ( -(1 / rho_s(:,:,jk,:)) * ( e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) ) + rLfus ) , 0._wp ) )
-               ZSCAP(:,:,jk,:)     = rho_s(:,:,jk,:) * XCI
+#if defined key_isbaes      
+      DO jk = 1, nlay_s
+         WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
+            dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)    
+            rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
+            o_s(:,:,jk,:) = ov_s(:,:,jk,:) / dv_s(:,:,jk,:)
+            !t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
+            !     &                MIN( r1_rcpi * ( -(1 / rho_s(:,:,jk,:)) * ( e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) ) + rLfus ) , 0._wp ) )
+            ZSCAP(:,:,jk,:)     = rho_s(:,:,jk,:) * XCI
 
-               !t_s(:,:,jk,:) = XTT + MIN(1.0, dh_s(:,:,jk,:)/XSNOWDMIN)*( ((e_s(:,:,jk,:)/MAX(XSNOWDMIN,dh_s(:,:,jk,:)))  &
-               !&    + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) )
-            ELSEWHERE                           !--- no ice
-               t_s(:,:,jk,:) = rt0
-            END WHERE
-         END DO
-      ELSE
-         DO jk = 1, nlay_s
-            WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
-               t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
-                    &                MIN( r1_rcpi * ( -r1_rhos * ( e_s(:,:,jk,:) / v_s(:,:,:) * zlay_s ) + rLfus ) , 0._wp ) )
-            ELSEWHERE                           !--- no ice
-               t_s(:,:,jk,:) = rt0
-            END WHERE
-         END DO
-      ENDIF
+            t_s(:,:,jk,:) = XTT + MIN(1.0, dh_s(:,:,jk,:)/XSNOWDMIN)*( (( - e_s(:,:,jk,:)/MAX(XSNOWDMIN,dh_s(:,:,jk,:)))  &
+            &    + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) ) ! Minus factor for enthalpy to match SI3 conventions
+         ELSEWHERE                           !--- no ice
+            t_s(:,:,jk,:) = rt0
+         END WHERE
+      END DO
+#else
+      DO jk = 1, nlay_s
+         WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
+            t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
+                 &                MIN( r1_rcpi * ( -r1_rhos * ( e_s(:,:,jk,:) / v_s(:,:,:) * zlay_s ) + rLfus ) , 0._wp ) )
+         ELSEWHERE                           !--- no ice
+            t_s(:,:,jk,:) = rt0
+         END WHERE
+      END DO
+#endif
       !
       ! integrated values
       vt_i (:,:) = SUM( v_i , dim=3 )
@@ -714,7 +719,11 @@ CONTAINS
       WHERE( psv_i(1:npti,:)   < 0._wp )   psv_i(1:npti,:)   = 0._wp   ! sv_i must be >= 0
       WHERE( poa_i(1:npti,:)   < 0._wp )   poa_i(1:npti,:)   = 0._wp   ! oa_i must be >= 0
       WHERE( pe_i (1:npti,:,:) < 0._wp )   pe_i (1:npti,:,:) = 0._wp   !  e_i must be >= 0
+#if defined key_isbaes
+      WHERE( pe_s (1:npti,:,:) > 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be <= 0
+#else
       WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+#endif
       IF( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
          WHERE( pa_ip(1:npti,:) < 0._wp )    pa_ip(1:npti,:)   = 0._wp   ! a_ip must be >= 0
          WHERE( pv_ip(1:npti,:) < 0._wp )    pv_ip(1:npti,:)   = 0._wp   ! v_ip must be >= 0
@@ -1313,7 +1322,7 @@ CONTAINS
    SUBROUTINE ice_var_snwfra_3d( ph_s, pa_s_fra )
       REAL(wp), DIMENSION(:,:,:), INTENT(in   ) ::   ph_s        ! snow thickness
       REAL(wp), DIMENSION(:,:,:), INTENT(  out) ::   pa_s_fra    ! ice fraction covered by snow
-      IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
+      IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
          WHERE( ph_s > 0._wp ) ; pa_s_fra = 1._wp
          ELSEWHERE             ; pa_s_fra = 0._wp
          END WHERE
@@ -1327,7 +1336,7 @@ CONTAINS
    SUBROUTINE ice_var_snwfra_2d( ph_s, pa_s_fra )
       REAL(wp), DIMENSION(:,:), INTENT(in   ) ::   ph_s        ! snow thickness
       REAL(wp), DIMENSION(:,:), INTENT(  out) ::   pa_s_fra    ! ice fraction covered by snow
-      IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
+      IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
          WHERE( ph_s > 0._wp ) ; pa_s_fra = 1._wp
          ELSEWHERE             ; pa_s_fra = 0._wp
          END WHERE
@@ -1341,7 +1350,7 @@ CONTAINS
    SUBROUTINE ice_var_snwfra_1d( ph_s, pa_s_fra )
       REAL(wp), DIMENSION(:), INTENT(in   ) ::   ph_s        ! snow thickness
       REAL(wp), DIMENSION(:), INTENT(  out) ::   pa_s_fra    ! ice fraction covered by snow
-      IF    ( nn_snwfra == 0 .OR. ln_isbaes ) THEN   ! basic 0 or 1 snow cover
+      IF    ( nn_snwfra == 0 ) THEN   ! basic 0 or 1 snow cover
          WHERE( ph_s > 0._wp ) ; pa_s_fra = 1._wp
          ELSEWHERE             ; pa_s_fra = 0._wp
          END WHERE

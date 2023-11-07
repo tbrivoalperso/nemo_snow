@@ -189,15 +189,12 @@ CONTAINS
          ! --- ice thermodynamics --- !
          !----------------------------!
          IF( ln_icethd )                CALL ice_thd( kt )            ! -- Ice thermodynamics
-         
          !
-         PRINT*,'MASS AT 4',SUM(rho_s * dh_s)
-
                                         CALL diag_trends( 2 )         ! record thermo trends
+
                                         CALL ice_var_glo2eqv          ! necessary calls (at least for coupling)
                                         CALL ice_var_agg( 2 )         ! necessary calls (at least for coupling)
          !
-         PRINT*,'MASS AT 5',SUM(rho_s * dh_s)
                                         CALL ice_update_flx( kt )     ! -- Update ocean surface mass, heat and salt fluxes
          !
          IF( ln_icediahsb )             CALL ice_dia( kt )            ! -- Diagnostics outputs
@@ -208,7 +205,6 @@ CONTAINS
          !
          IF( lrst_ice )                 CALL ice_rst_write( kt )      ! -- Ice restart file
          !
-         PRINT*,'MASS AT 6',SUM(rho_s * dh_s)
          IF( ln_icectl )                CALL ice_ctl( kt )            ! -- Control checks
          !
       ENDIF   ! End sea-ice time step only

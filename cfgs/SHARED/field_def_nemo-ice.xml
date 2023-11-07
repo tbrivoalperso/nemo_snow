@@ -63,6 +63,8 @@
       <field id="icetsni"      long_name="temperature at the snow-ice interface"                                                                             unit="degC" detect_missing_value="true" />
       <field id="icehc"        long_name="ice heat content"                                                                                                  unit="J/m2" />
       <field id="snwhc"        long_name="snow heat content"                                                                                                 unit="J/m2" />
+      
+      <field id="snwrho"      long_name="Mean snow density"                                                                                             unit="kg/m3" detect_missing_value="true" />
 
       <field id="snwrho"      long_name="Mean snow density"                                                                                             unit="kg/m3" detect_missing_value="true" />
 
@@ -316,6 +318,11 @@
     <!-- categories -->
     <field_group id="SBC_3D" grid_ref="grid_T_ncatice" >
       <field id="tn_ice"      long_name="surface ice/snow temperature"                                                                                       unit="degC" detect_missing_value="true" />
+<<<<<<< HEAD
+=======
+      <!-- Diags used if ln_snwext=T -->
+      <field id="qcn_snw_bot"     long_name="Downward conduction Flux at snow-ice interface"                                                                  unit="W/m2" />
+>>>>>>> devs_ISBA-ES
 
       <!-- standard ice fields -->
       <field id="iceconc_cat"  long_name="Sea-ice concentration per category"                unit=""        />

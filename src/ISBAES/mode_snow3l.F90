@@ -2466,7 +2466,6 @@ DO JJ=1,INLVLS
    DO JI=1,INI
       ZOPTICALPATH1(JI) = ZOPTICALPATH1(JI) + ZBETA1(JI,JJ)*PSNOWDZ(JI,JJ)
       ZOPTICALPATH2(JI) = ZOPTICALPATH2(JI) + ZBETA2(JI,JJ)*PSNOWDZ(JI,JJ)
-
       IF(PSPECTRALALBEDO(JI,3)==XUNDEF)THEN 
 
          PCOEF (JI,JJ)     = XSW_WGHT_VIS*(1.0-PSPECTRALALBEDO(JI,1))*EXP(-ZOPTICALPATH1(JI)*ZPROJLAT(JI)) &
@@ -3002,7 +3001,6 @@ ZSMASS(:,1) = 0.5 * PSNOWDZ(:,1) * PSNOWRHO(:,1)
 !Liquid water effect
 !
 ZWHOLDMAX(:,:) = SNOW3LHOLD(PSNOWRHO,PSNOWDZ)
-PRINT*,'ZWHOLDMAX',ZWHOLDMAX
 ZF1(:,:) = 1.0/(XVVISC5+10.*MIN(1.0,PSNOWLIQ(:,:)/ZWHOLDMAX(:,:)))
 !
 !Snow viscocity, density and grid thicknesses
@@ -3021,6 +3019,7 @@ DO JJ=1,INLVLS
 !       Calculate snow density:
         ZSNOWRHO2(JI,JJ) = PSNOWRHO(JI,JJ) + PSNOWRHO(JI,JJ)*PTSTEP &
                          * ( (XG*ZSMASS(JI,JJ)/ZVISCOCITY(JI,JJ)) )
+!        ZSNOWRHO2(JI,JJ) = 330. 
 !       
 !       Conserve mass by decreasing grid thicknesses in response to density increases
         PSNOWDZ(JI,JJ) = PSNOWDZ(JI,JJ)*(PSNOWRHO(JI,JJ)/ZSNOWRHO2(JI,JJ))  
@@ -3029,8 +3028,6 @@ DO JJ=1,INLVLS
 !
    ENDDO
 ENDDO
-PRINT*,'ZSNOWRHO2',ZSNOWRHO2
-PRINT*,'XVVISC3',XVVISC3,' XVRO11 ',XVRO11,' XVVISC4 ',XVVISC4
 !
 ! 3. Update total snow depth and density profile:
 ! -----------------------------------------------

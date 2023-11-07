@@ -97,7 +97,15 @@ CONTAINS
       !
       ! general fields
       IF( iom_use('icemass' ) )   CALL iom_put( 'icemass', vt_i * rhoi * zmsk00 )                                           ! Ice mass per cell area
+#if defined key_isbaes
+      IF(ln_isbaes) THEN
+         IF( iom_use('snwmass' ) )   CALL iom_put( 'snwmass', SUM(SUM(rhov_s, DIM=3),DIM=3) * zmsksn )                                  ! Snow mass per cell area    
+      ELSE
+#endif
       IF( iom_use('snwmass' ) )   CALL iom_put( 'snwmass', vt_s * rhos * zmsksn )                                           ! Snow mass per cell area
+#if defined key_isbaes
+      ENDIF
+#endif
       IF( iom_use('iceconc' ) )   CALL iom_put( 'iceconc', at_i        * zmsk00 )                                           ! ice concentration
       IF( iom_use('icevolu' ) )   CALL iom_put( 'icevolu', vt_i        * zmsk00 )                                           ! ice volume = mean ice thickness over the cell
       IF( iom_use('icethic' ) )   CALL iom_put( 'icethic', hm_i        * zmsk00 )                                           ! ice thickness
@@ -123,7 +131,9 @@ CONTAINS
       ! heat
       IF( iom_use('icetemp' ) )   CALL iom_put( 'icetemp', ( tm_i  - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! ice mean temperature
       IF( iom_use('snwtemp' ) )   CALL iom_put( 'snwtemp', ( tm_s  - rt0 ) * zmsksn + zmiss_val * ( 1._wp - zmsksn ) )      ! snw mean temperature
-      IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn )      ! snw mean density 
+#if defined key_isbaes
+      IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn )      ! snw mean density
+#endif 
       IF( iom_use('icettop' ) )   CALL iom_put( 'icettop', ( tm_su - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice surface
       IF( iom_use('icetbot' ) )   CALL iom_put( 'icetbot', ( t_bo  - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice bottom
       IF( iom_use('icetsni' ) )   CALL iom_put( 'icetsni', ( tm_si - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the snow-ice interface
