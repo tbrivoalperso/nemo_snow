@@ -28,7 +28,7 @@ INTEGER, INTENT(IN) :: KSIZE1
 INTEGER, INTENT(IN) :: KSIZE2
 INTEGER, INTENT(IN) :: KSIZE3
 INTEGER, DIMENSION(KSIZE1), INTENT(IN) :: KMASK
-REAL, DIMENSION(KSIZE1), INTENT(out) ::   za_s_fra    ! ice fraction covered by snow
+REAL, DIMENSION(KSIZE1), INTENT(IN) ::   za_s_fra    ! ice fraction covered by snow
 REAL, DIMENSION(KSIZE1), INTENT(out) ::   ZP_RADXS    ! Radiation transmited through the snow
 REAL, DIMENSION(KSIZE1), INTENT(out) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
 REAL, DIMENSION(KSIZE1), INTENT(out) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)

@@ -172,8 +172,8 @@ CONTAINS
             END DO
             DO jk = 1, nlay_s
 #if defined key_isbaes            
-               tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
-               rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
+               tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * dv_s(:,:,jk,jl) * z1_vt_s(:,:) !(dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
+               rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * dv_s(:,:,jk,jl) * z1_vt_s(:,:) !* (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
 #else
 
                tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)

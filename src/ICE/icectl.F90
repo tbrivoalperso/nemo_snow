@@ -48,7 +48,7 @@ MODULE icectl
    ! thresold rates for conservation
    !    these values are changed by the namelist parameter rn_icechk, so that threshold = zchk * rn_icechk
    REAL(wp), PARAMETER ::   rchk_m   = 2.5e-7   ! kg/m2/s <=> 1e-6 m of ice per hour spuriously gained/lost
-   REAL(wp), PARAMETER ::   rchk_s   = 2.5e-6   ! g/m2/s  <=> 1e-6 m of ice per hour spuriously gained/lost (considering s=10g/kg)
+   REAL(wp), PARAMETER ::   rchk_s   = 1000. !2.5e-6   ! g/m2/s  <=> 1e-6 m of ice per hour spuriously gained/lost (considering s=10g/kg)
    REAL(wp), PARAMETER ::   rchk_t   = 7.5e-2   ! W/m2    <=> 1e-6 m of ice per hour spuriously gained/lost (considering Lf=3e5J/kg)
 
    ! for drift outputs
@@ -119,32 +119,32 @@ CONTAINS
       !PRINT*,'hfx_res',hfx_res
       !PRINT*,'hfx_sub',hfx_sub
       !PRINT*,'hfx_spr',hfx_spr
-      PRINT*,'wfx_bog',wfx_bog 
-      PRINT*,'wfx_bom',wfx_bom 
-      PRINT*,'wfx_sum',wfx_sum 
-      PRINT*,'wfx_sni',wfx_sni 
-      PRINT*,'wfx_opw',wfx_opw 
-      PRINT*,'wfx_res',wfx_res 
-      PRINT*,'wfx_dyn',wfx_dyn 
-      PRINT*,'wfx_lam',wfx_lam 
-      PRINT*,'wfx_pnd',wfx_pnd 
-      PRINT*,'wfx_snw_sni',wfx_snw_sni 
-      PRINT*,'wfx_snw_sum',wfx_snw_sum 
-      PRINT*,'wfx_snw_dyn',wfx_snw_dyn 
-      PRINT*,'wfx_snw_sub',wfx_snw_sub 
-      PRINT*,'wfx_ice_sub',wfx_ice_sub 
-      PRINT*,'wfx_spr',wfx_spr 
-      !PRINT*,'sfx_bri',sfx_bri
-      !PRINT*,'sfx_bog',sfx_bog
-      !PRINT*,'sfx_bom',sfx_bom
-      !PRINT*,'sfx_sum',sfx_sum
-      !PRINT*,'sfx_sni',sfx_sni
-      !PRINT*,'sfx_opw',sfx_opw
-      !PRINT*,'sfx_res',sfx_res
-      !PRINT*,'sfx_res',sfx_res
-      !PRINT*,'sfx_dyn',sfx_dyn
-      !PRINT*,'sfx_sub',sfx_sub
-      !PRINT*,'sfx_lam',sfx_lam
+      !PRINT*,'wfx_bog',wfx_bog 
+      !PRINT*,'wfx_bom',wfx_bom 
+      !PRINT*,'wfx_sum',wfx_sum 
+      !PRINT*,'wfx_sni',wfx_sni 
+      !PRINT*,'wfx_opw',wfx_opw 
+      !PRINT*,'wfx_res',wfx_res 
+      !PRINT*,'wfx_dyn',wfx_dyn 
+      !PRINT*,'wfx_lam',wfx_lam 
+      !PRINT*,'wfx_pnd',wfx_pnd 
+      !PRINT*,'wfx_snw_sni',wfx_snw_sni 
+      !PRINT*,'wfx_snw_sum',wfx_snw_sum 
+      !PRINT*,'wfx_snw_dyn',wfx_snw_dyn 
+      !PRINT*,'wfx_snw_sub',wfx_snw_sub 
+      !PRINT*,'wfx_ice_sub',wfx_ice_sub 
+      !PRINT*,'wfx_spr',wfx_spr 
+      PRINT*,'sfx_bri',sfx_bri
+      PRINT*,'sfx_bog',sfx_bog
+      PRINT*,'sfx_bom',sfx_bom
+      PRINT*,'sfx_sum',sfx_sum
+      PRINT*,'sfx_sni',sfx_sni
+      PRINT*,'sfx_opw',sfx_opw
+      PRINT*,'sfx_res',sfx_res
+      PRINT*,'sfx_res',sfx_res
+      PRINT*,'sfx_dyn',sfx_dyn
+      PRINT*,'sfx_sub',sfx_sub
+      PRINT*,'sfx_lam',sfx_lam
 
       ! -- global sum -- !
       zchk3(1:6) = glob_sum_vec( 'icectl', ztmp3(:,:,1:6) )
