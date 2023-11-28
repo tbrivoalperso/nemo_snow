@@ -309,7 +309,7 @@ CONTAINS
       zlay_s = REAL( nlay_s , wp )
 #if defined key_isbaes      
       DO jk = 1, nlay_s
-         WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
+         WHERE( dv_s(:,:,jk,:) > epsi20 )        !--- icy area
             dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)    
             rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
             o_s(:,:,jk,:) = ov_s(:,:,jk,:) / dv_s(:,:,jk,:)
@@ -321,6 +321,7 @@ CONTAINS
             &    + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) ) ! Minus factor for enthalpy to match SI3 conventions
          ELSEWHERE                           !--- no ice
             t_s(:,:,jk,:) = rt0
+            rho_s(:,:,jk,:) = 400.
          END WHERE
       END DO
 #else

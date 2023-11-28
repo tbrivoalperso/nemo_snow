@@ -372,7 +372,11 @@ CONTAINS
       !
       a_i_b (:,:,:)   = a_i (:,:,:)     ! ice area
       v_i_b (:,:,:)   = v_i (:,:,:)     ! ice volume
+#if defined key_isbaes
+      v_s_b (:,:,:)   = SUM(dv_s (:,:,:,:),DIM=3)     ! snow volume
+#else
       v_s_b (:,:,:)   = v_s (:,:,:)     ! snow volume
+#endif
       v_ip_b(:,:,:)   = v_ip(:,:,:)     ! pond volume
       v_il_b(:,:,:)   = v_il(:,:,:)     ! pond lid volume
       sv_i_b(:,:,:)   = sv_i(:,:,:)     ! salt content
@@ -496,8 +500,13 @@ CONTAINS
             &             + SUM(     sv_i(:,:,:)          - sv_i_b(:,:,:)                  , dim=3 ) * r1_Dt_ice * rhoi
          diag_vice(:,:) = diag_vice(:,:) &
             &             + SUM(     v_i (:,:,:)          - v_i_b (:,:,:)                  , dim=3 ) * r1_Dt_ice * rhoi
+#if defined key_isbaes
+         diag_vsnw(:,:) = diag_vsnw(:,:) &
+            &             + SUM(     SUM(dv_s (:,:,:,:),DIM=3)          - v_s_b (:,:,:) , dim=3 ) * r1_Dt_ice * rhos
+#else        
          diag_vsnw(:,:) = diag_vsnw(:,:) &
             &             + SUM(     v_s (:,:,:)          - v_s_b (:,:,:)                  , dim=3 ) * r1_Dt_ice * rhos
+#endif
          diag_vpnd(:,:) = diag_vpnd(:,:) &
             &             + SUM(     v_ip + v_il          - v_ip_b - v_il_b                , dim=3 ) * r1_Dt_ice * rhow
          !

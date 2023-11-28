@@ -3063,7 +3063,7 @@ END SUBROUTINE SNOW3LCOMPACTN
 !     Same method as in Crocus
 !
 USE MODD_SURF_PAR, ONLY : XUNDEF          
-USE MODD_SNOW_PAR, ONLY : XSNOWCRITD
+USE MODD_SNOW_PAR, ONLY : XSNOWCRITD, XSNOWDMIN
 !
 !
 IMPLICIT NONE
@@ -3170,29 +3170,53 @@ DO JL=1,INLVLS
    DO JLO=1, INLVLS   
       DO JI=1,INI
         IF((ZSNOWZTOP_OLD(JI,JLO)>ZSNOWZBOT_NEW(JI,JL)).AND.(ZSNOWZBOT_OLD(JI,JLO)<ZSNOWZTOP_NEW(JI,JL)))THEN
-!                
-          ZPROPOR = (MIN(ZSNOWZTOP_OLD(JI,JLO), ZSNOWZTOP_NEW(JI,JL)) &
-                  -  MAX(ZSNOWZBOT_OLD(JI,JLO), ZSNOWZBOT_NEW(JI,JL)))&
-                  / ZSNOWDZO(JI,JLO) 
+!        
+          IF(ZSNOWDZO(JI,JLO) > 0.) THEN
+             ZPROPOR = (MIN(ZSNOWZTOP_OLD(JI,JLO), ZSNOWZTOP_NEW(JI,JL)) &
+                     -  MAX(ZSNOWZBOT_OLD(JI,JLO), ZSNOWZBOT_NEW(JI,JL)))&
+                     / ZSNOWDZO(JI,JLO)
 !
-          ZMASSDZO (JI,JLO)=ZSNOWRHOO(JI,JLO)*ZSNOWDZO(JI,JLO)*ZPROPOR
+          ELSE
+             ZPROPOR = 0.
+          ENDIF
+             ZMASSDZO (JI,JLO)=ZSNOWRHOO(JI,JLO)*ZSNOWDZO(JI,JLO)*ZPROPOR
 !
-          ZMASTOTN (JI,JL)=ZMASTOTN (JI,JL)+ZMASSDZO  (JI,JLO)
-          ZSNOWAGN (JI,JL)=ZSNOWAGN (JI,JL)+ZSNOWAGEO (JI,JLO)*ZMASSDZO(JI,JLO)
+             ZMASTOTN (JI,JL)=ZMASTOTN (JI,JL)+ZMASSDZO  (JI,JLO)
+             ZSNOWAGN (JI,JL)=ZSNOWAGN (JI,JL)+ZSNOWAGEO (JI,JLO)*ZMASSDZO(JI,JLO)
 !
-          ZSNOWHEAN(JI,JL)=ZSNOWHEAN(JI,JL)+ZSNOWHEATO(JI,JLO)*ZPROPOR
-!          
-        ENDIF
+             ZSNOWHEAN(JI,JL)=ZSNOWHEAN(JI,JL)+ZSNOWHEATO(JI,JLO)*ZPROPOR
+!            
+         ENDIF 
       ENDDO 
     ENDDO 
 ENDDO  
+DO JL=1,INLVLS
+   DO JI=1,INI
+      IF(ZMASTOTN(JI,JL) .eq. 0.) PRINT*,'mass',ZMASTOTN(JI,JL), 'DZ',ZSNOWDZO(JI,JL)
+   END DO
+END DO
+          
 !
 ! the new layer inherits from the weighted average properties of the old ones
 ! heat and mass
 !
+!DO JL=1,INLVLS
+!   DO JI=1,INI
+!       IF(ZMASTOTN(JI,JL) > 0.) THEN 
+!          ZSNOWHEATN(JI,JL)= ZSNOWHEAN(JI,JL)
+!          ZSNOWAGEN (JI,JL)= ZSNOWAGN (JI,JL)/ZMASTOTN(JI,JL)
+!          ZSNOWRHON (JI,JL)= ZMASTOTN (JI,JL)/PSNOWDZN(JI,JL)
+!       ELSE
+!          ZSNOWHEATN(JI,JL)= 0. 
+!          ZSNOWAGEN (JI,JL)= 0.
+!          ZSNOWRHON (JI,JL)= 0.
+!       ENDIF
+!   END DO
+!END DO
 ZSNOWHEATN(:,:)= ZSNOWHEAN(:,:)
 ZSNOWAGEN (:,:)= ZSNOWAGN (:,:)/ZMASTOTN(:,:)
 ZSNOWRHON (:,:)= ZMASTOTN (:,:)/PSNOWDZN(:,:)
+
 !
 !
 ! 4. Vanishing or very thin snowpack check:

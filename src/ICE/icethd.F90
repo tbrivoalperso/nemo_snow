@@ -44,7 +44,13 @@ MODULE icethd
    USE lbclnk         ! lateral boundary conditions (or mpp links)
    USE timing         ! Timing
 
-   USE fldread         ! read input fields
+   USE fldread         ! read input field
+#if defined key_isbaes
+   USE MODD_SNOW_PAR,   ONLY : XRHOSMAX_ES, XSNOWDMIN, XRHOSMIN_ES, XEMISSN
+   USE MODD_SURF_PAR,   ONLY : XUNDEF
+   USE sbc_phy        ! Catalog of functions for physical/meteorological parameters in the marine boundary layer
+
+#endif
    IMPLICIT NONE
    PRIVATE
 
@@ -103,10 +109,10 @@ CONTAINS
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zh_s  ! Thicknesses of the snow layers (m) 
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   ze_s  ! Snow enthalpy per unit volume of the snow layers 
       
-      ! Variables for snow to ice conversion
-      REAL(wp), DIMENSION(jpij) ::   thickness_si  ! Thickness removed to snow by snow to ice conversion (m) 
-      REAL(wp), DIMENSION(jpij) ::   mass_si       ! Mass removed to snow by snow to ice conversion (kg)      
-      REAL(wp), DIMENSION(jpij) ::   enthalpy_si   ! Enthalpy removed to snow by snow to ice conversion (J/m2) 
+!      ! Variables for snow to ice conversion
+!      REAL(wp), DIMENSION(jpij) ::   thickness_si  ! Thickness removed to snow by snow to ice conversion (m) 
+!      REAL(wp), DIMENSION(jpij) ::   mass_si       ! Mass removed to snow by snow to ice conversion (kg)      
+!      REAL(wp), DIMENSION(jpij) ::   enthalpy_si   ! Enthalpy removed to snow by snow to ice conversion (J/m2) 
 
 
       REAL(wp), DIMENSION(jpij)          ::   zq_ini      ! diag errors on heat
@@ -115,6 +121,12 @@ CONTAINS
       REAL(wp), DIMENSION(jpij) ::   zdm      ! 
       REAL(wp), DIMENSION(jpij) ::   zdm2      ! 
 
+#if defined key_isbaes
+      REAL(wp), DIMENSION(jpij) ::   zpa_t          ! ! pressure at atmospheric level
+      REAL(wp), DIMENSION(jpij) ::   zsnowblow      ! 
+      REAL(wp) ::   zsnowfall      ! 
+
+#endif
       ! FOR THEO Tests
       INTEGER :: imask, ierror
       REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_snw_bot_read   ! 
@@ -197,11 +209,26 @@ CONTAINS
             ze_s(1:npti, 0:nlay_s) = 0._wp ; 
             
             qcn_snw_bot_1d(1:npti)     = 0._wp
-            thickness_si(1:npti) = 0._wp
-            enthalpy_si(1:npti) = 0._wp
-            mass_si(1:npti) = 0._wp
+            !thickness_si(1:npti) = 0._wp
+            !enthalpy_si(1:npti) = 0._wp
+            !mass_si(1:npti) = 0._wp
             !
+               DO ji = 1, npti
+                  IF(ji .eq. 67) THEN
+                     WRITE(numout,*) '  thd00    ISBAES  glamt ', ji, glamt_1d(ji)
+                     WRITE(numout,*) '  thd00    ISBAES  gphit ', ji, gphit_1d(ji)
 
+                     WRITE(numout,*) '  thd00    ISBAES  T ', ji, t_s_1d(ji,:)
+                     WRITE(numout,*) '  thd00    ISBAES dz  ' ,ji, dh_s_1d(ji,:)
+                     WRITE(numout,*) '  thd00    ISBAES dv  ' ,ji, dv_s_1d(ji,:)
+
+                     WRITE(numout,*) '  thd00    ISBAES rho ', ji, rho_s_1d(ji,:)
+                     WRITE(numout,*) '  thd00    ISBAES e ', ji, e_s_1d(ji,:)
+                     !WRITE(numout,*) '  th0d    ISBAES log T° ', ji,
+                     !LOG(t_s_1d(ji,1))
+                     WRITE(numout,*) '  thd00    ISBAES h_i ', ji, h_i_1d(ji)
+                  ENDIF
+               ENDDO
             ! Theo : Here We call the new snow_thd routine which compute: 
             ! - The T° equation in the snow (snw_thd_zdf)
             ! - Snowfall / melt and associated mass and heat changes (snw_thd_dh)
@@ -221,33 +248,97 @@ CONTAINS
 #if defined key_isbaes
             IF( ln_isbaes ) THEN
                CALL ice_var_snwfra( h_s_1d(1:npti), za_s_fra(1:npti) )
-               CALL SNOW3L_SI3(npti,nlay_s,1, rn_Dt, za_s_fra(1:npti), isnow, ZP_RADXS, zq_rema, zevap_rema)
-               !Convert back J/m2 in J/m3 
-               DO jk = 1, nlay_s
-                  WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))
+
+               ! Compute factor for snow precip 
+               CALL ice_var_snwblow( 1._wp - at_i_1d(1:npti), zsnowblow(1:npti) )   ! snow distribution over ice after wind blowing
+               
+               DO ji = 1, npti
+                  IF (SUM(dh_s_1d(ji,:)) .eq. 0._wp) THEN
+                     DO jk = 1, nlay_s
+                        dh_s_1d(ji,jk) = 0._wp
+                        swe_s_1d(ji,jk) = 0._wp
+                        h_s_1d(ji)    = 0._wp
+                        e_s_1d(ji,jk)    = 0._wp 
+                        dh_s_1d(ji,jk) = 0._wp
+                        rhov_s_1d(ji,jk) = 0._wp
+                        rho_s_1d(ji,jk) = 400._wp
+                        t_s_1d(ji,jk)   = 273.15_wp
+                     ENDDO
+                  ENDIF
+
+                  ! Compute pressure at atmospheric level
+                  ! Careful : for now, atmospheric level (m) for U & T data are hard-coded
+                  zpa_t(ji) = pres_temp(qair_isbaes_1d(ji), slp_isbaes_1d(ji), 2., ptpot=tair_isbaes_1d(ji), l_ice=.true. )
+
+                  zsnowfall = snow_isbaes_1d(ji)*rn_Dt/XRHOSMAX_ES ! maximum possible snowfall depth (m)
+                  !IF ((h_s_1d(ji) > XSNOWDMIN .OR. zsnowfall > XSNOWDMIN) .AND. (h_i_1d(ji) > 0.) .AND. at_i_1d(ji) > 0.) THEN
+                  IF ((SUM(dh_s_1d(ji,:)) > XSNOWDMIN .OR. zsnowfall > XSNOWDMIN)) THEN   
+                     CALL CALL_MODEL(ji,nlay_s, rn_Dt, za_s_fra(ji),zsnowblow(ji), zpa_t(ji), ZP_RADXS, zq_rema(ji), zevap_rema(ji))
+                     isnow(ji) = 1.
+                     zradtr_s(ji,nlay_s) = ZP_RADXS(1)
+                    
+                     IF (SUM(dh_s_1d(ji,:)) .eq. 0._wp) THEN
+                        DO jk = 1, nlay_s
+                           dh_s_1d(ji,jk) = 0._wp
+                           swe_s_1d(ji,jk) = 0._wp
+                           h_s_1d(ji)    = 0._wp
+                           e_s_1d(ji,jk)    = 0._wp
+                           dh_s_1d(ji,jk) = 0._wp
+                           dv_s_1d(ji,jk) = 0._wp
+
+                           rhov_s_1d(ji,jk) = 0._wp
+                           rho_s_1d(ji,jk) = 400._wp
+                           t_s_1d(ji,jk)   = 273.15_wp
+                           IF(ji .eq. 67) WRITE(numout,*) '  HERE '
+                        ENDDO
+                     ENDIF
+                  ELSE
+                     isnow(ji) = 0.
+                     zradtr_s(ji,nlay_s) = qtr_ice_top_1d(ji)
+                     DO jk = 1, nlay_s 
+                        hfx_res_1d(ji) = hfx_res_1d(ji) - e_s_1d(ji,jk) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+
+                        ! Mass flux is computed from 3D density arrays instead of constant density
+                        wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk) * dh_s_1d(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+
+                        dh_s_1d(ji,jk) = 0._wp
+                        swe_s_1d(ji,jk) = 0._wp
+                        h_s_1d(ji)    = 0._wp
+                        e_s_1d(ji,jk)    = 0._wp
+                        dh_s_1d(ji,jk) = 0._wp
+                        dv_s_1d(ji,jk) = 0._wp
+
+                        rhov_s_1d(ji,jk) = 0._wp
+                        rho_s_1d(ji,jk) = 400._wp
+                        o_s_1d(ji,jk)   = 10.
+                        t_s_1d(ji,jk)   = 273.15 
+                     END DO
+                  ENDIF
                END DO
-              !CALL snw_thd_iceconv( isnow, thickness_si, mass_si, enthalpy_si )
+               !Convert back J/m2 in J/m3
+               DO jk = 1, nlay_s
+                  WHERE( dh_s_1d(1:npti,jk)>0._wp .AND. a_i_1d(1:npti) > 0.) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))
+               END DO
+
+
+
+             !CALL snw_thd_iceconv( isnow, thickness_si, mass_si, enthalpy_si )
              ELSE
                 CALL ctl_stop( 'key_ibaes activated => Could not launch model without ln_isbaes off' )          
              ENDIF
 
-             DO ji = 1, npti
-               IF (isnow(ji) == 0._wp) THEN
-                   zradtr_s(ji,nlay_s) = qtr_ice_top_1d(ji)
-               ELSE
-                   zradtr_s(:,nlay_s) = ZP_RADXS(:)
-               ENDIF
-            END DO
-#endif           
+#endif       
+            qrema_1d(:) = zq_rema(:)
+            evaprema_1d(:) = zevap_rema(:)
+
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
             CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
             !
 
             IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
-                              PRINT*,'here',kt
 
-                              CALL ice_thd_dh( isnow, zq_rema, zevap_rema, thickness_si, mass_si, enthalpy_si, zh_s, ze_s )    ! Ice-Snow thickness
+                              CALL ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
 
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF
@@ -261,12 +352,9 @@ CONTAINS
             IF( ln_icedA )    CALL ice_thd_da                       ! --- Lateral melting --- !
 
             !
-            PRINT*,'e_s_ after thd',SUM(e_s_1d(1,:) )
-            PRINT*,'e_i_ after thd',SUM(e_i_1d(1,:) * h_i_1d(1) * r1_nlay_i)
-
                               CALL ice_thd_1d2d( jl, 2 )            ! --- Change units of e_i, e_s from J/m3 to J/m2 --- !
             !                                                       ! --- & Move to 2D arrays --- !
-            PRINT*,'HERE3',e_s
+
          ENDIF
          !
       END DO
@@ -281,7 +369,7 @@ CONTAINS
       !
       IF( ln_icedO )          CALL ice_thd_do                       ! --- Frazil ice growth in leads --- !
       !
-                              CALL ice_cor( kt , 2 )                ! --- Corrections --- !
+                              !CALL ice_cor( kt , 2 )                ! --- Corrections --- !
       !
       !IF(thickness_si(1) > 0.) STOP
 
@@ -462,7 +550,10 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_res_1d    (1:npti), hfx_res       )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_err_dif_1d(1:npti), hfx_err_dif   )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_err_difs_1d(1:npti), hfx_err_difs   )
+
          CALL tab_2d_1d( npti, nptidx(1:npti), qcn_snw_bot_1d(1:npti), qcn_snw_bot(:,:,kl) )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qrema_1d (1:npti), qrema (:,:,kl) )
+         CALL tab_2d_1d( npti, nptidx(1:npti), evaprema_1d (1:npti), evaprema (:,:,kl) )
 
          !
          ! ocean surface fields
@@ -505,6 +596,7 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), qlwdwn_ice_isbaes_1d    (1:npti), qlwdwn_ice_isbaes(:,:,kl)       )
          CALL tab_2d_1d( npti, nptidx(1:npti), qsb_ice_isbaes_1d (1:npti), qsb_ice_isbaes (:,:,kl) )
          CALL tab_2d_1d( npti, nptidx(1:npti), qla_ice_isbaes_1d (1:npti), qla_ice_isbaes (:,:,kl) )
+
 #endif
          !
          ! --- Change units of e_i, e_s from J/m2 to J/m3 --- !
@@ -548,12 +640,13 @@ CONTAINS
             dv_s_1d (1:npti,jk) = dh_s_1d (1:npti,jk) * a_i_1d (1:npti) 
             rhov_s_1d (1:npti,jk) = rho_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
             ov_s_1d (1:npti,jk) = o_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
-            DO ji = 1, npti 
-               v_s_1d (ji) = SUM(dv_s_1d (ji,:))
-            END DO
 !            WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d(1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d(1:npti,jk)
 
          END DO
+         DO ji = 1, npti
+            v_s_1d (ji) = SUM(dv_s_1d (ji,:))
+         END DO
+
 #endif
          CALL tab_1d_2d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_1d_2d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
@@ -626,6 +719,8 @@ CONTAINS
 
          ! diags for ln_snwext=T
          CALL tab_1d_2d( npti, nptidx(1:npti), qcn_snw_bot_1d(1:npti), qcn_snw_bot(:,:,kl) )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qrema_1d(1:npti), qrema(:,:,kl)    )
+         CALL tab_1d_2d( npti, nptidx(1:npti), evaprema_1d(1:npti), evaprema(:,:,kl)    )
 
          ! extensive variables
          CALL tab_1d_2d( npti, nptidx(1:npti), v_i_1d (1:npti), v_i (:,:,kl) )

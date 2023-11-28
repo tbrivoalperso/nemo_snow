@@ -159,6 +159,8 @@ MODULE ice1D
    ! Variables for snow external routines (ln_snwext=T)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qcn_snw_bot_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   dh_s_1d        !: Snow layer thicknesses
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qrema_1d ! For isbaes use 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   evaprema_1d ! For isbaes
 
 
 #if defined key_isbaes
@@ -194,6 +196,9 @@ MODULE ice1D
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   glamt_1d ! For isbaes use 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   gphit_1d ! For isbaes use 
+!   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qrema_1d ! For isbaes use 
+!   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   evaprema_1d ! For isbaes
+
 #endif
    ! 
    !!----------------------
@@ -284,7 +289,7 @@ CONTAINS
 
 
        ii = ii + 1
-      ALLOCATE( qcn_snw_bot_1d(jpij), dh_s_1d(jpij,nlay_s), STAT=ierr(ii) )
+      ALLOCATE( qcn_snw_bot_1d(jpij), dh_s_1d(jpij,nlay_s), qrema_1d(jpij),evaprema_1d(jpij), STAT=ierr(ii) )
 
 #if defined key_isbaes
       ii = ii + 1

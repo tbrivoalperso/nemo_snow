@@ -480,6 +480,11 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   dh_s           !: Snow layer thickness                          (m)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   dv_s           !: Snow layer volume per unit area               (m)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   rhov_s           !: Snow layer density X olume per unit area               (m)
+   ! Diags
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   qrema  
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   evaprema
+
+!: Snow layer density X olume per unit area               (m)
 #endif
    !
    !!----------------------------------------------------------------------
@@ -590,7 +595,7 @@ CONTAINS
       ! Variables needed for ISBA-ES coupling
       ii = ii + 1
       ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) ,swe_s(jpi,jpj,nlay_s,jpl) , o_s(jpi,jpj,nlay_s,jpl), lwc_s(jpi,jpj,nlay_s,jpl), ov_s(jpi,jpj,nlay_s,jpl), albs_isbaes(jpi,jpj,jpl), & 
-                & albi_isbaes(jpi,jpj,jpl),cnd_i_isbaes(jpi,jpj,jpl), dh_s(jpi,jpj,nlay_s,jpl),dv_s(jpi,jpj,nlay_s,jpl),rhov_s(jpi,jpj,nlay_s,jpl), STAT=ierr(ii) )
+                & albi_isbaes(jpi,jpj,jpl),cnd_i_isbaes(jpi,jpj,jpl), dh_s(jpi,jpj,nlay_s,jpl),dv_s(jpi,jpj,nlay_s,jpl),rhov_s(jpi,jpj,nlay_s,jpl),qrema(jpi,jpj,jpl),evaprema(jpi,jpj,jpl), STAT=ierr(ii) )
 #endif
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )

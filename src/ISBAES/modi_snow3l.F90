@@ -1,7 +1,7 @@
 !depfile:snow3l.F90
 MODULE MODI_SNOW3L
 INTERFACE
-      SUBROUTINE SNOW3L(HSNOWRES, TPTIME, OMEB,OSI3, HIMPLICIT_WIND,           &
+      SUBROUTINE SNOW3L(JI_in,HSNOWRES, TPTIME, OMEB,OSI3, HIMPLICIT_WIND,           &
                 PPEW_A_COEF, PPEW_B_COEF,                                 &
                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,       &
                 PSNOWSWE,PSNOWRHO,PSNOWHEAT,PSNOWALB,                     &
@@ -21,7 +21,7 @@ INTERFACE
                 PHPSNOW,PLES3L,PLEL3L,PEVAP,PSNDRIFT,PRI,                 &
                 PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS,ZRADXS,    &
                 PPERMSNOWFRAC,PFORESTFRAC,PZENITH,PXLAT,PXLON,            &
-                HSNOWDRIFT,OSNOWDRIFT_SUBLIM                              )
+                HSNOWDRIFT,OSNOWDRIFT_SUBLIM,PEVAPGONECOR                              )
                 
                 
 USE MODD_CSTS,     ONLY : XTT, XRHOLW, XLMTT, XCL, XDAY
@@ -36,6 +36,7 @@ USE MODE_THERMOS,  ONLY : QSATI
 USE MODD_TYPE_DATE_SURF, ONLY: DATE_TIME
 !*      0.1    declarations of arguments
 !
+INTEGER, INTENT(IN)                    :: JI_in 
 REAL, INTENT(IN)                    :: PTSTEP
 !                                      PTSTEP    = time step of the integration
 TYPE(DATE_TIME), INTENT(IN)         :: TPTIME      ! current date and time
@@ -211,6 +212,7 @@ CHARACTER(4), INTENT(IN)          :: HSNOWDRIFT  ! Snowdrift scheme :
                                                  !  Other options are available in Crocus
 
 LOGICAL, INTENT(IN)               ::  OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
+REAL, DIMENSION(:), INTENT(OUT)   ::  PEVAPGONECOR
 
 
 END SUBROUTINE SNOW3L

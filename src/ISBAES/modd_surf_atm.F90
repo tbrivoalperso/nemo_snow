@@ -43,8 +43,8 @@
 IMPLICIT NONE
 !
 !-----------------------------------------------------------------------------------------------------
-REAL       :: XCISMIN  ! minimum wind shear
-REAL       :: XVMODMIN ! minimum wind speed
+REAL,PARAMETER       :: XCISMIN=0.  ! minimum wind shear
+REAL,PARAMETER       :: XVMODMIN=0. ! minimum wind speed
 LOGICAL    :: LALDTHRES! activate aladin threshold for wind
 !
 LOGICAL    :: LDRAG_COEF_ARP ! activate aladin formulation for Cd and Ch
@@ -73,7 +73,7 @@ REAL       :: XUSURID
 REAL       :: XUSURICL
 REAL       :: XVCHRNK
 REAL       :: XVZ0CM
-REAL       :: XRIMAX
+REAL,PARAMETER       :: XRIMAX=0.2
 REAL       :: XDELTA_MAX ! Maximum fraction of the foliage covered by intercepted water for high vegetation
 !
 REAL       :: XWINDMIN ! minimum wind speed (canopy)

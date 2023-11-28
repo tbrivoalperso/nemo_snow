@@ -134,17 +134,17 @@ CONTAINS
       !PRINT*,'wfx_snw_sub',wfx_snw_sub 
       !PRINT*,'wfx_ice_sub',wfx_ice_sub 
       !PRINT*,'wfx_spr',wfx_spr 
-      PRINT*,'sfx_bri',sfx_bri
-      PRINT*,'sfx_bog',sfx_bog
-      PRINT*,'sfx_bom',sfx_bom
-      PRINT*,'sfx_sum',sfx_sum
-      PRINT*,'sfx_sni',sfx_sni
-      PRINT*,'sfx_opw',sfx_opw
-      PRINT*,'sfx_res',sfx_res
-      PRINT*,'sfx_res',sfx_res
-      PRINT*,'sfx_dyn',sfx_dyn
-      PRINT*,'sfx_sub',sfx_sub
-      PRINT*,'sfx_lam',sfx_lam
+      !PRINT*,'sfx_bri',sfx_bri
+      !PRINT*,'sfx_bog',sfx_bog
+      !PRINT*,'sfx_bom',sfx_bom
+      !PRINT*,'sfx_sum',sfx_sum
+      !PRINT*,'sfx_sni',sfx_sni
+      !PRINT*,'sfx_opw',sfx_opw
+      !PRINT*,'sfx_res',sfx_res
+      !PRINT*,'sfx_res',sfx_res
+      !PRINT*,'sfx_dyn',sfx_dyn
+      !PRINT*,'sfx_sub',sfx_sub
+      !PRINT*,'sfx_lam',sfx_lam
 
       ! -- global sum -- !
       zchk3(1:6) = glob_sum_vec( 'icectl', ztmp3(:,:,1:6) )
@@ -164,14 +164,14 @@ CONTAINS
          zdiag_mass = ( zchk3(1) - pdiag_v ) * r1_Dt_ice + ( zchk3(4) - pdiag_fv )
          zdiag_salt = ( zchk3(2) - pdiag_s ) * r1_Dt_ice + ( zchk3(5) - pdiag_fs )
          zdiag_heat = ( zchk3(3) - pdiag_t ) * r1_Dt_ice + ( zchk3(6) - pdiag_ft )
-         PRINT*,'ROUTINE:', cd_routine
-         PRINT*,'Diag mass delta',( zchk3(1) - pdiag_v ) /e1e2t!* r1_Dt_ice
-         PRINT*,'Diag heat delta',( zchk3(3) - pdiag_t ) /e1e2t!* r1_Dt_ice
-         PRINT*,'Diag salt delta',( zchk3(2) - pdiag_s ) /e1e2t!* r1_Dt_ice
-         PRINT*,'Diag mass 2',( zchk3(4) - pdiag_fv )/ (r1_Dt_ice* e1e2t)  
-         PRINT*,'Diag heat 2',( zchk3(6) - pdiag_ft )/ (r1_Dt_ice* e1e2t)
-         PRINT*,'Diag salt 2',( zchk3(5) - pdiag_fs )/ (r1_Dt_ice* e1e2t)
-         PRINT*,'diff mass',zdiag_mass
+         !PRINT*,'ROUTINE:', cd_routine
+         !PRINT*,'Diag mass delta',( zchk3(1) - pdiag_v ) /e1e2t!* r1_Dt_ice
+         !PRINT*,'Diag heat delta',( zchk3(3) - pdiag_t ) /e1e2t!* r1_Dt_ice
+         !PRINT*,'Diag salt delta',( zchk3(2) - pdiag_s ) /e1e2t!* r1_Dt_ice
+         !PRINT*,'Diag mass 2',( zchk3(4) - pdiag_fv )/ (r1_Dt_ice* e1e2t)  
+         !PRINT*,'Diag heat 2',( zchk3(6) - pdiag_ft )/ (r1_Dt_ice* e1e2t)
+         !PRINT*,'Diag salt 2',( zchk3(5) - pdiag_fs )/ (r1_Dt_ice* e1e2t)
+         !PRINT*,'diff mass',zdiag_mass
          ! -- max concentration diag -- !
          ztmp3(:,:,7) = SUM( a_i, dim=3 )
          zchk3(7)     = glob_max( 'icectl', ztmp3(:,:,7) )
@@ -411,6 +411,33 @@ CONTAINS
       CALL iom_rstput( 0, 0, inum, 'snwvol'    , SUM(v_s ,dim=3) , ktype = jp_r8 )    !
       CALL iom_rstput( 0, 0, inum, 'pndvol'    , SUM(v_ip,dim=3) , ktype = jp_r8 )    !
       CALL iom_rstput( 0, 0, inum, 'lidvol'    , SUM(v_il,dim=3) , ktype = jp_r8 )    !
+      ! fluxes
+      CALL iom_rstput( 0, 0, inum, 'wfx_bog', wfx_bog(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_bom', wfx_bom(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_sum', wfx_sum(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_sni', wfx_sni(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_opw', wfx_opw(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_res', wfx_res(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_dyn', wfx_dyn(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_lam', wfx_lam(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_pnd', wfx_pnd(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_snw_sni', wfx_snw_sni(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_snw_sum', wfx_snw_sum(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_snw_dyn', wfx_snw_dyn(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_snw_sub', wfx_snw_sub(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'wfx_ice_sub', wfx_ice_sub(:,:) , ktype = jp_r8)    !
+
+      CALL iom_rstput( 0, 0, inum, 'hfx_bog', hfx_bog(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'hfx_sum', hfx_sum(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'hfx_bom', hfx_bom(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'hfx_dif', hfx_dif(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'hfx_difs', hfx_difs(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'hfx_opw', hfx_opw(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'hfx_thd', hfx_thd(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'hfx_dyn', hfx_dyn(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'hfx_res', hfx_res(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'hfx_sub', hfx_sub(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'hfx_spr', hfx_spr(:,:) , ktype = jp_r8)    !
 
       CALL iom_close( inum )
 

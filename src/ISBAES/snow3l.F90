@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE SNOW3L(HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,           &
+      SUBROUTINE SNOW3L(JI_in, HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,           &
                 PPEW_A_COEF, PPEW_B_COEF,                                 &
                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,       &
                 PSNOWSWE,PSNOWRHO,PSNOWHEAT,PSNOWALB,                     &
@@ -23,7 +23,7 @@
                 PHPSNOW,PLES3L,PLEL3L,PEVAP,PSNDRIFT,PRI,                 &
                 PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS,ZRADXS,    &
                 PPERMSNOWFRAC,PFORESTFRAC,PZENITH,PXLAT,PXLON,            &
-                HSNOWDRIFT,OSNOWDRIFT_SUBLIM                              )  
+                HSNOWDRIFT,OSNOWDRIFT_SUBLIM, PDHMELT                     )  
 !     ##########################################################################
 !
 !!****  *SNOW3L*
@@ -112,11 +112,14 @@ USE MODE_THERMOS,  ONLY : QSATI
 USE MODD_TYPE_DATE_SURF, ONLY: DATE_TIME
 !
 !
+USE in_out_manager ! I/O manager
+
 IMPLICIT NONE
 !
 !
 !*      0.1    declarations of arguments
 !
+INTEGER, INTENT(IN)                    :: JI_in 
 REAL, INTENT(IN)                    :: PTSTEP
 !                                      PTSTEP    = time step of the integration
 TYPE(DATE_TIME), INTENT(IN)         :: TPTIME      ! current date and time
@@ -292,6 +295,8 @@ CHARACTER(4), INTENT(IN)          :: HSNOWDRIFT  ! Snowdrift scheme :
                                                  !  Other options are available in Crocus
 
 LOGICAL, INTENT(IN)               ::  OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
+REAL, DIMENSION(:), INTENT(OUT)   ::  PDHMELT
+
 !
 !*      0.2    declarations of local variables
 !
@@ -430,6 +435,7 @@ DO JJ=1,INLVLS
       ZSNOW(JI) = ZSNOW(JI) + PSNOWDZ(JI,JJ)  ! m
    ENDDO
 END DO
+
 !
 ZWORK(:)=ZSNOW(:)
 !
@@ -452,6 +458,7 @@ ENDDO
 ! Caluclate uppermost density and thickness changes due to snowfall,
 ! and add heat content of falling snow
 !
+
 CALL SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,ZSNOW,PSNOWRHO,PSNOWDZ,             &
                 PSNOWHEAT,PSNOWHMASS,ZSNOWHMASS1,PSNOWAGE,PPERMSNOWFRAC  )
 !
@@ -469,18 +476,24 @@ ENDDO
 WHERE(ZWORK(:)==0.0.AND.PSR(:)>0.0)
      PSNOWALB(:) = ZWORK2(:)
 ENDWHERE
+
+!
+
 !
 !*       3.     Update grid/discretization
 !               --------------------------
 ! Reset grid to conform to model specifications:
 !
+IF(OSI3) THEN
+ CALL SNOW3LGRID(ZSNOWDZN,ZSNOW)
+ELSE
  CALL SNOW3LGRID(ZSNOWDZN,ZSNOW,PSNOWDZ_OLD=PSNOWDZ)
+ENDIF
 !
 ! Mass/Heat redistribution:
 !
 
 CALL SNOW3LTRANSF(ZSNOW,PSNOWDZ,ZSNOWDZN,PSNOWRHO,PSNOWHEAT,PSNOWAGE)
-
 
 !
 !
@@ -523,7 +536,6 @@ ZSCAP(:,:)     = SNOW3LSCAP(PSNOWRHO)
 PSNOWHEAT(:,:) = PSNOWDZ(:,:)*( ZSCAP(:,:)*(ZSNOWTEMP(:,:)-XTT)        &
                    - XLMTT*PSNOWRHO(:,:) ) + XLMTT*XRHOLW*PSNOWLIQ(:,:)  
 !
-!
 !*       6.     Solar radiation transmission
 !               -----------------------------
 !
@@ -556,6 +568,7 @@ PHPSNOW(:) = 0.0
 ! Surface Energy Budget calculations using ISBA linearized form
 ! and standard ISBA turbulent transfer formulation
 !
+
 IF(OMEB)THEN 
 
 ! - surface fluxes prescribed:
@@ -639,8 +652,16 @@ CALL SNOW3LGONE(PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                            &
 !
 ZSNOWLIQ0(:,:) = PSNOWLIQ(:,:) ! save liquid water profile before update
 !
+DO JI=1,INI
+   PDHMELT(JI) = SUM(PSNOWDZ(JI,:))
+ENDDO
 
 CALL SNOW3LMELT(PTSTEP,ZSCAP,ZSNOWTEMP,PSNOWDZ,PSNOWRHO,PSNOWLIQ,ZMELTXS)  
+
+DO JI=1,INI
+   PDHMELT(JI) = SUM(PSNOWDZ(JI,:)) - PDHMELT(JI)
+ENDDO
+
 
 !
 !
@@ -673,9 +694,12 @@ PDELPHASEN(:)=ZSNOWGONE_DELTA(:)*ZDELPHASE(:)*XLMTT
 !*      11.     Snow Evaporation/Sublimation mass updates:
 !               ------------------------------------------
 !
+
 CALL SNOW3LEVAPN(ZPSN3L,PLES3L,PLEL3L,PTSTEP,PPERMSNOWFRAC,       &
                  ZSNOWTEMP(:,1),PSNOWRHO(:,1),PSNOWDZ,            &
                  PSNOWLIQ(:,1),PTA,PLVTT,PLSTT,PSNOWHEAT,PSOILCOR )
+!
+
 !
 ! Update snow temperatures and liquid
 ! water portion of the snow from snow heat content

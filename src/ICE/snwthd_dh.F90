@@ -65,8 +65,8 @@ CONTAINS
       REAL(wp), DIMENSION(jpij), INTENT(in) ::   isnow       ! presence of snow or not (used only if key_isbaes=T)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
       REAL(wp), DIMENSION(jpij), INTENT(out) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)
-      REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(out) ::   zh_s      ! snw layer thickness (m) 
-      REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(out) ::   ze_s      ! snw layer enthalpy (J.m-3)
+      REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(inout) ::   zh_s      ! snw layer thickness (m) 
+      REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(inout) ::   ze_s      ! snw layer enthalpy (J.m-3)
 
 !
       INTEGER  ::   ji, jk       ! dummy loop indices

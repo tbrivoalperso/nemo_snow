@@ -418,8 +418,6 @@ CONTAINS
                           !e_s(ji,jj,jk,jl) = e_s(ji,jj,jk,jl) * dh_s_1d(1:npti,jk) * a_i_1d(1:npti)
                           !e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
                      !&               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
-                          PRINT*,'e_s SI3 style',zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
-                     &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
 
 #else
                e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &

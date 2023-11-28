@@ -44,7 +44,7 @@ MODULE icethd_dh
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE ice_thd_dh( isnow, zq_rema, zevap_rema,thickness_si, mass_si, enthalpy_si, zh_s, ze_s )
+   SUBROUTINE ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )
       !!------------------------------------------------------------------
       !!                ***  ROUTINE ice_thd_dh  ***
       !!
@@ -73,9 +73,6 @@ CONTAINS
       REAL(wp), DIMENSION(jpij), INTENT(in)    ::   isnow       ! presence of snow or not
       REAL(wp), DIMENSION(jpij), INTENT(inout) ::   zq_rema     ! remaining heat flux from snow melting       (J.m-2)
       REAL(wp), DIMENSION(jpij), INTENT(inout) ::   zevap_rema  ! remaining mass flux from snow sublimation   (kg.m-2)
-      REAL(wp), DIMENSION(jpij), INTENT(inout) ::   thickness_si 
-      REAL(wp), DIMENSION(jpij), INTENT(inout) ::   mass_si
-      REAL(wp), DIMENSION(jpij), INTENT(inout) ::   enthalpy_si
 
       REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(inout) ::   zh_s      ! snw layer thickness (m) 
       REAL(wp), DIMENSION(jpij,0:nlay_s  ), INTENT(inout) ::   ze_s      ! snw layer enthalpy (J.m-3)
@@ -107,6 +104,10 @@ CONTAINS
 
       INTEGER , DIMENSION(jpij,nlay_i)     ::   icount    ! number of layers vanishing by melting
       REAL(wp), DIMENSION(jpij,0:nlay_i+1) ::   zh_i      ! ice layer thickness (m)
+
+      REAL(wp), DIMENSION(jpij) ::   thickness_si
+      REAL(wp), DIMENSION(jpij) ::   mass_si
+      REAL(wp), DIMENSION(jpij) ::   enthalpy_si
 
       REAL(wp) ::   zswitch_sal
 
@@ -380,29 +381,33 @@ CONTAINS
 
       ! Remove snow if ice has melted entirely
       ! --------------------------------------
+#if defined key_isbaes
+      DO jk = 1, nlay_s
+#else
       DO jk = 0, nlay_s
+#endif
          DO ji = 1,npti
             IF( h_i_1d(ji) == 0._wp ) THEN
                ! mass & energy loss to the ocean
-               hfx_res_1d(ji) = hfx_res_1d(ji) - e_s_1d(ji,jk) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
-#if defined key_isbaes
-               IF( ln_isbaes) THEN
-                   ! Mass flux is computed from 3D density arrays instead of constant density
-                   wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk)        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
 
-                   dh_s_1d(ji,jk) = 0._wp
-                   swe_s_1d(ji,jk) = 0._wp
-               ELSE
-                    wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-               ENDIF
+#if defined key_isbaes
+               hfx_res_1d(ji) = hfx_res_1d(ji) - e_s_1d(ji,jk) * dh_s_1d(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+
+               ! Mass flux is computed from 3D density arrays instead of constant density
+               wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk)        * dh_s_1d(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+
+               dh_s_1d(ji,jk) = 0._wp
+               swe_s_1d(ji,jk) = 0._wp
                h_s_1d(ji)    = 0._wp
                e_s_1d(ji,jk)    = 0._wp
                ze_s  (ji,jk) = 0._wp
                zh_s  (ji,jk) = 0._wp
                dh_s_1d(ji,jk) = 0._wp
                rhov_s_1d(ji,jk) = 0._wp
-
+               rho_s_1d(ji,jk) = 330._wp
+               t_s_1d(ji,jk)   = 273.15
 #else
+               hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
                wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
 
                ! update thickness and energy
@@ -423,7 +428,14 @@ CONTAINS
             mass_si(ji) = 0; enthalpy_si(ji) = 0; thickness_si(ji) = 0; ! fields sent to sea ice model
          END DO
 
+!         ze_s  (:,:) = 0._wp ! Useless variables for now
+!         zh_s  (:,:) = 0._wp
+
+
          CALL snw_thd_iceconv( isnow, zh_s, ze_s, thickness_si, mass_si, enthalpy_si )
+!         ze_s  (:,:) = 0._wp ! Useless variables for now
+!         zh_s  (:,:) = 0._wp
+
 
          ! Snow-Ice formation
          ! ------------------
@@ -431,6 +443,7 @@ CONTAINS
          ! flooding of seawater transforms snow into ice. Thickness that is transformed is dh_snowice (positive for the ice)
          z1_rho = 1._wp / ( rhos+rho0-rhoi )
          zdeltah(1:npti) = 0._wp
+         dh_snowice(1:npti) = 0._wp
          DO ji = 1, npti
             !
             dh_snowice(ji) = thickness_si(ji) !MAX( 0._wp , ( rhos * h_s_1d(ji) + (rhoi-rho0) * h_i_1d(ji) ) * z1_rho )
@@ -467,18 +480,15 @@ CONTAINS
          DO ji = 1, npti
             eh_i_old(ji,0) = eh_i_old(ji,0) + enthalpy_si(ji) 
          END DO
-!
 
-
-
-!         
-!!!!$         ! --- Update snow diags --- !
-!!!!$         !!clem: this is wrong. dh_s_tot is not used anyway
-!!!!$         DO ji = 1, npti
-!!!!$            dh_s_tot(ji) = dh_s_tot(ji) + dh_s_mlt(ji) + zdeltah(ji) + zdh_s_sub(ji) - dh_snowice(ji)
-!!!!$         END DO
-!!         !
-!!         !
+         
+!!!$         ! --- Update snow diags --- !
+!!!$         !!clem: this is wrong. dh_s_tot is not used anyway
+!!!$         DO ji = 1, npti
+!!!$            dh_s_tot(ji) = dh_s_tot(ji) + dh_s_mlt(ji) + zdeltah(ji) + zdh_s_sub(ji) - dh_snowice(ji)
+!!!$         END DO
+!         !
+!         !
 
 !#if defined key_isbaes
 !      END IF

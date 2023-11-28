@@ -59,6 +59,10 @@ CONTAINS
       INTEGER  ::   ji                         ! dummy loop indices 
       REAL(wp) ::   zs_sni, zds                ! local scalars
       REAL(wp) ::   z1_time_gd, z1_time_fl
+#if defined key_isbaes
+      REAL(wp) ::   zdum, zdeltah, ztoth_s_si, jk
+      REAL(wp), DIMENSION(jpij) :: rho_s_isbaes
+#endif
       !!---------------------------------------------------------------------
 
       SELECT CASE ( nn_icesal )
@@ -73,13 +77,33 @@ CONTAINS
             !
             IF( h_i_1d(ji) > 0._wp ) THEN
                !
+#if defined key_isbaes
+               zdeltah = dh_snowice(ji)
+               rho_s_isbaes(ji) = 0._wp
+               IF(dh_snowice(ji) > 0._wp) THEN
+               DO jk = nlay_s, 0, -1 
+                     zdum           = MIN( zdeltah, dh_s_1d(ji,jk))
+                     rho_s_isbaes(ji) = rho_s_isbaes(ji) + (rho_s_1d(ji,jk) * zdum) / dh_snowice(ji)
+                     zdeltah    = MAX( 0._wp, zdeltah - zdum )
+                  ENDDO
+               ENDIF
+
+               zs_sni = sss_1d(ji) * ( rhoi - rho_s_isbaes(ji) ) * r1_rhoi ! salinity of snow ice
+               zds    =       ( zs_sni      - s_i_1d(ji) ) * dh_snowice(ji) / h_i_1d(ji) ! snow-ice    
+               IF(dh_snowice(ji) > 0._wp ) WRITE(numout,*) 'dh_snowice, zdeltah, rho_s_isbaes(ji),zs_sni, zds  ', &
+               & ji, dh_snowice(ji), zdeltah, rho_s_isbaes(ji), zs_sni,zds 
+
+#else
                ! --- Update ice salinity from snow-ice and bottom growth --- !
                zs_sni = sss_1d(ji) * ( rhoi - rhos ) * r1_rhoi                           ! salinity of snow ice
                zds    =       ( zs_sni      - s_i_1d(ji) ) * dh_snowice(ji) / h_i_1d(ji) ! snow-ice    
+#endif
                zds    = zds + ( s_i_new(ji) - s_i_1d(ji) ) * dh_i_bog  (ji) / h_i_1d(ji) ! bottom growth
                ! update salinity (nb: salt flux already included in icethd_dh)
                s_i_1d(ji) = s_i_1d(ji) + zds
                !
+               IF(dh_snowice(ji) > 0._wp ) WRITE(numout,*) 'zds1', zds
+
                ! --- Update ice salinity from brine drainage and flushing --- !
                IF( ld_sal ) THEN
                   IF( t_su_1d(ji) >= rt0 ) THEN             ! flushing (summer time)
@@ -94,17 +118,27 @@ CONTAINS
                   ! salt flux
                   sfx_bri_1d(ji) = sfx_bri_1d(ji) - rhoi * a_i_1d(ji) * h_i_1d(ji) * zds * r1_Dt_ice
                ENDIF
+
+               IF(dh_snowice(ji) > 0._wp ) WRITE(numout,*) 'zds1', zds
                !
                ! --- salinity must stay inbounds --- !
                zds =       MAX( 0._wp, rn_simin - s_i_1d(ji) ) ! > 0 if s_i < simin
                zds = zds + MIN( 0._wp, rn_simax - s_i_1d(ji) ) ! < 0 if s_i > simax
+               IF(dh_snowice(ji) > 0._wp ) WRITE(numout,*) 'zds2', zds
+
                ! update salinity
                s_i_1d(ji) = s_i_1d(ji) + zds
                ! salt flux
                sfx_res_1d(ji) = sfx_res_1d(ji) - rhoi * a_i_1d(ji) * h_i_1d(ji) * zds * r1_Dt_ice
                !
+
+               IF(dh_snowice(ji) > 0._wp ) WRITE(numout,*) 'sfx_res_1d(ji)', sfx_res_1d(ji)
+
             ENDIF
             !
+
+
+
          END DO
          !
          ! Salinity profile
