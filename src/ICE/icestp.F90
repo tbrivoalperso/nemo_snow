@@ -474,6 +474,9 @@ CONTAINS
 
             ! Diags to validate ln_snwext=T
             qcn_snw_bot(ji,jj,jl) = 0._wp
+            qrema(ji,jj,jl) = 0._wp
+            evaprema(ji,jj,jl) = 0._wp
+
          END_2D
       ENDDO
 

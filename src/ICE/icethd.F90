@@ -213,22 +213,6 @@ CONTAINS
             !enthalpy_si(1:npti) = 0._wp
             !mass_si(1:npti) = 0._wp
             !
-               DO ji = 1, npti
-                  IF(ji .eq. 67) THEN
-                     WRITE(numout,*) '  thd00    ISBAES  glamt ', ji, glamt_1d(ji)
-                     WRITE(numout,*) '  thd00    ISBAES  gphit ', ji, gphit_1d(ji)
-
-                     WRITE(numout,*) '  thd00    ISBAES  T ', ji, t_s_1d(ji,:)
-                     WRITE(numout,*) '  thd00    ISBAES dz  ' ,ji, dh_s_1d(ji,:)
-                     WRITE(numout,*) '  thd00    ISBAES dv  ' ,ji, dv_s_1d(ji,:)
-
-                     WRITE(numout,*) '  thd00    ISBAES rho ', ji, rho_s_1d(ji,:)
-                     WRITE(numout,*) '  thd00    ISBAES e ', ji, e_s_1d(ji,:)
-                     !WRITE(numout,*) '  th0d    ISBAES log T° ', ji,
-                     !LOG(t_s_1d(ji,1))
-                     WRITE(numout,*) '  thd00    ISBAES h_i ', ji, h_i_1d(ji)
-                  ENDIF
-               ENDDO
             ! Theo : Here We call the new snow_thd routine which compute: 
             ! - The T° equation in the snow (snw_thd_zdf)
             ! - Snowfall / melt and associated mass and heat changes (snw_thd_dh)
@@ -289,7 +273,6 @@ CONTAINS
                            rhov_s_1d(ji,jk) = 0._wp
                            rho_s_1d(ji,jk) = 400._wp
                            t_s_1d(ji,jk)   = 273.15_wp
-                           IF(ji .eq. 67) WRITE(numout,*) '  HERE '
                         ENDDO
                      ENDIF
                   ELSE
@@ -321,16 +304,16 @@ CONTAINS
                END DO
 
 
-
              !CALL snw_thd_iceconv( isnow, thickness_si, mass_si, enthalpy_si )
              ELSE
                 CALL ctl_stop( 'key_ibaes activated => Could not launch model without ln_isbaes off' )          
              ENDIF
 
 #endif       
-            qrema_1d(:) = zq_rema(:)
-            evaprema_1d(:) = zevap_rema(:)
 
+             qrema_1d(:) = zq_rema(:)
+             evaprema_1d(:) = zevap_rema(:)
+    
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
             CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
@@ -369,7 +352,7 @@ CONTAINS
       !
       IF( ln_icedO )          CALL ice_thd_do                       ! --- Frazil ice growth in leads --- !
       !
-                              !CALL ice_cor( kt , 2 )                ! --- Corrections --- !
+                              CALL ice_cor( kt , 2 )                ! --- Corrections --- !
       !
       !IF(thickness_si(1) > 0.) STOP
 
@@ -550,9 +533,8 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_res_1d    (1:npti), hfx_res       )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_err_dif_1d(1:npti), hfx_err_dif   )
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_err_difs_1d(1:npti), hfx_err_difs   )
-
          CALL tab_2d_1d( npti, nptidx(1:npti), qcn_snw_bot_1d(1:npti), qcn_snw_bot(:,:,kl) )
-         CALL tab_2d_1d( npti, nptidx(1:npti), qrema_1d (1:npti), qrema (:,:,kl) )
+         CALL tab_2d_1d( npti, nptidx(1:npti), qrema_1d (1:npti), qrema (:,:,kl))
          CALL tab_2d_1d( npti, nptidx(1:npti), evaprema_1d (1:npti), evaprema (:,:,kl) )
 
          !
@@ -719,7 +701,7 @@ CONTAINS
 
          ! diags for ln_snwext=T
          CALL tab_1d_2d( npti, nptidx(1:npti), qcn_snw_bot_1d(1:npti), qcn_snw_bot(:,:,kl) )
-         CALL tab_1d_2d( npti, nptidx(1:npti), qrema_1d(1:npti), qrema(:,:,kl)    )
+         CALL tab_1d_2d( npti, nptidx(1:npti), qrema_1d(1:npti), qrema(:,:,kl))
          CALL tab_1d_2d( npti, nptidx(1:npti), evaprema_1d(1:npti), evaprema(:,:,kl)    )
 
          ! extensive variables

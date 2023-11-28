@@ -270,6 +270,8 @@ CONTAINS
       IF( iom_use('qemp_oce'   ) )   CALL iom_put( 'qemp_oce'   , qemp_oce                                                   )   ! Downward Heat Flux from E-P over ocean
       IF( iom_use('qemp_ice'   ) )   CALL iom_put( 'qemp_ice'   , qemp_ice                                                   )   ! Downward Heat Flux from E-P over ice
       IF( iom_use('qcn_snw_bot'   ) )    CALL iom_put('qcn_snw_bot', qcn_snw_bot) ! diag for ln_snwext validation
+      IF( iom_use('qrema'   ) )    CALL iom_put('qrema', qrema) ! diag for ln_snwext validation
+      IF( iom_use('evaprema'   ) )    CALL iom_put('evaprema', evaprema) ! diag for ln_snwext validation
 
       ! heat fluxes from ice transformations
       !                            ! hfxdhc = hfxbog + hfxbom + hfxsum + hfxopw + hfxdif + hfxsnw - ( hfxthd + hfxdyn + hfxres + hfxsub + hfxspr )

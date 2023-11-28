@@ -163,6 +163,7 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   evaprema_1d ! For isbaes
 
 
+
 #if defined key_isbaes
    ! Variables needed for ISBA-ES coupling
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rho_s_1d      !:    Snow density per unit volume  
@@ -196,8 +197,6 @@ MODULE ice1D
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   glamt_1d ! For isbaes use 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   gphit_1d ! For isbaes use 
-!   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qrema_1d ! For isbaes use 
-!   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   evaprema_1d ! For isbaes
 
 #endif
    ! 
@@ -289,7 +288,7 @@ CONTAINS
 
 
        ii = ii + 1
-      ALLOCATE( qcn_snw_bot_1d(jpij), dh_s_1d(jpij,nlay_s), qrema_1d(jpij),evaprema_1d(jpij), STAT=ierr(ii) )
+      ALLOCATE( qcn_snw_bot_1d(jpij), dh_s_1d(jpij,nlay_s),qrema_1d(jpij),evaprema_1d(jpij), STAT=ierr(ii) )
 
 #if defined key_isbaes
       ii = ii + 1
