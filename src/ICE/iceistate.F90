@@ -17,8 +17,12 @@ MODULE iceistate
    USE phycst         ! physical constant
    USE oce            ! dynamics and tracers variables
    USE dom_oce        ! ocean domain
-   USE sbc_oce , ONLY : sst_m, sss_m, ln_ice_embd 
+   USE sbc_oce , ONLY : sst_m, sss_m, ln_ice_embd
+#if defined key_isbaes
+   USE sbc_ice , ONLY : tn_ice, snwice_mass, snwice_mass_b, qla_ice_isbaes, qsb_ice_isbaes, qlw_ice_isbaes
+#else 
    USE sbc_ice , ONLY : tn_ice, snwice_mass, snwice_mass_b
+#endif
    USE eosbn2         ! equation of state
 # if defined key_qco
    USE domqco         ! Quasi-Eulerian coord.
@@ -192,6 +196,10 @@ CONTAINS
       albs_isbaes(:,:,:) = 0._wp
       albi_isbaes(:,:,:) = 0._wp
       cnd_i_isbaes(:,:,:) = rcnd_i 
+      qla_ice_isbaes(:,:,:) = 0._wp
+      qsb_ice_isbaes(:,:,:) = 0._wp
+      qlw_ice_isbaes(:,:,:) = 0._wp
+
 #endif
       !
       ! melt ponds

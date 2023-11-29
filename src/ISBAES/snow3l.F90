@@ -23,7 +23,7 @@
                 PHPSNOW,PLES3L,PLEL3L,PEVAP,PSNDRIFT,PRI,                 &
                 PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS,ZRADXS,    &
                 PPERMSNOWFRAC,PFORESTFRAC,PZENITH,PXLAT,PXLON,            &
-                HSNOWDRIFT,OSNOWDRIFT_SUBLIM, PDHMELT                     )  
+                HSNOWDRIFT,OSNOWDRIFT_SUBLIM, PDELHEAT_SNWFL                     )  
 !     ##########################################################################
 !
 !!****  *SNOW3L*
@@ -295,7 +295,7 @@ CHARACTER(4), INTENT(IN)          :: HSNOWDRIFT  ! Snowdrift scheme :
                                                  !  Other options are available in Crocus
 
 LOGICAL, INTENT(IN)               ::  OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
-REAL, DIMENSION(:), INTENT(OUT)   ::  PDHMELT
+REAL, DIMENSION(:), INTENT(OUT)   ::  PDELHEAT_SNWFL
 
 !
 !*      0.2    declarations of local variables
@@ -458,9 +458,17 @@ ENDDO
 ! Caluclate uppermost density and thickness changes due to snowfall,
 ! and add heat content of falling snow
 !
+DO JI=1,INI
+   PDELHEAT_SNWFL(JI) = PSNOWHMASS(JI) 
+ENDDO
 
 CALL SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,ZSNOW,PSNOWRHO,PSNOWDZ,             &
                 PSNOWHEAT,PSNOWHMASS,ZSNOWHMASS1,PSNOWAGE,PPERMSNOWFRAC  )
+
+DO JI=1,INI
+   PDELHEAT_SNWFL(JI) = PSNOWHMASS(JI) - PDELHEAT_SNWFL(JI)  
+ENDDO
+
 !
 ! Caluclate new snow albedo at time t if snowfall
 !
@@ -652,16 +660,8 @@ CALL SNOW3LGONE(PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                            &
 !
 ZSNOWLIQ0(:,:) = PSNOWLIQ(:,:) ! save liquid water profile before update
 !
-DO JI=1,INI
-   PDHMELT(JI) = SUM(PSNOWDZ(JI,:))
-ENDDO
 
 CALL SNOW3LMELT(PTSTEP,ZSCAP,ZSNOWTEMP,PSNOWDZ,PSNOWRHO,PSNOWLIQ,ZMELTXS)  
-
-DO JI=1,INI
-   PDHMELT(JI) = SUM(PSNOWDZ(JI,:)) - PDHMELT(JI)
-ENDDO
-
 
 !
 !

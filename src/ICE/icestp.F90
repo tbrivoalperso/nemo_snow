@@ -374,6 +374,7 @@ CONTAINS
       v_i_b (:,:,:)   = v_i (:,:,:)     ! ice volume
 #if defined key_isbaes
       v_s_b (:,:,:)   = SUM(dv_s (:,:,:,:),DIM=3)     ! snow volume
+      rhov_s_b(:,:,:,:) = rhov_s(:,:,:,:)
 #else
       v_s_b (:,:,:)   = v_s (:,:,:)     ! snow volume
 #endif
@@ -505,7 +506,7 @@ CONTAINS
             &             + SUM(     v_i (:,:,:)          - v_i_b (:,:,:)                  , dim=3 ) * r1_Dt_ice * rhoi
 #if defined key_isbaes
          diag_vsnw(:,:) = diag_vsnw(:,:) &
-            &             + SUM(     SUM(dv_s (:,:,:,:),DIM=3)          - v_s_b (:,:,:) , dim=3 ) * r1_Dt_ice * rhos
+            &             + SUM(     SUM(rhov_s (:,:,:,:)          - rhov_s_b (:,:,:,:) , dim=3 ), DIM=3) * r1_Dt_ice 
 #else        
          diag_vsnw(:,:) = diag_vsnw(:,:) &
             &             + SUM(     v_s (:,:,:)          - v_s_b (:,:,:)                  , dim=3 ) * r1_Dt_ice * rhos

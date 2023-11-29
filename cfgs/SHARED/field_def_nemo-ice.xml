@@ -319,7 +319,9 @@
     <field_group id="SBC_3D" grid_ref="grid_T_ncatice" >
       <field id="tn_ice"      long_name="surface ice/snow temperature"                                                                                       unit="degC" detect_missing_value="true" />
       <!-- Diags used if ln_snwext=T -->
-      <field id="qcn_snw_bot"     long_name="Downward conduction Flux at snow-ice interface"                                                                  unit="W/m2" />
+     <field id="qcn_snw_bot"     long_name="Downward conduction Flux at snow-ice interface"                                                                  unit="W/m2" />
+      <field id="qrema"     long_name="Remaining heat eat snow-ice interface"                                                                  unit="J/m2" />
+      <field id="evaprema"     long_name="evaprema"                                                                  unit="kg/m2/s" />
 
       <!-- standard ice fields -->
       <field id="iceconc_cat"  long_name="Sea-ice concentration per category"                unit=""        />
@@ -339,9 +341,6 @@
       <field id="iceage_cat"   long_name="Ice age per category"                              unit="days"    detect_missing_value="true" />
       <field id="icebrv_cat"   long_name="Brine volume per category"                         unit="%"       detect_missing_value="true" />
       <field id="icealb_cat"   long_name="Sea-ice or snow albedo"                            unit=""        detect_missing_value="true" />
-
-      <!-- Diags used if ln_snwext=T -->
-      <field id="qcn_snw_bot"     long_name="Downward conduction Flux at snow-ice interface"                                                                  unit="W/m2" />
 
 
       <!-- Add-ons for SIMIP -->

@@ -123,7 +123,7 @@ REAL(wp),DIMENSION(1)         :: ZP_PSN_INV
 REAL(wp),DIMENSION(1)         :: ZP_PSN
 REAL(wp),DIMENSION(1)         :: ZP_PSN_GFLXCOR
 REAL(wp),DIMENSION(1)         :: ZP_WORK
-REAL(wp),  DIMENSION(1) :: ZP_DHMELT
+REAL(wp),  DIMENSION(1) :: ZP_DELHEAT_SNWFL
 
 !
 
@@ -390,7 +390,7 @@ CALL SNOW3L(JI, HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,                   
            ZP_LEL3L, ZP_EVAP, ZP_SNDRIFT, ZP_RI,                         &
            ZP_EMISNOW, ZP_CDSNOW, ZP_USTARSNOW,                          &
            ZP_CHSNOW, ZP_SNOWHMASS, ZP_QS, ZP_RADXS, ZP_VEGTYPE,  ZP_FOREST,       &
-           ZP_ZENITH, ZP_LAT, ZP_LON, OSNOWDRIFT,OSNOWDRIFT_SUBLIM, ZP_DHMELT)
+           ZP_ZENITH, ZP_LAT, ZP_LON, OSNOWDRIFT,OSNOWDRIFT_SUBLIM, ZP_DELHEAT_SNWFL)
 
 ! unpack variables
 !
@@ -469,9 +469,9 @@ qcn_snw_bot_1d(JI)  = (ZP_GRNDFLUX(1) ) !    + ZP_GFLXCOR(1))     ! Somme des fl
    
 ! Heat fluxes for budget diagnostics
   ! We put 0 to all heat fluxes except from hfx_snw that we now consider as the total heat content change in the snow
- hfx_sub_1d(JI) = 0. !hfx_sub_1d(JI) + (ZP_LES3L(1) + ZP_LEL3L(1)) ! Sublimation + liquid water Evaporation (for now) (W/m2)
+hfx_sub_1d(JI) = 0. !hfx_sub_1d(JI) + (ZP_LES3L(1) + ZP_LEL3L(1)) ! Sublimation + liquid water Evaporation (for now) (W/m2)
 !  hfx_spr_1d(JI) = 0. ! ZP_SNOWHMASS(JI)! heat release from rainfall (W/m2)
- hfx_difs_1d(JI) = hfx_difs_1d(JI) - ZP_DELHEATN(1) ! 
+hfx_difs_1d(JI) = hfx_difs_1d(JI) - ZP_DELHEATN(1) ! 
 
 hfx_snw_1d(JI) = - (hfx_snw_1d(JI) - zdq * r1_Dt_ice) - hfx_difs_1d(JI) - hfx_sub_1d(JI) ! Minus factor because enthalpy is negative per convention in ISBAES 
    
@@ -484,11 +484,13 @@ wfx_res_1d(JI)   = wfx_res_1d(JI) - zdm * r1_Dt_ice - (wfx_spr_1d(JI) + wfx_snw_
 ZP_Q_REMA   =  (ZP_GFLXCOR(1)      + ZP_RADXS(1) ) * rDt_ice ! En J / m2
 !ZP_EVAP_REMA      = (ZP_EVAP(1) - wfx_snw_sub_1d(JI)) * rDt_ice + (ZP_EVAPCOR(1) + ZP_SOILCOR(1)) * rDt_ice
 ZP_EVAP_REMA      =  (ZP_EVAPCOR(1) + ZP_SOILCOR(1)) * rDt_ice
-!dh_s_mlt(JI) = 0. !ZP_DHMELT(1) ! Save meltwater for pond formation 
 
 !Surface total flux => Qtot = qns_ice_1d(ji) + qsr_ice_1d(ji) - qtr_ice_top_1d(ji) - qcn_ice_top_1d(ji)                                            
-
-!qns_ice_1d(JI) = ZP_LES3L(1) + ZP_LEL3L(1) + ZP_HSNOW(1) + ZP_LWNETSNOW(1)
+qla_ice_isbaes_1d(JI) = ZP_LES3L(1) + ZP_LEL3L(1)
+qsb_ice_isbaes_1d(JI) = ZP_HSNOW(1)
+qlw_ice_isbaes_1d(JI) = ZP_LWNETSNOW(1)
+qns_ice_1d(JI) = ZP_LES3L(1) + ZP_LEL3L(1) + ZP_HSNOW(1) + ZP_LWNETSNOW(1)
+!qemp_ice_1d(JI) = ZP_DELHEAT_SNWFL(1)
 !  qcn_ice_top_1d(JI) = ZP_RESTOREN(JI)
 !  qtr_ice_top_1d(JI) =  ZP_SW_RAD(JI) * ZP_SNOWALB     (JI)
 

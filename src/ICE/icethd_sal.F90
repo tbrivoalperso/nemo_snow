@@ -87,7 +87,6 @@ CONTAINS
                      zdeltah    = MAX( 0._wp, zdeltah - zdum )
                   ENDDO
                ENDIF
-
                zs_sni = sss_1d(ji) * ( rhoi - rho_s_isbaes(ji) ) * r1_rhoi ! salinity of snow ice
                zds    =       ( zs_sni      - s_i_1d(ji) ) * dh_snowice(ji) / h_i_1d(ji) ! snow-ice    
                IF(dh_snowice(ji) > 0._wp ) WRITE(numout,*) 'dh_snowice, zdeltah, rho_s_isbaes(ji),zs_sni, zds  ', &

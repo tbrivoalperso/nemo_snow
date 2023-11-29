@@ -17,10 +17,11 @@ MODULE icethd
    USE dom_oce        ! ocean space and time domain variables
    USE ice            ! sea-ice: variables
 !!gm list trop longue ==>>> why not passage en argument d'appel ?
-   USE sbc_oce , ONLY : sss_m, sst_m, e3t_m, utau, vtau, ssu_m, ssv_m, frq_m, sprecip, ln_cpl
+   USE sbc_oce , ONLY : sss_m, sst_m, e3t_m, utau, vtau, ssu_m, ssv_m, frq_m, sprecip, ln_cpl, qns_tot, qsr_tot
    USE sbc_ice , ONLY : qsr_oce, qns_oce, qemp_oce, qsr_ice, qns_ice, dqns_ice, evap_ice, qprec_ice, qevap_ice, &
       &                 qml_ice, qcn_ice, qtr_ice_top, slp_isbaes, tair_isbaes, qair_isbaes, wndm_isbaes, rain_isbaes, &
-      &                 snow_isbaes, qsr_ice_isbaes, qns_ice_isbaes, qlw_ice_isbaes, qlwdwn_ice_isbaes, qsb_ice_isbaes, qla_ice_isbaes, rho_air_isbaes
+      &                 snow_isbaes, qsr_ice_isbaes, qns_ice_isbaes, qlw_ice_isbaes, qlwdwn_ice_isbaes, qsb_ice_isbaes,&
+      &                 qla_ice_isbaes, qemp_ice, rho_air_isbaes
    USE snwthd        ! snow thermodynamics
    USE snwthd_iceconv
    USE ice1D          ! sea-ice: thermodynamics variables
@@ -209,6 +210,12 @@ CONTAINS
             ze_s(1:npti, 0:nlay_s) = 0._wp ; 
             
             qcn_snw_bot_1d(1:npti)     = 0._wp
+
+#if defined key_isbaes
+            qla_ice_isbaes_1d(1:npti)     = 0._wp
+            qsb_ice_isbaes_1d(1:npti)     = 0._wp
+            qlw_ice_isbaes_1d(1:npti)     = 0._wp
+#endif
             !thickness_si(1:npti) = 0._wp
             !enthalpy_si(1:npti) = 0._wp
             !mass_si(1:npti) = 0._wp
@@ -217,7 +224,7 @@ CONTAINS
             ! - The T° equation in the snow (snw_thd_zdf)
             ! - Snowfall / melt and associated mass and heat changes (snw_thd_dh)
 
-            IF( ln_snwext )  THEN 
+            IF( ln_snwext )  THEN
                 CALL snw_thd( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, &
                                           zq_rema, zevap_rema, zh_s, ze_s )       ! Snow thermodynamics (detached mode)
                 ! returns:
@@ -260,7 +267,7 @@ CONTAINS
                      CALL CALL_MODEL(ji,nlay_s, rn_Dt, za_s_fra(ji),zsnowblow(ji), zpa_t(ji), ZP_RADXS, zq_rema(ji), zevap_rema(ji))
                      isnow(ji) = 1.
                      zradtr_s(ji,nlay_s) = ZP_RADXS(1)
-                    
+
                      IF (SUM(dh_s_1d(ji,:)) .eq. 0._wp) THEN
                         DO jk = 1, nlay_s
                            dh_s_1d(ji,jk) = 0._wp
@@ -277,6 +284,7 @@ CONTAINS
                      ENDIF
                   ELSE
                      isnow(ji) = 0.
+
                      zradtr_s(ji,nlay_s) = qtr_ice_top_1d(ji)
                      DO jk = 1, nlay_s 
                         hfx_res_1d(ji) = hfx_res_1d(ji) - e_s_1d(ji,jk) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
@@ -310,7 +318,6 @@ CONTAINS
              ENDIF
 
 #endif       
-
              qrema_1d(:) = zq_rema(:)
              evaprema_1d(:) = zevap_rema(:)
     
@@ -337,11 +344,15 @@ CONTAINS
             !
                               CALL ice_thd_1d2d( jl, 2 )            ! --- Change units of e_i, e_s from J/m3 to J/m2 --- !
             !                                                       ! --- & Move to 2D arrays --- !
-
          ENDIF
          !
       END DO
       !
+      ! --- total solar and non solar fluxes --- !
+      qns_tot(:,:) = ( 1._wp - at_i_b(:,:) ) * qns_oce(:,:) + SUM( a_i_b(:,:,:) * qns_ice(:,:,:), dim=3 )  &
+                        &           + qemp_ice(:,:) + qemp_oce(:,:)
+      !qsr_tot(:,:) = ( 1._wp - at_i_b(:,:) ) * qsr_oce(:,:) + SUM( a_i_b(:,:,:) * qsr_ice(:,:,:), dim=3 )
+
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'icethd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (1, 'icethd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
       !
@@ -579,6 +590,8 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), qsb_ice_isbaes_1d (1:npti), qsb_ice_isbaes (:,:,kl) )
          CALL tab_2d_1d( npti, nptidx(1:npti), qla_ice_isbaes_1d (1:npti), qla_ice_isbaes (:,:,kl) )
 
+         CALL tab_2d_1d( npti, nptidx(1:npti), qemp_ice_1d (1:npti), qemp_ice (:,:) )
+
 #endif
          !
          ! --- Change units of e_i, e_s from J/m2 to J/m3 --- !
@@ -742,6 +755,7 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), qsb_ice_isbaes_1d(1:npti), qsb_ice_isbaes(:,:,kl)    )
          CALL tab_1d_2d( npti, nptidx(1:npti), qla_ice_isbaes_1d(1:npti), qla_ice_isbaes(:,:,kl)    )
 
+         CALL tab_1d_2d( npti, nptidx(1:npti), qemp_ice_1d(1:npti), qemp_ice(:,:)    )
          !
 #endif
          ! check convergence of heat diffusion scheme

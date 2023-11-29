@@ -182,7 +182,11 @@ CONTAINS
          !----------------------------------------
          snwice_mass_b(ji,jj) = snwice_mass(ji,jj)       ! save mass from the previous ice time step
          !                                               ! new mass per unit area
+#if defined key_isbaes
+         snwice_mass  (ji,jj) = tmask(ji,jj,1) * ( SUM(rhov_s(ji,jj,:,:))  + rhoi * vt_i(ji,jj) + rhow * (vt_ip(ji,jj) + vt_il(ji,jj)) )
+#else
          snwice_mass  (ji,jj) = tmask(ji,jj,1) * ( rhos * vt_s(ji,jj) + rhoi * vt_i(ji,jj) + rhow * (vt_ip(ji,jj) + vt_il(ji,jj)) )
+#endif
          !                                               ! time evolution of snow+ice mass
          snwice_fmass (ji,jj) = ( snwice_mass(ji,jj) - snwice_mass_b(ji,jj) ) * r1_Dt_ice
 
@@ -450,12 +454,20 @@ CONTAINS
                CALL iom_get( numrir, jpdom_auto, 'snwice_mass_b', snwice_mass_b )
             ELSE                                     ! start from rest
                IF(lwp) WRITE(numout,*) '   ==>>   previous run without snow-ice mass output then set it'
+#if defined key_isbaes
+               snwice_mass  (:,:) = tmask(:,:,1) * ( SUM(SUM(rhov_s(:,:,:,:), DIM= 3),DIM=3) + rhoi * vt_i(:,:) )
+#else
                snwice_mass  (:,:) = tmask(:,:,1) * ( rhos * vt_s(:,:) + rhoi * vt_i(:,:) )
+#endif
                snwice_mass_b(:,:) = snwice_mass(:,:)
             ENDIF
          ELSE                                   !* Start from rest
             IF(lwp) WRITE(numout,*) '   ==>>   start from rest: set the snow-ice mass'
+#if defined key_isbaes
+               snwice_mass  (:,:) = tmask(:,:,1) * ( SUM(SUM(rhov_s(:,:,:,:), DIM= 3),DIM=3) + rhoi * vt_i(:,:) )
+#else
             snwice_mass  (:,:) = tmask(:,:,1) * ( rhos * vt_s(:,:) + rhoi * vt_i(:,:) )
+#endif
             snwice_mass_b(:,:) = snwice_mass(:,:)
          ENDIF
          !
