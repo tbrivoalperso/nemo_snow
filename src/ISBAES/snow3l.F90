@@ -23,7 +23,8 @@
                 PHPSNOW,PLES3L,PLEL3L,PEVAP,PSNDRIFT,PRI,                 &
                 PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS,ZRADXS,    &
                 PPERMSNOWFRAC,PFORESTFRAC,PZENITH,PXLAT,PXLON,            &
-                HSNOWDRIFT,OSNOWDRIFT_SUBLIM, PDELHEAT_SNWFL                     )  
+                HSNOWDRIFT,OSNOWDRIFT_SUBLIM, PDELHEAT_SNWFL,             & 
+                PDELHEAT_SUB, PDELHEAT_MLT, PDELHEAT_DIF                     )  
 !     ##########################################################################
 !
 !!****  *SNOW3L*
@@ -295,7 +296,7 @@ CHARACTER(4), INTENT(IN)          :: HSNOWDRIFT  ! Snowdrift scheme :
                                                  !  Other options are available in Crocus
 
 LOGICAL, INTENT(IN)               ::  OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
-REAL, DIMENSION(:), INTENT(OUT)   ::  PDELHEAT_SNWFL
+REAL, DIMENSION(:), INTENT(OUT)   ::  PDELHEAT_SNWFL, PDELHEAT_SUB, PDELHEAT_MLT, PDELHEAT_DIF ! Heat change diagnostics for SI3
 
 !
 !*      0.2    declarations of local variables
@@ -459,14 +460,14 @@ ENDDO
 ! and add heat content of falling snow
 !
 DO JI=1,INI
-   PDELHEAT_SNWFL(JI) = PSNOWHMASS(JI) 
+   PDELHEAT_SNWFL(JI) = SUM(PSNOWHEAT(JI,:)) 
 ENDDO
 
 CALL SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,ZSNOW,PSNOWRHO,PSNOWDZ,             &
                 PSNOWHEAT,PSNOWHMASS,ZSNOWHMASS1,PSNOWAGE,PPERMSNOWFRAC  )
 
 DO JI=1,INI
-   PDELHEAT_SNWFL(JI) = PSNOWHMASS(JI) - PDELHEAT_SNWFL(JI)  
+   PDELHEAT_SNWFL(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_SNWFL(JI)  
 ENDDO
 
 !
@@ -620,11 +621,21 @@ ZSNOWTEMP01(:) = ZSNOWTEMP(:,1) ! save surface snow temperature before update
 !
 ZGRNDFLUXI(:)  = ZGRNDFLUX(:)
 !
+DO JI=1,INI
+   PDELHEAT_DIF(JI) = SUM(PSNOWHEAT(JI,:))
+ENDDO
+
 CALL SNOW3LSOLVT(OMEB,OSI3, PTSTEP,XSNOWDZMIN,PSNOWDZ,ZSCOND,ZSCAP,PTG,              &
                    PSOILCOND,PD_G,ZRADSINK,ZCT,ZTSTERM1,ZTSTERM2,              &
                    ZPET_A_COEF_T,ZPEQ_A_COEF_T,ZPET_B_COEF_T,ZPEQ_B_COEF_T,    &
                    ZTA_IC,ZQA_IC,ZGRNDFLUX,ZGRNDFLUXO,ZSNOWTEMP,PRESTOREN      )  
 !
+
+DO JI=1,INI
+   PDELHEAT_DIF(JI) = SUM(PSNOWDZ(JI,:)*( ZSCAP(JI,:)*(ZSNOWTEMP(JI,:)-XTT)        &
+                   - XLMTT*PSNOWRHO(JI,:) ) + XLMTT*XRHOLW*PSNOWLIQ(JI,:)) - PDELHEAT_DIF(JI)
+ENDDO
+
 !
 !*       8.     Surface fluxes
 !               --------------
@@ -651,6 +662,11 @@ ENDIF
 !
 ! First Test to see if snowpack vanishes during this time step:
 !
+DO JI=1,INI
+   PDELHEAT_MLT(JI) = SUM(PSNOWDZ(JI,:)*( ZSCAP(JI,:)*(ZSNOWTEMP(JI,:)-XTT)        &
+                   - XLMTT*PSNOWRHO(JI,:) ) + XLMTT*XRHOLW*PSNOWLIQ(JI,:)) 
+ENDDO
+
 CALL SNOW3LGONE(PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                            &
                 PSNOWHEAT,ZRADSINK(:,INLVLS),PEVAPCOR,PTHRUFAL,ZGRNDFLUX, &
                 PGFLUXSNOW,ZGRNDFLUXO,PSNOWDZ,PSNOWLIQ,ZSNOWTEMP,         &
@@ -677,6 +693,11 @@ CALL SNOW3LREFRZ(PTSTEP,PRR,PSNOWRHO,ZSNOWTEMP,PSNOWDZ,PSNOWLIQ,  &
 ZSCAP(:,:)        = SNOW3LSCAP(PSNOWRHO)
 PSNOWHEAT(:,:)    = PSNOWDZ(:,:)*( ZSCAP(:,:)*(ZSNOWTEMP(:,:)-XTT)        &
                       - XLMTT*PSNOWRHO(:,:) ) + XLMTT*XRHOLW*PSNOWLIQ(:,:) 
+
+DO JI=1,INI
+   PDELHEAT_MLT(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_MLT(JI) 
+ENDDO
+
 !
 ! Latent heating due to surface layer snow melt/freeze  (W m-2)
 !
@@ -694,6 +715,9 @@ PDELPHASEN(:)=ZSNOWGONE_DELTA(:)*ZDELPHASE(:)*XLMTT
 !*      11.     Snow Evaporation/Sublimation mass updates:
 !               ------------------------------------------
 !
+DO JI=1,INI
+   PDELHEAT_SUB(JI) = SUM(PSNOWHEAT(JI,:)) 
+ENDDO
 
 CALL SNOW3LEVAPN(ZPSN3L,PLES3L,PLEL3L,PTSTEP,PPERMSNOWFRAC,       &
                  ZSNOWTEMP(:,1),PSNOWRHO(:,1),PSNOWDZ,            &
@@ -719,6 +743,9 @@ ZSNOWTEMP(:,:) = MIN(XTT,ZSNOWTEMP(:,:))
 !
 CALL SNOW3LEVAPGONE(PSNOWHEAT,PSNOWDZ,PSNOWRHO,ZSNOWTEMP,PSNOWLIQ)
 !
+DO JI=1,INI
+   PDELHEAT_SUB(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_SUB(JI)
+ENDDO
 !
 !*      12.     Update surface albedo:
 !               ----------------------

@@ -466,6 +466,7 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_snw_bot   !: Conduction flux at snow / ice interface (W/m2)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   qrema
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   evaprema
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   isnow_save !: non solar flux per category
 
 #if defined key_isbaes
    !!----------------------------------------------------------------------
@@ -484,7 +485,9 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   rhov_s           !: Snow layer density X olume per unit area               (m)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   rhov_s_b !: before Snow layer density X olume per unit area               (m)
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   isnow_3d !: presence of snow or not 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::     qns_ice_b
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::     qsr_ice_b
+
 
 !: Snow layer density X olume per unit area               (m)
 #endif
@@ -591,14 +594,14 @@ CONTAINS
 
       ! * Extra diagnotics for external snow (ln_snwext=T)
       ii = ii + 1 
-      ALLOCATE( qcn_snw_bot(jpi,jpj,jpl),qrema(jpi,jpj,jpl),evaprema(jpi,jpj,jpl), STAT = ierr(ii) )
+      ALLOCATE( qcn_snw_bot(jpi,jpj,jpl),qrema(jpi,jpj,jpl),evaprema(jpi,jpj,jpl), isnow_save(jpi,jpj,jpl), STAT = ierr(ii) )
 
 #if defined key_isbaes
       ! Variables needed for ISBA-ES coupling
       ii = ii + 1
       ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) ,swe_s(jpi,jpj,nlay_s,jpl) , o_s(jpi,jpj,nlay_s,jpl), lwc_s(jpi,jpj,nlay_s,jpl), ov_s(jpi,jpj,nlay_s,jpl), albs_isbaes(jpi,jpj,jpl), & 
                 & albi_isbaes(jpi,jpj,jpl),cnd_i_isbaes(jpi,jpj,jpl), dh_s(jpi,jpj,nlay_s,jpl),dv_s(jpi,jpj,nlay_s,jpl),rhov_s(jpi,jpj,nlay_s,jpl), & 
-                & rhov_s_b(jpi,jpj,nlay_s,jpl), STAT=ierr(ii) )
+                & rhov_s_b(jpi,jpj,nlay_s,jpl), qns_ice_b(jpi,jpj,jpl), qsr_ice_b(jpi,jpj,jpl), STAT=ierr(ii) )
 #endif
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )

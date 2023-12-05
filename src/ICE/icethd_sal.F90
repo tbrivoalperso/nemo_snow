@@ -60,7 +60,8 @@ CONTAINS
       REAL(wp) ::   zs_sni, zds                ! local scalars
       REAL(wp) ::   z1_time_gd, z1_time_fl
 #if defined key_isbaes
-      REAL(wp) ::   zdum, zdeltah, ztoth_s_si, jk
+      INTEGER  ::   jk
+      REAL(wp) ::   zdum, zdeltah, ztoth_s_si
       REAL(wp), DIMENSION(jpij) :: rho_s_isbaes
 #endif
       !!---------------------------------------------------------------------
@@ -81,11 +82,12 @@ CONTAINS
                zdeltah = dh_snowice(ji)
                rho_s_isbaes(ji) = 0._wp
                IF(dh_snowice(ji) > 0._wp) THEN
-               DO jk = nlay_s, 0, -1 
-                     zdum           = MIN( zdeltah, dh_s_1d(ji,jk))
-                     rho_s_isbaes(ji) = rho_s_isbaes(ji) + (rho_s_1d(ji,jk) * zdum) / dh_snowice(ji)
-                     zdeltah    = MAX( 0._wp, zdeltah - zdum )
-                  ENDDO
+                  !DO jk = 1, nlay_s       
+                  DO jk = nlay_s, 1, -1 
+                        zdum           = MIN( zdeltah, dh_s_1d(ji,jk))
+                        rho_s_isbaes(ji) = rho_s_isbaes(ji) + (rho_s_1d(ji,jk) * zdum) / dh_snowice(ji)
+                        zdeltah    = MAX( 0._wp, zdeltah - zdum )
+                     ENDDO
                ENDIF
                zs_sni = sss_1d(ji) * ( rhoi - rho_s_isbaes(ji) ) * r1_rhoi ! salinity of snow ice
                zds    =       ( zs_sni      - s_i_1d(ji) ) * dh_snowice(ji) / h_i_1d(ji) ! snow-ice    

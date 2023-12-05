@@ -161,6 +161,7 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   dh_s_1d        !: Snow layer thicknesses
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qrema_1d ! For isbaes use 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   evaprema_1d ! For isbaes
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   isnow_save_1d !  For isbaes use
 
 
 
@@ -194,7 +195,6 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qlwdwn_ice_isbaes_1d ! For isbaes use
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qsb_ice_isbaes_1d ! For isbaes use 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qla_ice_isbaes_1d ! For isbaes use 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   isnow_1d !  For isbaes use
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qemp_ice_1d !  For isbaes use 
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   glamt_1d ! For isbaes use 
@@ -290,7 +290,7 @@ CONTAINS
 
 
        ii = ii + 1
-      ALLOCATE( qcn_snw_bot_1d(jpij), dh_s_1d(jpij,nlay_s),qrema_1d(jpij),evaprema_1d(jpij), STAT=ierr(ii) )
+      ALLOCATE( qcn_snw_bot_1d(jpij), dh_s_1d(jpij,nlay_s),qrema_1d(jpij),evaprema_1d(jpij), isnow_save_1d(jpij), STAT=ierr(ii) )
 
 #if defined key_isbaes
       ii = ii + 1
@@ -300,7 +300,7 @@ CONTAINS
          &      tair_isbaes_1d(jpij), qair_isbaes_1d(jpij), slp_isbaes_1d(jpij), wndm_isbaes_1d(jpij), rain_isbaes_1d(jpij),   & 
          &      snow_isbaes_1d(jpij), qsr_ice_isbaes_1d(jpij), qns_ice_isbaes_1d(jpij), qlwdwn_ice_isbaes_1d(jpij), qlw_ice_isbaes_1d(jpij),          & 
          &      qla_ice_isbaes_1d(jpij), qsb_ice_isbaes_1d(jpij), qemp_ice_1d(jpij),                      &
-         &      isnow_1d(jpij),   rho_air_isbaes_1d(jpij), glamt_1d(jpij), gphit_1d(jpij), STAT=ierr(ii) )
+         &      rho_air_isbaes_1d(jpij), glamt_1d(jpij), gphit_1d(jpij), STAT=ierr(ii) )
 #endif
 
       ice1D_alloc = MAXVAL( ierr(:) )

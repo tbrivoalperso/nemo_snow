@@ -252,14 +252,27 @@ CONTAINS
 
       ! global sums
       zchk(1:4)   = glob_sum_vec( 'icectl', ztmp(:,:,1:4) )
-      
+!      PRINT*,cd_routine,'Ice', h_i(1,1,1), 'snow', &
+!            & h_s(1,1,1), 'isnow_save', isnow_save(1,1,1), 'qemp', qemp_ice(1,1), 'qns', qns_ice(1,1,1), 'qsr', qsr_ice(1,1,1), &
+!            & 'qt_oce_ai', qt_oce_ai(1,1), 'qt_atm_oi', qt_atm_oi(1,1), 't_su_1d(1,1)', t_su(1,1,1), 'a_i', a_i(1,1,1)
+!      PRINT*,cd_routine, 'hfx_sum(1,1)', hfx_sum(1,1), 'hfx_dif(1,1)', hfx_dif(1,1),'hfx_difs(1,1)', hfx_difs(1,1), 'hfx_snw(1,1)',&
+!            &  hfx_snw(1,1), 'hfx_thd', hfx_thd(1,1), 'hfx_res', hfx_res(1,1), 'hfx_sub',hfx_sub(1,1),  'hfx_spr', hfx_spr(1,1)
+!
       IF( lwp ) THEN
          IF( ABS(zchk(1)) > rchk_m * rn_icechk_glo * zchk(4) ) &
-            &                   WRITE(numout,*) cd_routine,' : violation mass cons. [kg] = ',zchk(1) * rDt_ice
+            &                   WRITE(numout,*) cd_routine,' : violation mass cons. [kg] = ',zchk(1) * rDt_ice, 'Ice', h_i, 'snow', &
+            & h_s, 'isnow_save', isnow_save
          IF( ABS(zchk(2)) > rchk_s * rn_icechk_glo * zchk(4) ) &
-            &                   WRITE(numout,*) cd_routine,' : violation salt cons. [g]  = ',zchk(2) * rDt_ice
-         IF( ABS(zchk(3)) > rchk_t * rn_icechk_glo * zchk(4) ) &
-            &                   WRITE(numout,*) cd_routine,' : violation heat cons. [J]  = ',zchk(3) * rDt_ice
+            &                   WRITE(numout,*) cd_routine,' : violation salt cons. [g]  = ',zchk(2) * rDt_ice, 'Ice', h_i, 'snow', &
+            & h_s, 'isnow_save', isnow_save
+ 
+         IF( ABS(zchk(3)) > rchk_t * rn_icechk_glo * zchk(4) ) THEN
+         
+            WRITE(numout,*) cd_routine,' : violation heat cons. [J]  = ',zchk(3) * rDt_ice, 'Ice', h_i, 'snow', &
+            & h_s, 'isnow_save', isnow_save
+            !STOP
+            PRINT*,'VIOL'
+         ENDIF
       ENDIF
       !
    END SUBROUTINE ice_cons_final
@@ -438,6 +451,17 @@ CONTAINS
       CALL iom_rstput( 0, 0, inum, 'hfx_res', hfx_res(:,:) , ktype = jp_r8)    !
       CALL iom_rstput( 0, 0, inum, 'hfx_sub', hfx_sub(:,:) , ktype = jp_r8)    !
       CALL iom_rstput( 0, 0, inum, 'hfx_spr', hfx_spr(:,:) , ktype = jp_r8)    !
+
+      CALL iom_rstput( 0, 0, inum, 'sfx_bri', sfx_bri(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'sfx_bog', sfx_bog(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'sfx_bom', sfx_bom(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'sfx_sum', sfx_sum(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'sfx_sni', sfx_sni(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'sfx_opw', sfx_opw(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'sfx_res', sfx_res(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'sfx_dyn', sfx_dyn(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'sfx_sub', sfx_sub(:,:) , ktype = jp_r8)    !
+      CALL iom_rstput( 0, 0, inum, 'sfx_lam', sfx_sub(:,:) , ktype = jp_r8)    !
 
       CALL iom_close( inum )
 

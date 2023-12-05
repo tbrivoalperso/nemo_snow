@@ -21,7 +21,8 @@ INTERFACE
                 PHPSNOW,PLES3L,PLEL3L,PEVAP,PSNDRIFT,PRI,                 &
                 PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS,ZRADXS,    &
                 PPERMSNOWFRAC,PFORESTFRAC,PZENITH,PXLAT,PXLON,            &
-                HSNOWDRIFT,OSNOWDRIFT_SUBLIM,PEVAPGONECOR                              )
+                HSNOWDRIFT,OSNOWDRIFT_SUBLIM,PDELHEAT_SNWFL,              &
+                PDELHEAT_SUB, PDELHEAT_MLT, PDELHEAT_DIF                             )
                 
                 
 USE MODD_CSTS,     ONLY : XTT, XRHOLW, XLMTT, XCL, XDAY
@@ -212,7 +213,7 @@ CHARACTER(4), INTENT(IN)          :: HSNOWDRIFT  ! Snowdrift scheme :
                                                  !  Other options are available in Crocus
 
 LOGICAL, INTENT(IN)               ::  OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
-REAL, DIMENSION(:), INTENT(OUT)   ::  PEVAPGONECOR
+REAL, DIMENSION(:), INTENT(OUT)   ::  PDELHEAT_SNWFL, PDELHEAT_SUB, PDELHEAT_MLT, PDELHEAT_DIF 
 
 
 END SUBROUTINE SNOW3L

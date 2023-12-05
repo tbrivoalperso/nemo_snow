@@ -122,7 +122,11 @@ CONTAINS
       !
       !                                      ! integrated values
       vt_i(:,:) =       SUM( v_i (:,:,:)           , dim=3 )
+#if defined key_isbaes
+      vt_s(:,:) =       SUM(SUM( dv_s (:,:,:,:)      , dim=3 ), dim=3)
+#else
       vt_s(:,:) =       SUM( v_s (:,:,:)           , dim=3 )
+#endif
       st_i(:,:) =       SUM( sv_i(:,:,:)           , dim=3 )
       at_i(:,:) =       SUM( a_i (:,:,:)           , dim=3 )
       et_s(:,:)  = SUM( SUM( e_s (:,:,:,:), dim=4 ), dim=3 )
@@ -337,7 +341,11 @@ CONTAINS
       !
       ! integrated values
       vt_i (:,:) = SUM( v_i , dim=3 )
+#if defined key_isbaes
+      vt_s (:,:) = SUM(SUM( dv_s , dim=3 ))
+#else
       vt_s (:,:) = SUM( v_s , dim=3 )
+#endif
       at_i (:,:) = SUM( a_i , dim=3 )
       !
    END SUBROUTINE ice_var_glo2eqv

@@ -150,7 +150,7 @@ CONTAINS
                &             + SUM( a_i_b(ji,jj,:) * qtr_ice_bot(ji,jj,:) ) * ( 1._wp - frq_m(ji,jj) )
             !
          ELSE                                                       !-- cooling or no ice left
-            qsr(ji,jj) = zqsr
+           qsr(ji,jj) = zqsr
          ENDIF
          !
          ! the non-solar is simply derived from the solar flux
@@ -305,6 +305,7 @@ CONTAINS
       ! controls
       !---------
 #if ! defined key_agrif
+      PRINT*,kt
       IF( ln_icediachk      )   CALL ice_cons_final('iceupdate')                                       ! conservation
 #endif
       IF( ln_icectl         )   CALL ice_prt       (kt, iiceprt, jiceprt, 3, 'Final state ice_update') ! prints
