@@ -1338,12 +1338,19 @@ CONTAINS
       ENDIF
 
       !#LB:
+#if defined key_isbaes
+      ! air-ice heat flux components that are not written from ice_stp()@icestp.F90:
+      IF( iom_use('qla_ice') )  CALL iom_put( 'qla_ice', SUM( - qla_ice_isbaes * a_i_b, dim=3 ) ) !#LB: sign consistent with what's done for ocean
+      IF( iom_use('qsb_ice') )  CALL iom_put( 'qsb_ice', SUM( - qsb_ice_isbaes * a_i_b, dim=3 ) ) !#LB:     ==> negative => loss of heat for sea-ice
+      IF( iom_use('qlw_ice') )  CALL iom_put( 'qlw_ice', SUM( qlw_ice_isbaes * a_i_b, dim=3 ) )
+#else
+
       ! air-ice heat flux components that are not written from ice_stp()@icestp.F90:
       IF( iom_use('qla_ice') )  CALL iom_put( 'qla_ice', SUM( - qla_ice * a_i_b, dim=3 ) ) !#LB: sign consistent with what's done for ocean
       IF( iom_use('qsb_ice') )  CALL iom_put( 'qsb_ice', SUM( -   z_qsb * a_i_b, dim=3 ) ) !#LB:     ==> negative => loss of heat for sea-ice
       IF( iom_use('qlw_ice') )  CALL iom_put( 'qlw_ice', SUM(     z_qlw * a_i_b, dim=3 ) )
       !#LB.
-
+#endif
    END SUBROUTINE blk_ice_2
 
 
