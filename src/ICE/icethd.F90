@@ -330,7 +330,6 @@ CONTAINS
              qrema_1d(:) = zq_rema(:)
              evaprema_1d(:) = zevap_rema(:)
              isnow_save_1d(:) = isnow(:)
-            PRINT*,'hfx_res',hfx_res_1d(1)
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
             CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !

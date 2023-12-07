@@ -503,7 +503,6 @@ ZP_Q_REMA   =  (ZP_GFLXCOR(1)      + ZP_RADXS(1) ) * rDt_ice ! En J / m2
 ZP_EVAP_REMA      =  (ZP_EVAPCOR(1) + ZP_SOILCOR(1)) * rDt_ice
 
 ZP_BDG = - zdq * r1_Dt_ice - (ZP_GFLUXSNOW(1) + ZP_SNOWHMASS(1)* r1_Dt_ice - ZP_GRNDFLUX(1) - ZP_GFLXCOR(1) - ZP_RADXS(1))
-PRINT*,ZP_BDG
 !- ZP_GFLUXSNOW(1) + - ZP_SNOWHMASS(1)* r1_Dt_ice + ZP_GRNDFLUX(1) + ZP_GFLXCOR(1) + ZP_RADXS(1)  
 !Surface total flux => Qtot = qns_ice_1d(ji) + qsr_ice_1d(ji) - qtr_ice_top_1d(ji) - qcn_ice_top_1d(ji)                                            
 qla_ice_isbaes_1d(JI) = ZP_LES3L(1) + ZP_LEL3L(1)
@@ -511,7 +510,7 @@ qsb_ice_isbaes_1d(JI) = ZP_HSNOW(1)
 qlw_ice_isbaes_1d(JI) = ZP_LWNETSNOW(1)
 qns_ice_1d(JI) = qlw_ice_isbaes_1d(JI) - qla_ice_isbaes_1d(JI) - qsb_ice_isbaes_1d(JI) !ZP_LES3L(1) + ZP_LEL3L(1) + ZP_HSNOW(1) + ZP_LWNETSNOW(1)
 
-qsr_ice_1d(JI) = ZP_SWNETSNOWS(1)
+qsr_ice_1d(JI) = ZP_SWNETSNOWS(1) - qns_ice_1d(JI) ! ZP_SWNETSNOWS(1)
 qemp_ice_1d(JI) = ZP_DELHEAT_SNWFL(1) * r1_Dt_ice
 
 !  qcn_ice_top_1d(JI) = ZP_RESTOREN(JI)

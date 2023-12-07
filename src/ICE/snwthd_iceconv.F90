@@ -141,7 +141,7 @@ CONTAINS
                    
                   !!! Calculate snow ice formation for layer k
                   zden = zrhos(ji,jk) + rho0 - rhoi ! denominator
-                  zdh  = 0. !MAX( SUM(mass_snow(ji,:)) + ( rhoi - rho0 ) * zhi(ji) , 0._wp ) / zden ! snow ice for layer jk
+                  zdh  = MAX( SUM(mass_snow(ji,:)) + ( rhoi - rho0 ) * zhi(ji) , 0._wp ) / zden ! snow ice for layer jk
                   dh_sni(ji,jk) = MIN( zdh, zh_s(ji,jk) ) ! snow ice cannot exceed available thickness
                   zfrac = dh_sni(ji,jk) / zh_s(ji,jk)       ! fraction of layer k consumed by snow ice (between 0 and 1)
 

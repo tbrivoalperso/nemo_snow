@@ -202,6 +202,7 @@ CONTAINS
       qla_ice_isbaes(:,:,:) = 0._wp
       qsb_ice_isbaes(:,:,:) = 0._wp
       qlw_ice_isbaes(:,:,:) = 0._wp
+      hbdg_isbaes(:,:,:) = 0._wp
 
 #endif
       !
