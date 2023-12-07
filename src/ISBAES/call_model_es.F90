@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
 !================================================================
-SUBROUTINE CALL_MODEL(JI,KSIZE2,PTSTEP, ZP_A_S_FRA, ZP_SNOWBLOW, ZP_PA, ZP_RADXS, ZP_Q_REMA,  ZP_EVAP_REMA)
+SUBROUTINE CALL_MODEL(JI,KSIZE2,PTSTEP, ZP_A_S_FRA, ZP_SNOWBLOW, ZP_PA, ZP_RADXS, ZP_Q_REMA,  ZP_EVAP_REMA, ZP_BDG)
 !
 USE MODD_CSTS !,       ONLY : XLMTT, XLSTT
 USE MODD_TYPE_DATE_SURF, ONLY: DATE_TIME
@@ -35,6 +35,7 @@ REAL(wp), INTENT(IN) ::   ZP_PA   ! Pressure at atmospheric level
 REAL(wp),DIMENSION(1), INTENT(out) ::   ZP_RADXS    ! Radiation transmited through the snow
 REAL(wp),DIMENSION(1), INTENT(out) ::   ZP_Q_REMA     ! remaining heat flux from snow melting       (J.m-2)
 REAL(wp),DIMENSION(1), INTENT(out) ::   ZP_EVAP_REMA  ! remaining mass flux from snow sublimation   (kg.m-2)
+REAL(wp),DIMENSION(1), INTENT(out) ::   ZP_BDG        ! Heat budget diagnostic 
 
 !
 REAL(wp), DIMENSION(1,KSIZE2) :: ZP_SNOWSWE
@@ -434,6 +435,8 @@ h_s_1d(JI) = SUM(dh_s_1d(JI,:))
 zdq = SUM( e_s_1d(JI,1:nlay_s)) - zq_ini  !  * dh_s_1d(JI,1:nlay_s) )
 zdm = - zm_ini + SUM(rho_s_1d(JI,1:nlay_s) * dh_s_1d(JI,1:nlay_s)) * a_i_1d(JI) 
 
+
+t_su_1d(JI) = t_s_1d(JI,1)
 albs_isbaes_1d(JI)   = ZP_SNOWALB(1)     
 !   PEK%TSNOW%EMIS(JI)  = ZP_EMISNOW     (JI) ! Constante
 !  DMK%XCDSNOW   (JI)  = ZP_CDSNOW      (JI) ! OUT
@@ -474,8 +477,21 @@ hfx_sub_1d(JI) = hfx_sub_1d(JI)   - ZP_DELHEAT_SUB(1) * r1_Dt_ice ! Minus factor
 hfx_difs_1d(JI) = hfx_difs_1d(JI) + ZP_DELHEAT_DIF(1) * r1_Dt_ice 
 hfx_spr_1d(JI)  = hfx_spr_1d(JI)  - ZP_DELHEAT_SNWFL(1) * r1_Dt_ice ! Minus factor following SI3 conventions
 hfx_snw_1d(JI)  = hfx_snw_1d(JI)  + ZP_DELHEAT_MLT(1) * r1_Dt_ice
-hfx_res_1d(JI)  = hfx_res_1d(JI)  + zdq * r1_Dt_ice + hfx_difs_1d(JI) - hfx_sub_1d(JI) - hfx_spr_1d(JI) + hfx_snw_1d(JI)! Minus factor because enthalpy is negative per convention in ISBAES 
-
+hfx_res_1d(JI)  = hfx_res_1d(JI)  + zdq * r1_Dt_ice + (ZP_DELHEAT_SUB(1) + ZP_DELHEAT_DIF(1) + ZP_DELHEAT_SNWFL(1) + ZP_DELHEAT_MLT(1) )* r1_Dt_ice ! Minus factor because enthalpy is negative per convention in ISBAES 
+!PRINT*,'zdq + ZP_DELHEAT_SUB(1) + ZP_DELHEAT_DIF(1) + ZP_DELHEAT_SNWFL(1) + ZP_DELHEAT_MLT(1)',(zdq + ZP_DELHEAT_SUB(1) + &
+!& ZP_DELHEAT_DIF(1) + ZP_DELHEAT_SNWFL(1) + ZP_DELHEAT_MLT(1))  * r1_Dt_ice
+!PRINT*,'ZP_GFLXCOR(:)',ZP_GFLXCOR(:)
+!PRINT*,'ZP_SOILCOR(:)',ZP_SOILCOR(:)
+!PRINT*,'ZP_EVAPCOR(:)',ZP_EVAPCOR(:)
+!PRINT*,'ZP_SNOWSFCH(:)',ZP_SNOWSFCH(:)
+!PRINT*,'ZP_GRNDFLUX(1)',ZP_GRNDFLUX(1)
+!PRINT*,'BUDGET ', ZP_GFLUXSNOW(1) + ZP_SNOWHMASS(1)* r1_Dt_ice - ZP_GRNDFLUX(1)
+!PRINT*,'ZP_DELHEAT_SNWFL(1)',ZP_DELHEAT_SNWFL(1),'ZP_SNOWHMASS(1)',ZP_SNOWHMASS
+!PRINT*,'ZP_DELHEAT_SUB(1)',ZP_DELHEAT_SUB(1), 'ZP_DELHEAT_MLT(1)', ZP_DELHEAT_MLT(1), 'ZP_DELHEAT_MLT(1) + ZP_DELHEAT_SUB(1)', &
+!        & ZP_DELHEAT_MLT(1) + ZP_DELHEAT_SUB(1),'ZP_DELPHASEN(1)',ZP_DELPHASEN(1) 
+!PRINT*,'ZP_DELHEAT_DIF(1)',ZP_DELHEAT_DIF(1),'ZP_DELHEATN(1)',ZP_DELHEATN(1), 'ZP_GFLUXSNOW(:)', ZP_GFLUXSNOW(:)
+!PRINT*,'ZP_DELHEATN(:)+ZP_DELPHASEN(:)-ZP_GFLUXSNOW(:)+ZP_GRNDFLUX(:)+ZP_GFLXCOR(:)',ZP_DELHEATN(:)+ZP_DELPHASEN(:)-ZP_GFLUXSNOW(:)+ZP_GRNDFLUX(:)+ZP_GFLXCOR(:)
+!PRINT*,'ZP_DELHEATN_SFC(:)-ZP_SNOWSFCH(:)+ZP_SWNETSNOW(:)-ZP_SWNETSNOWS(:)-ZP_GFLUXSNOW(:)+ZP_RESTOREN(:)', ZP_DELHEATN_SFC(:)-ZP_SNOWSFCH(:)+ZP_SWNETSNOW(:)-ZP_SWNETSNOWS(:)-ZP_GFLUXSNOW(:)+ZP_RESTOREN(:)
 wfx_spr_1d    (JI)   = wfx_spr_1d    (JI) -(ZP_SRSNOW(1) + ZP_RRSNOW(1) ) * a_i_1d(JI) ! METTRE EVAP A SUB 
 wfx_snw_sub_1d   (JI)   =  wfx_snw_sub_1d   (JI) + ((ZP_PSN3L(1)*ZP_LES3L(1)/XLSTT) - (ZP_EVAPCOR(1) + ZP_SOILCOR(1))) * a_i_1d(JI)
 !wfx_snw_sub_1d   (JI)   =  wfx_snw_sub_1d   (JI) + (ZP_PSN3L(1)*ZP_LES3L(1)/XLSTT) * a_i_1d(JI)
@@ -486,13 +502,18 @@ ZP_Q_REMA   =  (ZP_GFLXCOR(1)      + ZP_RADXS(1) ) * rDt_ice ! En J / m2
 !ZP_EVAP_REMA      = (ZP_EVAP(1) - wfx_snw_sub_1d(JI)) * rDt_ice + (ZP_EVAPCOR(1) + ZP_SOILCOR(1)) * rDt_ice
 ZP_EVAP_REMA      =  (ZP_EVAPCOR(1) + ZP_SOILCOR(1)) * rDt_ice
 
+ZP_BDG = - zdq * r1_Dt_ice - (ZP_GFLUXSNOW(1) + ZP_SNOWHMASS(1)* r1_Dt_ice - ZP_GRNDFLUX(1) - ZP_GFLXCOR(1) - ZP_RADXS(1))
+PRINT*,ZP_BDG
+!- ZP_GFLUXSNOW(1) + - ZP_SNOWHMASS(1)* r1_Dt_ice + ZP_GRNDFLUX(1) + ZP_GFLXCOR(1) + ZP_RADXS(1)  
 !Surface total flux => Qtot = qns_ice_1d(ji) + qsr_ice_1d(ji) - qtr_ice_top_1d(ji) - qcn_ice_top_1d(ji)                                            
 qla_ice_isbaes_1d(JI) = ZP_LES3L(1) + ZP_LEL3L(1)
 qsb_ice_isbaes_1d(JI) = ZP_HSNOW(1)
 qlw_ice_isbaes_1d(JI) = ZP_LWNETSNOW(1)
 qns_ice_1d(JI) = qlw_ice_isbaes_1d(JI) - qla_ice_isbaes_1d(JI) - qsb_ice_isbaes_1d(JI) !ZP_LES3L(1) + ZP_LEL3L(1) + ZP_HSNOW(1) + ZP_LWNETSNOW(1)
-qsr_ice_1d(JI) = ZP_SWNETSNOW(1)
+
+qsr_ice_1d(JI) = ZP_SWNETSNOWS(1)
 qemp_ice_1d(JI) = ZP_DELHEAT_SNWFL(1) * r1_Dt_ice
+
 !  qcn_ice_top_1d(JI) = ZP_RESTOREN(JI)
 !  qtr_ice_top_1d(JI) =  ZP_SW_RAD(JI) * ZP_SNOWALB     (JI)
 

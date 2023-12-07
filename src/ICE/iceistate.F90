@@ -177,7 +177,10 @@ CONTAINS
       ! heat contents
       e_i (:,:,:,:) = 0._wp
       e_s (:,:,:,:) = 0._wp
-      
+
+      ! THEO - diags for debug
+      diag1_2D(:,:) = 0._wp
+
       ! general fields
       a_i (:,:,:) = 0._wp
       v_i (:,:,:) = 0._wp

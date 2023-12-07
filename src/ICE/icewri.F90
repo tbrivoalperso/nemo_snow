@@ -133,6 +133,8 @@ CONTAINS
       IF( iom_use('snwtemp' ) )   CALL iom_put( 'snwtemp', ( tm_s  - rt0 ) * zmsksn + zmiss_val * ( 1._wp - zmsksn ) )      ! snw mean temperature
 #if defined key_isbaes
       IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn )      ! snw mean density
+      IF( iom_use('hbdg_isbaes') )       CALL iom_put( 'hbdg_isbaes'   , SUM(hbdg_isbaes(:,:,:), DIM=3) ) ! ISBAES heat budget
+
 #endif 
       IF( iom_use('icettop' ) )   CALL iom_put( 'icettop', ( tm_su - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice surface
       IF( iom_use('icetbot' ) )   CALL iom_put( 'icetbot', ( t_bo  - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice bottom
@@ -197,7 +199,7 @@ CONTAINS
       IF( iom_use('iceafpnd_cat') )   CALL iom_put( 'iceafpnd_cat',   a_ip_frac    * zmsk00l                                   ) ! melt pond frac per ice area for categories
       IF( iom_use('iceaepnd_cat') )   CALL iom_put( 'iceaepnd_cat',   a_ip_eff     * zmsk00l                                   ) ! melt pond effective frac for categories
       IF( iom_use('icealb_cat'  ) )   CALL iom_put( 'icealb_cat'  ,   alb_ice      * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! ice albedo for categories
-
+      IF( iom_use('qtot_diff') )       CALL iom_put( 'qtot_diff'   , diag1_2D )
       !------------------
       ! Add-ons for SIMIP
       !------------------

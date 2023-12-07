@@ -466,10 +466,10 @@ ENDDO
 CALL SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,ZSNOW,PSNOWRHO,PSNOWDZ,             &
                 PSNOWHEAT,PSNOWHMASS,ZSNOWHMASS1,PSNOWAGE,PPERMSNOWFRAC  )
 
-DO JI=1,INI
-   PDELHEAT_SNWFL(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_SNWFL(JI)  
-ENDDO
-
+!DO JI=1,INI
+!   PDELHEAT_SNWFL(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_SNWFL(JI)  
+!ENDDO
+!
 !
 ! Caluclate new snow albedo at time t if snowfall
 !
@@ -503,6 +503,11 @@ ENDIF
 !
 
 CALL SNOW3LTRANSF(ZSNOW,PSNOWDZ,ZSNOWDZN,PSNOWRHO,PSNOWHEAT,PSNOWAGE)
+
+!DO JI=1,INI
+!   PDELHEAT_SNWFL(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_SNWFL(JI)
+!ENDDO
+
 
 !
 !
@@ -544,6 +549,11 @@ ENDIF
 ZSCAP(:,:)     = SNOW3LSCAP(PSNOWRHO)
 PSNOWHEAT(:,:) = PSNOWDZ(:,:)*( ZSCAP(:,:)*(ZSNOWTEMP(:,:)-XTT)        &
                    - XLMTT*PSNOWRHO(:,:) ) + XLMTT*XRHOLW*PSNOWLIQ(:,:)  
+
+DO JI=1,INI
+   PDELHEAT_SNWFL(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_SNWFL(JI)
+ENDDO
+
 !
 !*       6.     Solar radiation transmission
 !               -----------------------------
@@ -577,6 +587,9 @@ PHPSNOW(:) = 0.0
 ! Surface Energy Budget calculations using ISBA linearized form
 ! and standard ISBA turbulent transfer formulation
 !
+DO JI=1,INI
+   PDELHEAT_DIF(JI) = SUM(PSNOWHEAT(JI,:))
+ENDDO
 
 IF(OMEB)THEN 
 
@@ -621,9 +634,6 @@ ZSNOWTEMP01(:) = ZSNOWTEMP(:,1) ! save surface snow temperature before update
 !
 ZGRNDFLUXI(:)  = ZGRNDFLUX(:)
 !
-DO JI=1,INI
-   PDELHEAT_DIF(JI) = SUM(PSNOWHEAT(JI,:))
-ENDDO
 
 CALL SNOW3LSOLVT(OMEB,OSI3, PTSTEP,XSNOWDZMIN,PSNOWDZ,ZSCOND,ZSCAP,PTG,              &
                    PSOILCOND,PD_G,ZRADSINK,ZCT,ZTSTERM1,ZTSTERM2,              &
@@ -743,9 +753,9 @@ ZSNOWTEMP(:,:) = MIN(XTT,ZSNOWTEMP(:,:))
 !
 CALL SNOW3LEVAPGONE(PSNOWHEAT,PSNOWDZ,PSNOWRHO,ZSNOWTEMP,PSNOWLIQ)
 !
-DO JI=1,INI
-   PDELHEAT_SUB(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_SUB(JI)
-ENDDO
+!DO JI=1,INI
+!   PDELHEAT_SUB(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_SUB(JI)
+!ENDDO
 !
 !*      12.     Update surface albedo:
 !               ----------------------
@@ -777,6 +787,9 @@ ZSCAP(:,:)        = SNOW3LSCAP(PSNOWRHO)
 PSNOWHEAT(:,:)    = PSNOWDZ(:,:)*( ZSCAP(:,:)*(PSNOWTEMP(:,:)-XTT)        &
                   - XLMTT*PSNOWRHO(:,:) ) + XLMTT*XRHOLW*PSNOWLIQ(:,:)  
 !
+DO JI=1,INI
+   PDELHEAT_SUB(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_SUB(JI)
+ENDDO
 !
 !*      14.     Snow/Ground heat flux:
 !               ----------------------

@@ -305,7 +305,6 @@ CONTAINS
       ! controls
       !---------
 #if ! defined key_agrif
-      PRINT*,kt
       IF( ln_icediachk      )   CALL ice_cons_final('iceupdate')                                       ! conservation
 #endif
       IF( ln_icectl         )   CALL ice_prt       (kt, iiceprt, jiceprt, 3, 'Final state ice_update') ! prints

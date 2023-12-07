@@ -322,6 +322,8 @@
      <field id="qcn_snw_bot"     long_name="Downward conduction Flux at snow-ice interface"                                                                  unit="W/m2" />
       <field id="qrema"     long_name="Remaining heat eat snow-ice interface"                                                                  unit="J/m2" />
       <field id="evaprema"     long_name="evaprema"                                                                  unit="kg/m2/s" />
+      <field id="qtot_diff"     long_name="qtot_diff"                                                                  unit="W/m2" />
+      <field id="hbdg_isbaes"     long_name="isbaes heat budget diagnostic"                                           unit="W/m2" />
 
       <!-- standard ice fields -->
       <field id="iceconc_cat"  long_name="Sea-ice concentration per category"                unit=""        />

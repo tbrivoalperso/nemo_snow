@@ -314,16 +314,19 @@ CONTAINS
 #if defined key_isbaes      
       DO jk = 1, nlay_s
          WHERE( dv_s(:,:,jk,:) > epsi20 )        !--- icy area
-            dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)    
+!            dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)    
             rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
             o_s(:,:,jk,:) = ov_s(:,:,jk,:) / dv_s(:,:,jk,:)
             !t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
             !     &                MIN( r1_rcpi * ( -(1 / rho_s(:,:,jk,:)) * ( e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) ) + rLfus ) , 0._wp ) )
             ZSCAP(:,:,jk,:)     = rho_s(:,:,jk,:) * XCI
 
-            t_s(:,:,jk,:) = XTT + MIN(1.0, dh_s(:,:,jk,:)/XSNOWDMIN)*( (( - e_s(:,:,jk,:)/MAX(XSNOWDMIN,dh_s(:,:,jk,:)))  &
-            &    + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) ) ! Minus factor for enthalpy to match SI3 conventions
-         ELSEWHERE                           !--- no ice
+            !t_s(:,:,jk,:) = XTT + MIN(1.0, dh_s(:,:,jk,:)/XSNOWDMIN)*( (( - e_s(:,:,jk,:)/MAX(XSNOWDMIN,dh_s(:,:,jk,:)))  &
+            !&    + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) ) ! Minus factor for enthalpy to match SI3 conventions
+
+            dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)
+ 
+        ELSEWHERE                           !--- no ice
             t_s(:,:,jk,:) = rt0
             rho_s(:,:,jk,:) = 400.
          END WHERE

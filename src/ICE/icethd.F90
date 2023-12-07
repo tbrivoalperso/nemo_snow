@@ -166,13 +166,14 @@ CONTAINS
          qcn_snw_bot(:,:,:) = qcn_snw_bot_read(:,:,:)
       ENDIF
       ! / 
+   diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3)
 
 #if defined key_isbaes
    ! Save before solar & non solar heat flux for later
 
    qns_ice_b(:,:,:) = qns_ice(:,:,:)
    qsr_ice_b(:,:,:) = qsr_ice(:,:,:)
-
+!   diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3) 
 #endif
 
       ! Compatibility controls with ln_snwext
@@ -233,7 +234,7 @@ CONTAINS
             ! - The T° equation in the snow (snw_thd_zdf)
             ! - Snowfall / melt and associated mass and heat changes (snw_thd_dh)
 
-            IF( ln_snwext .AND. a_i_1d(ji) > 0._wp)  THEN
+            IF( ln_snwext )  THEN
                 CALL snw_thd( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow, &
                                           zq_rema, zevap_rema, zh_s, ze_s )       ! Snow thermodynamics (detached mode)
                 ! returns:
@@ -273,7 +274,8 @@ CONTAINS
                   zsnowfall = snow_isbaes_1d(ji)*rn_Dt/XRHOSMAX_ES ! maximum possible snowfall depth (m)
                   !IF ((h_s_1d(ji) > XSNOWDMIN .OR. zsnowfall > XSNOWDMIN) .AND. (h_i_1d(ji) > 0.) .AND. at_i_1d(ji) > 0.) THEN
                   IF ((SUM(dh_s_1d(ji,:)) > XSNOWDMIN .OR. zsnowfall > XSNOWDMIN)) THEN   
-                     CALL CALL_MODEL(ji,nlay_s, rn_Dt, za_s_fra(ji),zsnowblow(ji), zpa_t(ji), ZP_RADXS, zq_rema(ji), zevap_rema(ji))
+                     CALL CALL_MODEL(ji,nlay_s, rn_Dt, za_s_fra(ji),zsnowblow(ji), zpa_t(ji), ZP_RADXS, zq_rema(ji), &
+                          &   zevap_rema(ji), hbdg_isbaes_1d(ji))
                      isnow(ji) = 1.
                      zradtr_s(ji,nlay_s) = ZP_RADXS(1)
 
@@ -319,7 +321,6 @@ CONTAINS
                   WHERE( dh_s_1d(1:npti,jk)>0._wp .AND. a_i_1d(1:npti) > 0.) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))
                END DO
 
-
              !CALL snw_thd_iceconv( isnow, thickness_si, mass_si, enthalpy_si )
              ELSE
                 CALL ctl_stop( 'key_ibaes activated => Could not launch model without ln_isbaes off' )          
@@ -329,7 +330,7 @@ CONTAINS
              qrema_1d(:) = zq_rema(:)
              evaprema_1d(:) = zevap_rema(:)
              isnow_save_1d(:) = isnow(:)
-
+            PRINT*,'hfx_res',hfx_res_1d(1)
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
             CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
@@ -358,11 +359,11 @@ CONTAINS
       END DO
       !
 
-#if defined key_isbaes      
+#if defined key_isbaes
       ! --- total solar and non solar fluxes --- !
       qns_tot(:,:) = ( 1._wp - at_i_b(:,:) ) * qns_oce(:,:) + qemp_ice(:,:) + qemp_oce(:,:)
       qsr_tot(:,:) = ( 1._wp - at_i_b(:,:) ) * qsr_oce(:,:)
-
+      
       DO jl = 1, jpl
           qns_tot(:,:) =  qns_tot(:,:) + isnow_save(:,:,jl) * (a_i_b(:,:,jl) * qns_ice(:,:,jl)) & 
                   &       + (1 - isnow_save(:,:,jl)) * (a_i_b(:,:,jl) * qns_ice_b(:,:,jl))  
@@ -370,6 +371,7 @@ CONTAINS
                   &       + (1 - isnow_save(:,:,jl)) * a_i_b(:,:,jl) * qsr_ice_b(:,:,jl)
       END DO
 #endif
+      diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3) - diag1_2D(:,:) 
 
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'icethd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (1, 'icethd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
@@ -610,6 +612,7 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), qlwdwn_ice_isbaes_1d    (1:npti), qlwdwn_ice_isbaes(:,:,kl)       )
          CALL tab_2d_1d( npti, nptidx(1:npti), qsb_ice_isbaes_1d (1:npti), qsb_ice_isbaes (:,:,kl) )
          CALL tab_2d_1d( npti, nptidx(1:npti), qla_ice_isbaes_1d (1:npti), qla_ice_isbaes (:,:,kl) )
+         CALL tab_2d_1d( npti, nptidx(1:npti), hbdg_isbaes_1d (1:npti), hbdg_isbaes (:,:,kl) )
 
          ! Those variables are here because we need to update the flux
          CALL tab_2d_1d( npti, nptidx(1:npti), qemp_ice_1d (1:npti), qemp_ice (:,:) )
@@ -778,6 +781,7 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), qlwdwn_ice_isbaes_1d    (1:npti), qlwdwn_ice_isbaes(:,:,kl)       )
          CALL tab_1d_2d( npti, nptidx(1:npti), qsb_ice_isbaes_1d(1:npti), qsb_ice_isbaes(:,:,kl)    )
          CALL tab_1d_2d( npti, nptidx(1:npti), qla_ice_isbaes_1d(1:npti), qla_ice_isbaes(:,:,kl)    )
+         CALL tab_1d_2d( npti, nptidx(1:npti), hbdg_isbaes_1d(1:npti), hbdg_isbaes(:,:,kl)    )
 
 ! Those variables are here because we need to update the flux
          CALL tab_1d_2d( npti, nptidx(1:npti), qemp_ice_1d(1:npti), qemp_ice(:,:)    )
