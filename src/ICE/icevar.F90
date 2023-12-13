@@ -316,7 +316,7 @@ CONTAINS
          WHERE( dv_s(:,:,jk,:) > epsi20 )        !--- icy area
 !            dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)    
             rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
-            o_s(:,:,jk,:) = ov_s(:,:,jk,:) / dv_s(:,:,jk,:)
+            !o_s(:,:,jk,:) = ov_s(:,:,jk,:) / dv_s(:,:,jk,:)
             !t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
             !     &                MIN( r1_rcpi * ( -(1 / rho_s(:,:,jk,:)) * ( e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) ) + rLfus ) , 0._wp ) )
             ZSCAP(:,:,jk,:)     = rho_s(:,:,jk,:) * XCI

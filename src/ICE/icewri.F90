@@ -133,6 +133,8 @@ CONTAINS
       IF( iom_use('snwtemp' ) )   CALL iom_put( 'snwtemp', ( tm_s  - rt0 ) * zmsksn + zmiss_val * ( 1._wp - zmsksn ) )      ! snw mean temperature
 #if defined key_isbaes
       IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn )      ! snw mean density
+      IF( iom_use('snwrho_1' ) )   CALL iom_put( 'snwrho_1', SUM(rho_s(:,:,1,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw top density
+      IF( iom_use('snwrho_N' ) )   CALL iom_put( 'snwrho_N', SUM(rho_s(:,:,nlay_s,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw bottom density
       IF( iom_use('hbdg_isbaes') )       CALL iom_put( 'hbdg_isbaes'   , SUM(hbdg_isbaes(:,:,:), DIM=3) ) ! ISBAES heat budget
 
 #endif 
@@ -174,7 +176,7 @@ CONTAINS
          END WHERE
          CALL iom_put( 'icealb' , zalb * zmskalb + zmiss_val * ( 1._wp - zmskalb ) )
          ! ice+ocean albedo
-         zalb(:,:) = SUM( alb_ice * a_i_b, dim=3 ) + rn_alb_oce * ( 1._wp - at_i_b )
+         zalb(:,:) = SUM( alb_ice * a_i_b, dim=3 ) !+ rn_alb_oce * ( 1._wp - at_i_b )
          CALL iom_put( 'albedo' , zalb )
          DEALLOCATE( zalb, zmskalb )
       ENDIF
@@ -199,7 +201,12 @@ CONTAINS
       IF( iom_use('iceafpnd_cat') )   CALL iom_put( 'iceafpnd_cat',   a_ip_frac    * zmsk00l                                   ) ! melt pond frac per ice area for categories
       IF( iom_use('iceaepnd_cat') )   CALL iom_put( 'iceaepnd_cat',   a_ip_eff     * zmsk00l                                   ) ! melt pond effective frac for categories
       IF( iom_use('icealb_cat'  ) )   CALL iom_put( 'icealb_cat'  ,   alb_ice      * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! ice albedo for categories
-      IF( iom_use('qtot_diff') )       CALL iom_put( 'qtot_diff'   , diag1_2D )
+      IF( iom_use('qns_bef') )       CALL iom_put( 'qns_bef'   , diag1_2D )
+      IF( iom_use('qns_aft') )       CALL iom_put( 'qns_aft'   , diag3_2D )
+
+      IF( iom_use('qsr_bef') )       CALL iom_put( 'qsr_bef'   , diag2_2D )
+      IF( iom_use('qsr_aft') )       CALL iom_put( 'qsr_aft'   , diag4_2D )
+      
       !------------------
       ! Add-ons for SIMIP
       !------------------

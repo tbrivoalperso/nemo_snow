@@ -183,7 +183,6 @@ CONTAINS
             !
             ! albedo depends on cloud fraction because of non-linear spectral effects
             palb_ice(ji,jj,jl) = ( 1._wp - pcloud_fra(ji,jj) ) * zalb_cs + pcloud_fra(ji,jj) * zalb_os
-
          END_2D
       END DO
       !

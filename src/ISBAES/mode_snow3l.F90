@@ -2760,7 +2760,7 @@ END SUBROUTINE SNOW3LALB
 !####################################################################
 !####################################################################
 !####################################################################
-SUBROUTINE SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,PSNOW,PSNOWRHO,PSNOWDZ,        &
+SUBROUTINE SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,PSNOW,PSNOWRHO,PSNOWDZ,PZ0EFF,PUREF,        &
                       PSNOWHEAT,PSNOWHMASS,PSNOWHMASS1,PSNOWAGE,PPERMSNOWFRAC)  
 !
 !!    PURPOSE
@@ -2773,7 +2773,11 @@ USE MODD_CSTS,     ONLY : XLMTT, XTT, XCI
 USE MODD_SNOW_PAR, ONLY : XRHOSMIN_ES,            &
                           XSNOWFALL_A_SN,         &
                           XSNOWFALL_B_SN,         &
-                          XSNOWFALL_C_SN
+                          XSNOWFALL_C_SN,         &
+                          XSNOWFALL_A_SN_R21,         &
+                          XSNOWFALL_B_SN_R21,         &
+                          XSNOWFALL_C_SN_R21         
+       
 !
 USE MODD_SNOW_METAMO, ONLY : XSNOWDZMIN
 !
@@ -2785,12 +2789,16 @@ IMPLICIT NONE
 REAL, INTENT(IN)                    :: PTSTEP
 !
 REAL, DIMENSION(:), INTENT(IN)      :: PSR, PTA, PVMOD, PPERMSNOWFRAC
-!
+
 REAL, DIMENSION(:), INTENT(INOUT)   :: PSNOW
 !
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PSNOWRHO, PSNOWDZ, PSNOWHEAT, PSNOWAGE
 !
 REAL, DIMENSION(:), INTENT(OUT)     :: PSNOWHMASS, PSNOWHMASS1
+
+! THEO : PArameters for ROyer et al 2021
+REAL, DIMENSION(:),INTENT(IN)       :: PZ0EFF,PUREF!
+
 !
 !
 !*      0.2    declarations of local variables
@@ -2800,6 +2808,14 @@ INTEGER                             :: JJ, JI
 INTEGER                             :: INI
 INTEGER                             :: INLVLS
 !
+! THEO : ADD Parameters for Royer et al 2021.
+REAL, PARAMETER                    :: PPHREF_WIND_RHO   = 10.
+REAL, PARAMETER                    :: PPHREF_WIND_GRAIN = 5.
+REAL, PARAMETER                    :: PPHREF_WIND_MIN = MIN(PPHREF_WIND_RHO,PPHREF_WIND_GRAIN)*0.5
+REAL, DIMENSION(SIZE(PTA))         :: ZWIND_RHO
+
+! /THEO
+
 REAL, DIMENSION(SIZE(PTA))          :: ZSNOWFALL, ZRHOSNEW,        &
                                        ZSNOW, ZSNOWTEMP,           &
                                        ZSNOWFALL_DELTA, ZSCAP,     &
@@ -2851,9 +2867,19 @@ WHERE (PSR(:) > 0.0)
 !
 ! Snowfall density: Following CROCUS (Pahaut 1976)
 !
-   ZRHOSNEW(:)   = MAX(XRHOSMIN_ES, XSNOWFALL_A_SN + XSNOWFALL_B_SN*(PTA(:)-XTT)+         &
-                     XSNOWFALL_C_SN*SQRT(PVMOD(:)))  
-!
+!   ZRHOSNEW(:)   = MAX(XRHOSMIN_ES, XSNOWFALL_A_SN + XSNOWFALL_B_SN*(PTA(:)-XTT)+         &
+!                     XSNOWFALL_C_SN*SQRT(PVMOD(:)))  
+!!
+!ELSEIF( HSNOWFALL == 'R21') THEN ! Royer et al. 2021 (Doubled wind speed)
+
+! Snowfall density: Following CROCUS (Pahaut 1976)
+
+    ZWIND_RHO(:)   = PVMOD(:)*LOG(PPHREF_WIND_RHO/PZ0EFF)/          &
+                               LOG(PUREF(JJ)/PZ0EFF)
+
+    ZRHOSNEW(:) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN_R21 + &
+                                   XSNOWFALL_B_SN_R21 * ( PTA(:)-XTT ) + &
+                                   XSNOWFALL_C_SN_R21 * SQRT(ZWIND_RHO(:) ) )
 !
 ! Fresh snowfall changes the snowpack age,
 ! decreasing in uppermost snow layer (mass weighted average):
@@ -2863,7 +2889,7 @@ WHERE (PSR(:) > 0.0)
 !
 ! Augment total pack depth:
 !  
-   ZRHOSNEW(:) = 330. !theo
+!   ZRHOSNEW(:) = 330. !theo
    ZSNOWFALL(:)  = PSR(:)*PTSTEP/ZRHOSNEW(:)    ! snowfall thickness (m)
 !
    PSNOW(:)      = PSNOW(:) + ZSNOWFALL(:)

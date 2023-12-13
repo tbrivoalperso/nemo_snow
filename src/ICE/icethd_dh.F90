@@ -512,19 +512,22 @@ CONTAINS
 #if defined key_isbaes
             zdeltah(ji) = dh_snowice(ji)
             rho_s_isbaes(ji) = 0._wp
-            IF(dh_snowice(ji) > 0._wp) THEN
-               !DO jk = 1, nlay_s       
-                DO jk = nlay_s, 1, -1 
-                   zdum           = MIN( zdeltah(ji), dh_s_1d(ji,jk))
-                   rho_s_isbaes(ji) = rho_s_isbaes(ji) + (rho_s_1d(ji,jk) * zdum) / dh_snowice(ji)
-                   zdeltah(ji)    = MAX( 0._wp, zdeltah(ji) - zdum )
-                ENDDO
-            ENDIF
-            zs_sni = sss_1d(ji) * ( rhoi - rho_s_isbaes(ji) ) * r1_rhoi ! salinity of snow ice
+            !IF(dh_snowice(ji) > 0._wp) THEN
+            !   !DO jk = 1, nlay_s       
+            !    DO jk = nlay_s, 1, -1 
+            !       zdum           = MIN( zdeltah(ji), dh_s_1d(ji,jk))
+            !       rho_s_isbaes(ji) = rho_s_isbaes(ji) + (rho_s_1d(ji,jk) * zdum) / dh_snowice(ji)
+            !       zdeltah(ji)    = MAX( 0._wp, zdeltah(ji) - zdum )
+            !    ENDDO
+            !ENDIF
+            !zs_sni = sss_1d(ji) * ( rhoi - rho_s_isbaes(ji) ) * r1_rhoi ! salinity of snow ice
+            zs_sni = sss_1d(ji) * (rhoi * dh_snowice(ji) - mass_si(ji)) * r1_rhoi
+            zds    =       ( zs_sni   - s_i_1d(ji) * dh_snowice(ji)) / MAX( epsi10, h_i_1d(ji) ) ! snow-ice
 #else
             zs_sni = sss_1d(ji) * ( rhoi - rhos ) * r1_rhoi                                       ! salinity of snow ice
-#endif
             zds    =       ( zs_sni   - s_i_1d(ji) ) * dh_snowice(ji) / MAX( epsi10, h_i_1d(ji) ) ! snow-ice    
+#endif
+
             zds    = zds + ( zs_i_new(ji) - s_i_1d(ji) ) * dh_i_bog  (ji) / MAX( epsi10, h_i_1d(ji) ) ! bottom growth
             !
             s_i_1d(ji) = s_i_1d(ji) + zds

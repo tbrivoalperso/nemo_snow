@@ -180,6 +180,9 @@ CONTAINS
 
       ! THEO - diags for debug
       diag1_2D(:,:) = 0._wp
+      diag2_2D(:,:) = 0._wp
+      diag3_2D(:,:) = 0._wp
+      diag4_2D(:,:) = 0._wp
 
       ! general fields
       a_i (:,:,:) = 0._wp

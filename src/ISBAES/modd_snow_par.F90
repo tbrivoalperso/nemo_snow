@@ -305,6 +305,17 @@ REAL, PARAMETER :: XSNOWFALL_A_SN_P75 = 109.0  ! kg/m3
 REAL, PARAMETER :: XSNOWFALL_B_SN_P75 =   8.0  ! kg/(m3 K) this one is different from Brun 89
 REAL, PARAMETER :: XSNOWFALL_C_SN_P75 =  26.0  ! kg/(m7/2 s1/2)
 
+! Coefficients for R21 (Royer et al., 2021)
+REAL, PARAMETER :: XSNOWFALL_A_SN_R21 = 109.0 ! kg/m3
+REAL, PARAMETER :: XSNOWFALL_B_SN_R21 =   6.0 ! kg/(m3 K)
+REAL, PARAMETER :: XSNOWFALL_C_SN_R21 =  52.0 ! kg/(m7/2 s1/2) different from Brun 89 (*2)
+
+! Increased maximum value of the density of snow (Royer et al. 2021)
+!
+REAL, PARAMETER       :: XRHOSMAX_R21 = 600.   ! (kg m-3)  
+REAL, PARAMETER :: XVROMAX_R21 = 600. ! increase in maximum density
+! drift compaction to account for high Arctic wind speeds UNIT : kg m-3 
+REAL, PARAMETER :: XCOEF_EFFECT_R21 = 1.5 ! increase in coefficient for impact on density due
 !
 !
 ! Coefficients for the optimal vertical grid calculation

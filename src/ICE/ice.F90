@@ -469,6 +469,9 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   isnow_save !: non solar flux per category
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::  diag1_2D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::  diag2_2D 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::  diag3_2D
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::  diag4_2D
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::  diag1_3D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::  diag2_3D
    
@@ -599,7 +602,7 @@ CONTAINS
       ! * Extra diagnotics for external snow (ln_snwext=T)
       ii = ii + 1 
       ALLOCATE( qcn_snw_bot(jpi,jpj,jpl),qrema(jpi,jpj,jpl),evaprema(jpi,jpj,jpl), isnow_save(jpi,jpj,jpl), diag1_2D(jpi,jpj), &
-              & diag2_2D(jpi,jpj), diag1_3D(jpi,jpj,jpl), diag2_3D(jpi,jpj,jpl), STAT = ierr(ii) )
+              & diag2_2D(jpi,jpj),diag3_2D(jpi,jpj), diag4_2D(jpi,jpj), diag1_3D(jpi,jpj,jpl), diag2_3D(jpi,jpj,jpl), STAT = ierr(ii) )
 
 #if defined key_isbaes
       ! Variables needed for ISBA-ES coupling

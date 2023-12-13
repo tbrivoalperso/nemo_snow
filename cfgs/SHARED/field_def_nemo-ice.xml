@@ -66,7 +66,8 @@
       
       <field id="snwrho"      long_name="Mean snow density"                                                                                             unit="kg/m3" detect_missing_value="true" />
 
-      <field id="snwrho"      long_name="Mean snow density"                                                                                             unit="kg/m3" detect_missing_value="true" />
+      <field id="snwrho_1"      long_name="Top snow density"                                                                                             unit="kg/m3" detect_missing_value="true" />
+      <field id="snwrho_N"      long_name="Bottom snow density"                                                                                             unit="kg/m3" detect_missing_value="true" />
 
       
       <!-- salt -->
@@ -322,7 +323,11 @@
      <field id="qcn_snw_bot"     long_name="Downward conduction Flux at snow-ice interface"                                                                  unit="W/m2" />
       <field id="qrema"     long_name="Remaining heat eat snow-ice interface"                                                                  unit="J/m2" />
       <field id="evaprema"     long_name="evaprema"                                                                  unit="kg/m2/s" />
-      <field id="qtot_diff"     long_name="qtot_diff"                                                                  unit="W/m2" />
+      <field id="qns_bef"     long_name="qns_bef"                                                                  unit="W/m2" />
+      <field id="qns_aft"     long_name="qns_aft"                                                                  unit="W/m2" />
+      <field id="qsr_bef"     long_name="qsr_bef"                                                                  unit="W/m2" />
+      <field id="qsr_aft"     long_name="qsr_aft"                                                                  unit="W/m2" />
+
       <field id="hbdg_isbaes"     long_name="isbaes heat budget diagnostic"                                           unit="W/m2" />
 
       <!-- standard ice fields -->
@@ -432,6 +437,9 @@
       <field field_ref="icetsni"          name="sitsni" />
 
       <field field_ref="snwrho"          name="snrho" />
+      <field field_ref="snwrho_1"          name="snrho_1" />
+      <field field_ref="snwrho_N"          name="snrho_N" />
+
 
       <!-- momentum -->
       <field field_ref="uice"             name="sivelu"  />
@@ -549,6 +557,8 @@
       <field field_ref="icetbot"          name="sitbot"     />
 
       <field field_ref="snwrho"          name="snrho"     />
+      <field field_ref="snwrho_1"          name="snrho_1" />
+      <field field_ref="snwrho_N"          name="snrho_N" />
 
       <!-- heat fluxes -->
       <field field_ref="qt_oce_ai"        name="qt_oce_ai"  />

@@ -463,7 +463,7 @@ DO JI=1,INI
    PDELHEAT_SNWFL(JI) = SUM(PSNOWHEAT(JI,:)) 
 ENDDO
 
-CALL SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,ZSNOW,PSNOWRHO,PSNOWDZ,             &
+CALL SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,ZSNOW,PSNOWRHO,PSNOWDZ,PZ0EFF,PUREF,       &
                 PSNOWHEAT,PSNOWHMASS,ZSNOWHMASS1,PSNOWAGE,PPERMSNOWFRAC  )
 
 !DO JI=1,INI
@@ -926,7 +926,8 @@ USE MODD_SURF_PAR, ONLY : XUNDEF
 !
 USE MODD_SNOW_PAR, ONLY : XVTIME, XVROMAX, XVROMIN, XVMOB1, &
                           XVDRIFT1, XVDRIFT2, XVDRIFT3,     &
-                          XCOEF_FF, XCOEF_EFFECT, XQS_REF
+                          XCOEF_FF, XCOEF_EFFECT, XQS_REF,  &
+                          XVROMAX_R21, XCOEF_EFFECT_R21
 !
 USE MODE_THERMOS
 !
@@ -1098,19 +1099,29 @@ DO JJ=1,INLVLS
 !     update the decay coeff by half the current layer
       ZPROFEQU(JI) = ZPROFEQU(JI)  + 0.5 * PSNOWDZ(JI,JJ) * 0.1 * (XVDRIFT3-ZRDRIFT(JI,JJ))
 !
-      IF(GDRIFT(JI,JJ).AND.PSNOWRHO(JI,JJ)<XVROMAX)THEN
+!      IF(GDRIFT(JI,JJ).AND.PSNOWRHO(JI,JJ)<XVROMAX)THEN
+      IF(GDRIFT(JI,JJ).AND.PSNOWRHO(JI,JJ)<XVROMAX_R21)THEN
 !      
 !       computation of the drift index inclunding the decay by overburden snow 
         ZRT(JI,JJ) = MAX(0.0,ZRDRIFT(JI,JJ)*EXP(-ZPROFEQU(JI)*100.0))
 !     
-        ZDRIFT_EFFECT(JI,JJ) = (ZQS_EFFECT(JI,JJ)+XCOEF_EFFECT)*ZRT(JI,JJ)/(XVTIME*XCOEF_FF)
+!        ZDRIFT_EFFECT(JI,JJ) = (ZQS_EFFECT(JI,JJ)+XCOEF_EFFECT)*ZRT(JI,JJ)/(XVTIME*XCOEF_FF)
 !
-!       settling by wind transport only in case of not too dense snow
-        ZDRO(JI,JJ) = (XVROMAX - PSNOWRHO(JI,JJ)) * ZDRIFT_EFFECT(JI,JJ) * PTSTEP
-!          
-!       Calculate new snow density:
-        ZSNOWRHO2(JI,JJ) = MIN(XVROMAX,PSNOWRHO(JI,JJ)+ZDRO(JI,JJ))
+!!       settling by wind transport only in case of not too dense snow
+!        ZDRO(JI,JJ) = (XVROMAX - PSNOWRHO(JI,JJ)) * ZDRIFT_EFFECT(JI,JJ) * PTSTEP
+!! 
+!!       Calculate new snow density:
+!        ZSNOWRHO2(JI,JJ) = MIN(XVROMAX,PSNOWRHO(JI,JJ)+ZDRO(JI,JJ))
 
+!       Royer et al., 2021
+        ZDRIFT_EFFECT(JI,JJ) = (ZQS_EFFECT(JI,JJ)+XCOEF_EFFECT_R21)*ZRT(JI,JJ)/(XVTIME*XCOEF_FF)
+!       settling by wind transport only in case of not too dense snow
+        ZDRO(JI,JJ) = (XVROMAX_R21 - PSNOWRHO(JI,JJ)) * ZDRIFT_EFFECT(JI,JJ) * PTSTEP
+! 
+!       Calculate new snow density:
+        ZSNOWRHO2(JI,JJ) = MIN(XVROMAX_R21,PSNOWRHO(JI,JJ)+ZDRO(JI,JJ))
+         
+!       
 !       Conserve mass by decreasing grid thicknesses in response to density increases
         PSNOWDZ(JI,JJ) = PSNOWDZ(JI,JJ)*(PSNOWRHO(JI,JJ)/ZSNOWRHO2(JI,JJ))    
 !
@@ -2136,7 +2147,7 @@ ENDDO
 !
 ZWORK    (:,:) = MAX(XSNOWDZMIN,ZSNOWDZ(:,:))
 ZSNOWRHO (:,:) = ZSNOWRHO(:,:)+(ZSNOWLIQ(:,:)-PSNOWLIQ(:,:))*XRHOLW/ZWORK(:,:)  
-!œZSNOWRHO (:,:) = 330. 
+!ZSNOWRHO (:,:) = 330. 
 ZSCAP    (:,:) = SNOW3LSCAP(ZSNOWRHO(:,:))
 ZSNOWTEMP(:,:) = XTT +(((ZSNOWHEAT(:,:)/ZWORK(:,:))+XLMTT*ZSNOWRHO(:,:))/ZSCAP(:,:))
 ZSNOWLIQ (:,:) = MAX(0.0,ZSNOWTEMP(:,:)-XTT)*ZSCAP(:,:)*ZSNOWDZ(:,:)/(XLMTT*XRHOLW)  
@@ -2476,6 +2487,7 @@ WHERE(PSNOWDZ(:,1) > 0.0)
    PSOILCOR(:)    = MAX(0.0,XRHOSMIN_ES-PSNOWRHO(:))*PSNOWDZ(:,1)/PTSTEP
    PSNOWRHO(:)    = MAX(XRHOSMIN_ES,PSNOWRHO(:))
 !
+!   PSNOWRHO(:) = 330. 
 END WHERE
 !
 ! 2. Update heat capacity:

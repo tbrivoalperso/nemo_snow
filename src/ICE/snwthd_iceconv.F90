@@ -138,7 +138,6 @@ CONTAINS
             ! Loop over snow layers
             DO jk = nlay_s, 1, -1
                IF((zh_s(ji,jk)) >  0._wp) THEN
-                   
                   !!! Calculate snow ice formation for layer k
                   zden = zrhos(ji,jk) + rho0 - rhoi ! denominator
                   zdh  = MAX( SUM(mass_snow(ji,:)) + ( rhoi - rho0 ) * zhi(ji) , 0._wp ) / zden ! snow ice for layer jk

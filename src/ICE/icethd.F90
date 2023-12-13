@@ -166,8 +166,8 @@ CONTAINS
          qcn_snw_bot(:,:,:) = qcn_snw_bot_read(:,:,:)
       ENDIF
       ! / 
-   diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3)
-
+   diag1_2D(:,:) = SUM((qns_ice(:,:,:)) * a_i_b(:,:,:),DIM=3)
+   diag2_2D(:,:) = SUM((qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3)
 #if defined key_isbaes
    ! Save before solar & non solar heat flux for later
 
@@ -272,7 +272,7 @@ CONTAINS
                   zpa_t(ji) = pres_temp(qair_isbaes_1d(ji), slp_isbaes_1d(ji), 2., ptpot=tair_isbaes_1d(ji), l_ice=.true. )
 
                   zsnowfall = snow_isbaes_1d(ji)*rn_Dt/XRHOSMAX_ES ! maximum possible snowfall depth (m)
-                  !IF ((h_s_1d(ji) > XSNOWDMIN .OR. zsnowfall > XSNOWDMIN) .AND. (h_i_1d(ji) > 0.) .AND. at_i_1d(ji) > 0.) THEN
+
                   IF ((SUM(dh_s_1d(ji,:)) > XSNOWDMIN .OR. zsnowfall > XSNOWDMIN)) THEN   
                      CALL CALL_MODEL(ji,nlay_s, rn_Dt, za_s_fra(ji),zsnowblow(ji), zpa_t(ji), ZP_RADXS, zq_rema(ji), &
                           &   zevap_rema(ji), hbdg_isbaes_1d(ji))
@@ -327,9 +327,9 @@ CONTAINS
              ENDIF
 
 #endif       
-             qrema_1d(:) = zq_rema(:)
-             evaprema_1d(:) = zevap_rema(:)
-             isnow_save_1d(:) = isnow(:)
+            qrema_1d(:) = zq_rema(:)
+            evaprema_1d(:) = zevap_rema(:)
+            isnow_save_1d(:) = isnow(:)
             IF( ln_fcond ) qcn_snw_bot_1D(1:npti) = qcn_snw_bot_read_1D(1:npti)  ! Used to test snow devs - will be removed                      
 
             CALL ice_thd_zdf( zradtr_s, zradab_s, za_s_fra, qcn_snw_bot_1d, isnow )      ! --- Ice-Snow temperature --- !
@@ -370,8 +370,9 @@ CONTAINS
                   &       + (1 - isnow_save(:,:,jl)) * a_i_b(:,:,jl) * qsr_ice_b(:,:,jl)
       END DO
 #endif
-      diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3) - diag1_2D(:,:) 
-
+      !diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3) - diag1_2D(:,:) 
+      diag3_2D(:,:) = SUM((qns_ice(:,:,:) ) * a_i_b(:,:,:),DIM=3)
+      diag4_2D(:,:) = SUM((qsr_ice(:,:,:) ) * a_i_b(:,:,:),DIM=3)
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'icethd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (1, 'icethd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
       !
@@ -384,7 +385,6 @@ CONTAINS
       !
                               CALL ice_cor( kt , 2 )                ! --- Corrections --- !
       !
-      !IF(thickness_si(1) > 0.) STOP
 
       oa_i(:,:,:) = oa_i(:,:,:) + a_i(:,:,:) * rDt_ice              ! --- Ice natural aging incrementation
       !
