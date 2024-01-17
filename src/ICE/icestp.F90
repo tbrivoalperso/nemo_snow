@@ -131,6 +131,7 @@ CONTAINS
          u_oce(:,:) = ssu_m(:,:)                  ! -- mean surface ocean current
          v_oce(:,:) = ssv_m(:,:)
          !
+
          CALL eos_fzp( sss_m(:,:) , t_bo(:,:) )   ! -- freezing temperature [Kelvin] (set to rt0 over land)
          t_bo(:,:) = ( t_bo(:,:) + rt0 ) * tmask(:,:,1) + rt0 * ( 1._wp - tmask(:,:,1) )
          !
@@ -275,8 +276,10 @@ CONTAINS
       ELSE
          CALL ice_istate( nit000, Kbb, Kmm, Kaa )   ! start from rest or read a file
       ENDIF
+
       CALL ice_var_glo2eqv
       CALL ice_var_agg(1)
+
       !
       CALL ice_dyn_init                ! set ice dynamics parameters
       !

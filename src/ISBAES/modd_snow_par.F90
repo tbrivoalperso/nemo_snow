@@ -245,6 +245,7 @@ INTEGER, PARAMETER :: NSPEC_BAND_SNOW = 3
 !
 ! for spectral distribution and thickness effects
 REAL, PARAMETER :: XVSPEC1 = .71, XVSPEC2 = .21, XVSPEC3 = .08
+!REAL, PARAMETER :: XVSPEC1 = 1., XVSPEC2 = 0., XVSPEC3 = 0.
 !
 ! for thickness effects
 REAL, PARAMETER :: XVW1 = .80, XVW2 = .20 , XVD1 = .02, XVD2 = .01

@@ -190,6 +190,13 @@ CONTAINS
       !-------------------------------------------------------------------------------------------!
       ! Thermodynamic computation (only on grid points covered by ice) => loop over ice categories
       !-------------------------------------------------------------------------------------------!
+#if defined key_isbaes
+      dv_s(:,:,:,:) = rhov_s(:,:,:,:) / rho_s(:,:,:,:)
+      DO jk=1, nlay_s
+         dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i(:,:,:)
+      ENDDO  
+      h_s(:,:,:) = SUM(dh_s(:,:,:,:) , DIM=3) 
+#endif
       DO jl = 1, jpl
 
          ! select ice covered grid points
@@ -217,7 +224,7 @@ CONTAINS
             za_s_fra  (1:npti)    = 0._wp ; zq_rema(1:npti)     = 0._wp
             zevap_rema(1:npti)    = 0._wp ; zh_s(1:npti, 0:nlay_s) = 0._wp
             ze_s(1:npti, 0:nlay_s) = 0._wp ; 
-            
+                       
             qcn_snw_bot_1d(1:npti)     = 0._wp
             isnow_save_1d(1:npti)            = 0._wp
 
@@ -226,6 +233,7 @@ CONTAINS
             qsb_ice_isbaes_1d(1:npti)     = 0._wp
             qlw_ice_isbaes_1d(1:npti)     = 0._wp
 #endif
+
             !thickness_si(1:npti) = 0._wp
             !enthalpy_si(1:npti) = 0._wp
             !mass_si(1:npti) = 0._wp
@@ -357,7 +365,6 @@ CONTAINS
          !
       END DO
       !
-
 #if defined key_isbaes
       ! --- total solar and non solar fluxes --- !
       qns_tot(:,:) = ( 1._wp - at_i_b(:,:) ) * qns_oce(:,:) + qemp_ice(:,:) + qemp_oce(:,:)
@@ -379,8 +386,11 @@ CONTAINS
       IF ( ln_pnd .AND. ln_icedH ) &
          &                    CALL ice_thd_pnd                      ! --- Melt ponds --- !
       !
+
+
       IF( jpl > 1  )          CALL ice_itd_rem( kt )                ! --- Transport ice between thickness categories --- !
       !
+      
       IF( ln_icedO )          CALL ice_thd_do                       ! --- Frazil ice growth in leads --- !
       !
                               CALL ice_cor( kt , 2 )                ! --- Corrections --- !
@@ -496,6 +506,7 @@ CONTAINS
          !   ! Recompute the mass and the volume, which are the variables that will be advected later on
          !      rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s (:,:,:,:) 
          !ENDIF
+
          CALL tab_2d_1d( npti, nptidx(1:npti), at_i_1d(1:npti), at_i             )
          CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d (1:npti), a_i (:,:,kl)     )
          CALL tab_2d_1d( npti, nptidx(1:npti), h_i_1d (1:npti), h_i (:,:,kl)     )
@@ -623,15 +634,26 @@ CONTAINS
          DO jk = 1, nlay_i
             WHERE( h_i_1d(1:npti)>0._wp ) e_i_1d(1:npti,jk) = e_i_1d(1:npti,jk) / (h_i_1d(1:npti) * a_i_1d(1:npti)) * nlay_i
          END DO
-         DO jk = 1, nlay_s
 #if defined key_isbaes
-         ! Conversion is done after isbaes  
-         WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))     
-#else
-         WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s 
-         dh_s_1d(1:npti,jk) = h_s_1d(1:npti) * r1_nlay_s ! Initialise dh_s_1d
-#endif
+         DO jk = 1, nlay_s
+            ! Conversion is done after isbaes  
+            WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))    
+            ! Recompute the mass and the volume, which are the variables that will be advected later on
+            WHERE( h_s_1d(1:npti)>0._wp ) dh_s_1d (1:npti,jk) = dv_s_1d (1:npti,jk) / a_i_1d (1:npti)
+            WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d (1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
+            WHERE( h_s_1d(1:npti)>0._wp ) o_s_1d (1:npti,jk) = ov_s_1d(1:npti,jk) / dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
+!            WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d(1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d(1:npti,jk)
          END DO
+         DO ji = 1, npti
+            v_s_1d (ji) = SUM(dv_s_1d (ji,:))
+         END DO
+                 
+#else
+         DO jk = 1, nlay_s
+            WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) / (h_s_1d(1:npti) * a_i_1d(1:npti)) * nlay_s 
+            dh_s_1d(1:npti,jk) = h_s_1d(1:npti) * r1_nlay_s ! Initialise dh_s_1d
+         END DO
+#endif
          !
          !                 !---------------------!
       CASE( 2 )            !==  from 1D to 2D  ==!

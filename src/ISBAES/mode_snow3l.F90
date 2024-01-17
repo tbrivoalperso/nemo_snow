@@ -2471,9 +2471,7 @@ DO JJ=1,INLVLS
          PCOEF (JI,JJ)     = XSW_WGHT_VIS*(1.0-PSPECTRALALBEDO(JI,1))*EXP(-ZOPTICALPATH1(JI)*ZPROJLAT(JI)) &
                            + XSW_WGHT_NIR*(1.0-PSPECTRALALBEDO(JI,2))*EXP(-ZOPTICALPATH2(JI)*ZPROJLAT(JI))  
       ELSE
-      
          ZOPTICALPATH3(JI) = ZOPTICALPATH3(JI) + ZBETA3(JI,JJ)*PSNOWDZ(JI,JJ)
-
          PCOEF (JI,JJ)     = XVSPEC1*(1.0-PSPECTRALALBEDO(JI,1))*EXP(-ZOPTICALPATH1(JI)*ZPROJLAT(JI)) &
                            + XVSPEC2*(1.0-PSPECTRALALBEDO(JI,2))*EXP(-ZOPTICALPATH2(JI)*ZPROJLAT(JI)) &
                            + XVSPEC3*(1.0-PSPECTRALALBEDO(JI,3))*EXP(-ZOPTICALPATH3(JI)*ZPROJLAT(JI))
@@ -2875,7 +2873,7 @@ WHERE (PSR(:) > 0.0)
 ! Snowfall density: Following CROCUS (Pahaut 1976)
 
     ZWIND_RHO(:)   = PVMOD(:)*LOG(PPHREF_WIND_RHO/PZ0EFF)/          &
-                               LOG(PUREF(JJ)/PZ0EFF)
+                               LOG(PUREF(:)/PZ0EFF)
 
     ZRHOSNEW(:) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN_R21 + &
                                    XSNOWFALL_B_SN_R21 * ( PTA(:)-XTT ) + &
@@ -3216,11 +3214,6 @@ DO JL=1,INLVLS
       ENDDO 
     ENDDO 
 ENDDO  
-DO JL=1,INLVLS
-   DO JI=1,INI
-      IF(ZMASTOTN(JI,JL) .eq. 0.) PRINT*,'mass',ZMASTOTN(JI,JL), 'DZ',ZSNOWDZO(JI,JL)
-   END DO
-END DO
           
 !
 ! the new layer inherits from the weighted average properties of the old ones

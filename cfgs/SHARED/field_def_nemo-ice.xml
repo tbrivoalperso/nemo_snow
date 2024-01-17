@@ -164,6 +164,10 @@
       <field id="vfxsnw_dyn"   long_name="ice-ocean mass flux from dynamics (ridging)"                  unit="kg/m2/s" />
       <field id="vfxsnw_sub"   long_name="ice-atm.  mass flux from snw sublimation"                     unit="kg/m2/s" />
       <field id="vfxsnw_pre"   long_name="snw precipitation on ice"                                     unit="kg/m2/s" />
+      <field id="qns_bef"     long_name="qns_bef"                                                                  unit="W/m2" />
+      <field id="qns_aft"     long_name="qns_aft"                                                                  unit="W/m2" />
+      <field id="qsr_bef"     long_name="qsr_bef"                                                                  unit="W/m2" />
+      <field id="qsr_aft"     long_name="qsr_aft"                                                                  unit="W/m2" />
 
       <!-- heat fluxes -->
       <field id="hfxbog"       long_name="heat flux used for bottom ice growth (neg.)"                  unit="W/m2" />
@@ -323,10 +327,6 @@
      <field id="qcn_snw_bot"     long_name="Downward conduction Flux at snow-ice interface"                                                                  unit="W/m2" />
       <field id="qrema"     long_name="Remaining heat eat snow-ice interface"                                                                  unit="J/m2" />
       <field id="evaprema"     long_name="evaprema"                                                                  unit="kg/m2/s" />
-      <field id="qns_bef"     long_name="qns_bef"                                                                  unit="W/m2" />
-      <field id="qns_aft"     long_name="qns_aft"                                                                  unit="W/m2" />
-      <field id="qsr_bef"     long_name="qsr_bef"                                                                  unit="W/m2" />
-      <field id="qsr_aft"     long_name="qsr_aft"                                                                  unit="W/m2" />
 
       <field id="hbdg_isbaes"     long_name="isbaes heat budget diagnostic"                                           unit="W/m2" />
 

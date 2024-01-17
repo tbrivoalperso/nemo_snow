@@ -198,8 +198,8 @@ CONTAINS
 
 #if defined key_isbaes
       ov_s(:,:,:,:) = 0._wp
-      o_s (:,:,:,:) = 0._wp
-      albs_isbaes(:,:,:) = 0._wp
+      o_s (:,:,:,:) = 1._wp
+      albs_isbaes(:,:,:) = 0.85 
       albi_isbaes(:,:,:) = 0._wp
       cnd_i_isbaes(:,:,:) = rcnd_i 
       qla_ice_isbaes(:,:,:) = 0._wp
