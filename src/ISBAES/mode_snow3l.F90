@@ -2769,13 +2769,14 @@ SUBROUTINE SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,PSNOW,PSNOWRHO,PSNOWDZ,PZ0EFF,PUREF, 
 !
 USE MODD_CSTS,     ONLY : XLMTT, XTT, XCI
 USE MODD_SNOW_PAR, ONLY : XRHOSMIN_ES,            &
-                          XSNOWFALL_A_SN,         &
-                          XSNOWFALL_B_SN,         &
-                          XSNOWFALL_C_SN,         &
-                          XSNOWFALL_A_SN_R21,         &
-                          XSNOWFALL_B_SN_R21,         &
-                          XSNOWFALL_C_SN_R21         
-       
+                          XSNOWFALL_A_SN, XSNOWFALL_B_SN,  XSNOWFALL_C_SN,         &
+                          XSNOWFALL_A_SN_P75, XSNOWFALL_B_SN_P75, XSNOWFALL_C_SN_P75,&
+                          XSNOWFALL_A_SN_R21, XSNOWFALL_B_SN_R21, XSNOWFALL_C_SN_R21,&
+                          XSNOWFALL_A_SN_L22, XSNOWFALL_B_SN_L22, XSNOWFALL_C_SN_L22,&
+                          XSNOWFALL_A_SN_GW1, XSNOWFALL_B_SN_GW1, XSNOWFALL_C_SN_GW1,&
+                          XSNOWFALL_A_SN_GW2, XSNOWFALL_B_SN_GW2, XSNOWFALL_C_SN_GW2,&
+                          XSNOWFALL_A_SN_OPT, XSNOWFALL_B_SN_OPT, XSNOWFALL_C_SN_OPT
+ 
 !
 USE MODD_SNOW_METAMO, ONLY : XSNOWDZMIN
 !
@@ -2818,6 +2819,8 @@ REAL, DIMENSION(SIZE(PTA))          :: ZSNOWFALL, ZRHOSNEW,        &
                                        ZSNOW, ZSNOWTEMP,           &
                                        ZSNOWFALL_DELTA, ZSCAP,     &
                                        ZAGENEW
+
+CHARACTER(3)                       :: HSNOWFALL
 !                               
 !-------------------------------------------------------------------------------
 !
@@ -2825,6 +2828,9 @@ REAL, DIMENSION(SIZE(PTA))          :: ZSNOWFALL, ZRHOSNEW,        &
 ! ------------------
 !
 !
+!
+HSNOWFALL = 'L22' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
+
 INI             = SIZE(PSNOWDZ(:,:),1)
 INLVLS          = SIZE(PSNOWDZ(:,:),2)
 !
@@ -2859,25 +2865,48 @@ WHERE (PSR(:) > 0.0 .AND. PSNOWDZ(:,1)>0.)
   ZSNOWTEMP(:)  = MIN(XTT, ZSNOWTEMP(:))
 END WHERE
 !
+ZWIND_RHO(:)   = PVMOD(:)*LOG(PPHREF_WIND_RHO/PZ0EFF)/          &
+                          LOG(PUREF(:)/PZ0EFF)
+PRINT*,'WINRHO',ZWIND_RHO
+IF ( HSNOWFALL == 'V12' ) THEN ! Crocus original law (Pahaut 1976)
+   ZRHOSNEW(:)   = MAX(XRHOSMIN_ES, XSNOWFALL_A_SN + XSNOWFALL_B_SN*(PTA(:)-XTT)+         &
+                     XSNOWFALL_C_SN*SQRT(PVMOD(:)))
+!
+
+ELSEIF( HSNOWFALL == 'P75') THEN ! Pahaut original law quoted by Brun 1989 but with different X_SNOWFALL_BSN
+    ZRHOSNEW(:) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN_P75 + &
+                                   XSNOWFALL_B_SN_P75 * ( PTA(:)-XTT ) + &
+                                   XSNOWFALL_C_SN_P75 * SQRT(ZWIND_RHO(:) ) )
+ELSEIF( HSNOWFALL == 'R21') THEN ! Royer et al. 2021 (Doubled wind speed)
+    ZRHOSNEW(:) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN_R21 + &
+                                   XSNOWFALL_B_SN_R21 * ( PTA(:)-XTT ) + &
+                                   XSNOWFALL_C_SN_R21 * SQRT(ZWIND_RHO(:) ) )
+ELSEIF( HSNOWFALL == 'L22') THEN ! Lackner et al. 2022 (Doubled density, Increased wind speed by 5)
+    ZRHOSNEW(:) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN_L22 + &
+                                   XSNOWFALL_B_SN_L22 * ( PTA(:)-XTT ) + &
+                                   XSNOWFALL_C_SN_L22 * SQRT(ZWIND_RHO(:) ) )
+ELSEIF( HSNOWFALL == 'GW1') THEN ! GW1 (XSNOWFALL_C_SN * 1.5) 
+    ZRHOSNEW(:) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN_GW1 + &
+                                   XSNOWFALL_B_SN_GW1 * ( PTA(:)-XTT ) + &
+                                   XSNOWFALL_C_SN_GW1 * SQRT(ZWIND_RHO(:) ) )
+ELSEIF( HSNOWFALL == 'GW2') THEN ! GW2 (XSNOWFALL_C_SN * 1) 
+    ZRHOSNEW(:) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN_GW2 + &
+                                   XSNOWFALL_B_SN_GW2 * ( PTA(:)-XTT ) + &
+                                   XSNOWFALL_C_SN_GW2 * SQRT(ZWIND_RHO(:) ) )
+ELSEIF( HSNOWFALL == 'OPT') THEN ! OPT (XSNOWFALL_C_SN * 1) 
+    ZRHOSNEW(:) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN_OPT + &
+                                   XSNOWFALL_B_SN_OPT * ( PTA(:)-XTT ) + &
+                                   XSNOWFALL_C_SN_OPT * SQRT(ZWIND_RHO(:) ) )
+ELSEIF ( HSNOWFALL == 'SI3' ) THEN
+    ZRHOSNEW(:) = 330.
+END IF
+
+
+
 WHERE (PSR(:) > 0.0)
 !
   PSNOWHMASS(:) = PSR(:)*(XCI*(ZSNOWTEMP(:)-XTT)-XLMTT)*PTSTEP
 !
-! Snowfall density: Following CROCUS (Pahaut 1976)
-!
-!   ZRHOSNEW(:)   = MAX(XRHOSMIN_ES, XSNOWFALL_A_SN + XSNOWFALL_B_SN*(PTA(:)-XTT)+         &
-!                     XSNOWFALL_C_SN*SQRT(PVMOD(:)))  
-!!
-!ELSEIF( HSNOWFALL == 'R21') THEN ! Royer et al. 2021 (Doubled wind speed)
-
-! Snowfall density: Following CROCUS (Pahaut 1976)
-
-    ZWIND_RHO(:)   = PVMOD(:)*LOG(PPHREF_WIND_RHO/PZ0EFF)/          &
-                               LOG(PUREF(:)/PZ0EFF)
-
-    ZRHOSNEW(:) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN_R21 + &
-                                   XSNOWFALL_B_SN_R21 * ( PTA(:)-XTT ) + &
-                                   XSNOWFALL_C_SN_R21 * SQRT(ZWIND_RHO(:) ) )
 !
 ! Fresh snowfall changes the snowpack age,
 ! decreasing in uppermost snow layer (mass weighted average):
@@ -2890,6 +2919,16 @@ WHERE (PSR(:) > 0.0)
 !   ZRHOSNEW(:) = 330. !theo
    ZSNOWFALL(:)  = PSR(:)*PTSTEP/ZRHOSNEW(:)    ! snowfall thickness (m)
 !
+END WHERE
+
+
+IF( HSNOWFALL == 'L22') THEN
+   ! Lackney et al. 2022 = Change in snow precip by blowing snow
+   WHERE((ZWIND_RHO(:) > 3.) .AND. PSR(:) > 0.0 ) ZSNOWFALL(:) = ((ZSNOWFALL(:)/ PTSTEP) * (0.1 + 0.3 * MIN(ZWIND_RHO(:), 10.))) * PTSTEP 
+ENDIF
+
+WHERE (PSR(:) > 0.0)
+
    PSNOW(:)      = PSNOW(:) + ZSNOWFALL(:)
 !
 ! Fresh snowfall changes the snowpack

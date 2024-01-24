@@ -175,7 +175,7 @@ OMEB = .false.
 OSI3 = .true.
 !OMEB = OSI3
 OSNOWDRIFT = 'DFLT' ! 'NONE' 
-OSNOWDRIFT_SUBLIM = .true.
+OSNOWDRIFT_SUBLIM = .false.
 
 
 ! Initialise constants (in modd_csts)
