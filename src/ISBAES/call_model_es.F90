@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
 !================================================================
-SUBROUTINE CALL_MODEL(JI,KSIZE2,PTSTEP, ZP_A_S_FRA, ZP_SNOWBLOW, ZP_PA, ZP_RADXS, ZP_Q_REMA,  ZP_EVAP_REMA, ZP_BDG)
+SUBROUTINE CALL_MODEL(KT,JI,KSIZE2,PTSTEP, ZP_A_S_FRA, ZP_SNOWBLOW, ZP_PA, ZP_RADXS, ZP_Q_REMA,  ZP_EVAP_REMA, ZP_BDG)
 !
 USE MODD_CSTS !,       ONLY : XLMTT, XLSTT
 USE MODD_TYPE_DATE_SURF, ONLY: DATE_TIME
@@ -24,6 +24,7 @@ USE in_out_manager ! I/O manager
 
 IMPLICIT NONE
 !
+INTEGER, INTENT(IN) :: KT
 INTEGER, INTENT(IN) :: JI 
 INTEGER, INTENT(IN) :: KSIZE2 ! Number of snow layers
 
@@ -302,7 +303,8 @@ DO JWRK=1,KSIZE2
    ZP_SNOWGRAN2(1,JWRK) = XUNDEF ! Not used
    ZP_SNOWHIST (1,JWRK) = XUNDEF ! Not used
 ENDDO
-!  
+! 
+qsr_ice_isbaes_1d(JI) = 200.
 ZP_D_G          = h_i_1d(JI) * r1_nlay_i ! Assumed first soil layer thickness (m) 
 !
 h_s_bef            = SUM(ZP_SNOWDZ  (1,:)) ! Save height for later
@@ -373,6 +375,7 @@ ZP_FOREST(1)   = 0. ! => ?????
 ZP_PSN_INV       = 0.
 ZP_PSN           = ZP_PSN3L 
 !
+PRINT*,'Call model, ts=',KT
 !
 CALL SNOW3L(JI, HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,                   &
            ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                 &

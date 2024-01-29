@@ -1293,6 +1293,11 @@ ELSE
    PSWNETSNOWS(:)      = PSWNETSNOW(:) - PSW_RAD(:)*ZCOEF(:,1)
 !
 ENDIF
+PRINT*,'PSNOWALB',PSNOWALB
+PRINT*,'ZCOEF',ZCOEF
+PRINT*,'PSWNETSNOW',PSWNETSNOW
+PRINT*,'PSWNETSNOWS',PSWNETSNOWS
+
 !
 ! 3. Radiation at each level: (W/m2)
 ! ----------------------------------
