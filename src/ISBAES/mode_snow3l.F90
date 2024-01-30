@@ -2855,14 +2855,21 @@ PSNOWHMASS1(:)   = 0.0
 ! on the time scales of interest. If we use the above assumption
 ! then, then the snowfall advective heat flux is zero.
 !
-ZSNOWTEMP(:)  = XTT
+!ZSNOWTEMP(:)  = XTT
+! Nb Theo: When there is no snow, we assume the snow T° is the air T° (if under 0°C)
+! This avoid weird longwave fluxes when coupling with SI3
+
+
 ZSCAP    (:)  = SNOW3LSCAP(PSNOWRHO(:,1))
 !
 WHERE (PSR(:) > 0.0 .AND. PSNOWDZ(:,1)>0.)
+  ZSNOWTEMP(:)  = XTT
   ZSNOWTEMP(:)  = XTT + (PSNOWHEAT(:,1) +                              &
                     XLMTT*PSNOWRHO(:,1)*PSNOWDZ(:,1))/                   &
                     (ZSCAP(:)*MAX(XSNOWDZMIN,PSNOWDZ(:,1)))  
   ZSNOWTEMP(:)  = MIN(XTT, ZSNOWTEMP(:))
+ELSEWHERE
+  ZSNOWTEMP(:)  = MIN(XTT, PTA)
 END WHERE
 !
 ZWIND_RHO(:)   = PVMOD(:)*LOG(PPHREF_WIND_RHO/PZ0EFF)/          &
@@ -2900,7 +2907,8 @@ ELSEIF( HSNOWFALL == 'OPT') THEN ! OPT (XSNOWFALL_C_SN * 1)
 ELSEIF ( HSNOWFALL == 'SI3' ) THEN
     ZRHOSNEW(:) = 330.
 END IF
-
+PRINT*,'PSNOWHEAT bef snwfl direct',PSNOWHEAT
+PRINT*,'ZSNOWTEMP in snwfl 1',ZSNOWTEMP
 
 
 WHERE (PSR(:) > 0.0)
@@ -2947,6 +2955,8 @@ WHERE (PSR(:) > 0.0)
    PSNOWHEAT(:,1)  = PSNOWHEAT(:,1) + PSNOWHMASS(:)
 !
 END WHERE
+PRINT*,'HMASS',PSNOWHMASS
+PRINT*,'PSNOWHEAT aft snwfl direct',PSNOWHEAT
 !
 !
 ! 2. Case of new snowfall on a previously snow-free surface:
@@ -2961,6 +2971,7 @@ ZSNOWFALL_DELTA(:)    = 0.0
 WHERE(ZSNOW(:) == 0.0 .AND. PSR(:) > 0.0)
    ZSNOWFALL_DELTA(:) = 1.0
 END WHERE
+PRINT*,'ZSNOWFALL_DELTA',ZSNOWFALL_DELTA
 !
 DO JJ=1,INLVLS
    DO JI=1,INI

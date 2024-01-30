@@ -280,7 +280,7 @@ CONTAINS
                   zpa_t(ji) = pres_temp(qair_isbaes_1d(ji), slp_isbaes_1d(ji), 2., ptpot=tair_isbaes_1d(ji), l_ice=.true. )
 
                   zsnowfall = snow_isbaes_1d(ji)*rn_Dt/XRHOSMAX_ES ! maximum possible snowfall depth (m)
-
+                  PRINT*,'e_sbef',e_s_1d
                   IF ((SUM(dh_s_1d(ji,:)) > XSNOWDMIN .OR. zsnowfall > XSNOWDMIN)) THEN   
                      CALL CALL_MODEL(kt,ji,nlay_s, rn_Dt, za_s_fra(ji),zsnowblow(ji), zpa_t(ji), ZP_RADXS, zq_rema(ji), &
                           &   zevap_rema(ji), hbdg_isbaes_1d(ji))

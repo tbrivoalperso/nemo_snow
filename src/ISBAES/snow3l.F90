@@ -526,6 +526,9 @@ ZSNOWTEMP(:,:) = XTT + ( ((PSNOWHEAT(:,:)/PSNOWDZ(:,:))                   &
 PSNOWLIQ(:,:)  = MAX(0.0,ZSNOWTEMP(:,:)-XTT)*ZSCAP(:,:)*                  &
                    PSNOWDZ(:,:)/(XLMTT*XRHOLW)  
 !
+PRINT*,'ZSNOWTEMP aft snwfl',ZSNOWTEMP
+PRINT*,'PSNOWHEAT',PSNOWHEAT
+PRINT*,'PSNOWDZ',PSNOWDZ
 ZSNOWTEMP(:,:) = MIN(XTT,ZSNOWTEMP(:,:))
 !
 !

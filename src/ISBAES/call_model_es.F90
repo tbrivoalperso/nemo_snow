@@ -276,7 +276,7 @@ DO JWRK=1,KSIZE2
      IF(dh_s_1d(JI,JWRK) .eq. 0.) THEN
         ZP_SNOWSWE (1,JWRK) = 0. 
         ZP_SNOWRHO (1,JWRK) = 400. 
-        ZP_SNOWTEMP(1,JWRK) = 273.15 
+        ZP_SNOWTEMP(1,JWRK) = t_su_1d(JI) !273.15 
         ZP_SNOWAGE (1,JWRK) = 10.
         ZP_SNOWLIQ (1,JWRK) = 0.
         ZP_SNOWDZ  (1,JWRK) = 0. 
@@ -304,7 +304,6 @@ DO JWRK=1,KSIZE2
    ZP_SNOWHIST (1,JWRK) = XUNDEF ! Not used
 ENDDO
 ! 
-qsr_ice_isbaes_1d(JI) = 200.
 ZP_D_G          = h_i_1d(JI) * r1_nlay_i ! Assumed first soil layer thickness (m) 
 !
 h_s_bef            = SUM(ZP_SNOWDZ  (1,:)) ! Save height for later
