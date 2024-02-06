@@ -2717,8 +2717,12 @@ ZPRES_EFFECT(:) = XVALB10*MIN(MAX(PPS(:)/XVPRES1,XVRPRE1),XVRPRE2)
 !
 !Snow optical diameter do not depend on snow age over glacier or polar regions
 ZAGE(:) = (1.0-PPERMSNOWFRAC(:))*PSNOWAGE(:)
+
+PRINT*,'AGE ALB',ZAGE
+PRINT*,'RHO ALB',PSNOWRHO
 !
 ZDIAM(:) = SNOW3LDOPT(PSNOWRHO(:),ZAGE(:))
+PRINT*,'ZDIAM',ZDIAM
 !
 ! 2. spectral albedo over 3 bands :
 ! ---------------------------------
@@ -2727,20 +2731,24 @@ ZDIAM(:) = SNOW3LDOPT(PSNOWRHO(:),ZAGE(:))
 ZAGE(:) = MIN(365.,PSNOWAGE(:))
 !
 ZWORK(:)=SQRT(ZDIAM(:))
+PRINT*,'XVALB2-XVALB3*ZWORK(:)',XVALB2-XVALB3*ZWORK(:)
 !
 ! Visible
 ZALB1(:)=MIN(XVALB4,XVALB2-XVALB3*ZWORK(:))
+PRINT*,'ZALB1',ZALB1
 ZALB1(:)=MAX(XVALB11,ZALB1(:)-ZPRES_EFFECT(:)*ZAGE(:)/ZVAGING(:))
 !
 ! near Infra-red 1
 ZALB2(:)=XVALB5-XVALB6*ZWORK(:)
 ZALB2(:)=MAX(ZALBNIR1,ZALB2(:))
+PRINT*,'ZALB2',ZALB2
 !
 ! near Infra-red 2
 ZDIAM(:)=MIN(XVDIOP1,ZDIAM(:))
 ZWORK(:)=SQRT(ZDIAM(:))
 ZALB3(:)=XVALB7*ZDIAM(:)-XVALB8*ZWORK(:)+XVALB9
 ZALB3(:)=MAX(ZALBNIR2,ZALB3(:))
+PRINT*,'ZALB3',ZALB3
 !
 PSPECTRALALBEDO(:,1)=ZALB1(:)
 PSPECTRALALBEDO(:,2)=ZALB2(:)
@@ -2750,6 +2758,7 @@ PSPECTRALALBEDO(:,3)=ZALB3(:)
 ! -----------------
 !
 PALBEDOSC(:)=XVSPEC1*ZALB1(:)+XVSPEC2*ZALB2(:)+XVSPEC3*ZALB3(:)
+PRINT*,'ALBEDO ENDO OF ALB',PALBEDOSC
 !
 !
 !-------------------------------------------------------------------------------
@@ -2829,7 +2838,7 @@ CHARACTER(3)                       :: HSNOWFALL
 !
 !
 !
-HSNOWFALL = 'L22' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
+HSNOWFALL = 'R21' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
 
 INI             = SIZE(PSNOWDZ(:,:),1)
 INLVLS          = SIZE(PSNOWDZ(:,:),2)
@@ -2991,6 +3000,8 @@ DO JJ=1,INLVLS
    ENDDO
 ENDDO
 !
+PRINT*,'RHO snwfl',PSNOWRHO
+PRINT*,'ZRHOSNEW', ZRHOSNEW
 PSNOWHMASS1(:) = (1.0-ZSNOWFALL_DELTA(:)) * PSNOWHMASS(:)  &
                +      ZSNOWFALL_DELTA(:)  * PSNOWHMASS(:)/INLVLS 
 !

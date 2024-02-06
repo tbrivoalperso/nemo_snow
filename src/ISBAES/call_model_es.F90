@@ -175,10 +175,10 @@ HIMPLICIT_WIND = 'OLD'
 OMEB = .false.
 OSI3 = .true.
 !OMEB = OSI3
-OSNOWDRIFT = 'DFLT' ! 'NONE' 
+OSNOWDRIFT = 'NONE' !'DFLT' ! 'NONE' 
 OSNOWDRIFT_SUBLIM = .false.
 
-
+PRINT*,'nday_year',nday_year
 ! Initialise constants (in modd_csts)
 XPI         = 2.*ASIN(1.)
 XDAY   = 86400.
@@ -303,7 +303,8 @@ DO JWRK=1,KSIZE2
    ZP_SNOWGRAN2(1,JWRK) = XUNDEF ! Not used
    ZP_SNOWHIST (1,JWRK) = XUNDEF ! Not used
 ENDDO
-! 
+!
+PRINT*,'albs_isbaes_1d call',albs_isbaes_1d
 ZP_D_G          = h_i_1d(JI) * r1_nlay_i ! Assumed first soil layer thickness (m) 
 !
 h_s_bef            = SUM(ZP_SNOWDZ  (1,:)) ! Save height for later
@@ -334,7 +335,7 @@ ZP_EXNA        (1) = (ZP_PA/XP00)**(XRD/XCPD) ! Exner function at atm level => N
 ZP_TA          (1) = tair_isbaes_1d(JI) * ZP_EXNA(1)      ! DOIT ETRE LA TEMPERATURE ABSOLUE = multiplier tpot par fonction exner air temperature at atm. level 
 ZP_TG          (1) = t_i_1d(JI,1)       * ZP_EXNS(1) ! Ground T° => 1st ice level 
 ZP_ALB         (1) = albi_isbaes_1d(JI) ! green areas albedo => snow free albedo   
-ZP_RRSNOW      (1) = rain_isbaes_1d(JI) !* a_i_1d(JI) !* ZP_A_S_FRA(JI) ! rain rate over snow [kg/(m2 s)] !!!!!!! MULTIPLIER PAR LA FRACTION DE NEIGE 
+ZP_RRSNOW      (1) = 0. !rain_isbaes_1d(JI) !* a_i_1d(JI) !* ZP_A_S_FRA(JI) ! rain rate over snow [kg/(m2 s)] !!!!!!! MULTIPLIER PAR LA FRACTION DE NEIGE 
 ZP_SOILCOND    (1) = cnd_i_isbaes_1d(JI) ! Temporary heat conductivity of litter + soil => conductivity of 1st ice layer 
 ZP_PEW_A_COEF  (1) = 0. ! XUNDEF !0. !ZP_VMOD(JI) ! 0. ! Coeff flux => No flux computation no need ! B COEFF 0 et A COEFF 1
 ZP_PEW_B_COEF  (1) = ZP_VMOD(1) ! => No flux computation no need
@@ -472,12 +473,14 @@ qcn_snw_bot_1d(JI)  = (ZP_GRNDFLUX(1) ) !    + ZP_GFLXCOR(1))     ! Somme des fl
    !qns_ice_1d(JI) = ZP_LWNETSNOW   (JI)
 !  ZSWNET_NS  (JI) = ZP_SWNETSNOWS  (JI)
 !  ZLWNET_N   (JI) = ZP_LWNETSNOW   (JI)
-   
+PRINT*,'ZP_SWNETSNOW',ZP_SWNETSNOW
+PRINT*,'ZP_SW_RAD',ZP_SW_RAD
+PRINT*,'(ZP_SWNETSNOW/ ZP_SW_RAD)',(ZP_SWNETSNOW/ ZP_SW_RAD)   
 ! Heat fluxes for budget diagnostics
   ! We put 0 to all heat fluxes except from hfx_snw that we now consider as the total heat content change in the snow
 
 ZP_BDG(1) = - zdq * r1_Dt_ice - (ZP_GFLUXSNOW(1) + ZP_SNOWHMASS(1)* r1_Dt_ice - ZP_GRNDFLUX(1) - ZP_GFLXCOR(1) - ZP_RADXS(1))
-
+PRINT*,'rho_s_1d(JI) after call',rho_s_1d(JI,:)
 
 !hfx_res_bef = hfx_res_1d(JI)
 hfx_sub_1d(JI)  = hfx_sub_1d(JI)  - ZP_DELHEAT_SUB(1) * r1_Dt_ice ! Minus factor following SI3 conventions
