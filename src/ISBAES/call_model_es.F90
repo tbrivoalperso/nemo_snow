@@ -304,7 +304,7 @@ DO JWRK=1,KSIZE2
    ZP_SNOWHIST (1,JWRK) = XUNDEF ! Not used
 ENDDO
 !
-PRINT*,'albs_isbaes_1d call',albs_isbaes_1d
+PRINT*,'albs_isbaes_1d call',albs_isbaes_1d(JI)
 ZP_D_G          = h_i_1d(JI) * r1_nlay_i ! Assumed first soil layer thickness (m) 
 !
 h_s_bef            = SUM(ZP_SNOWDZ  (1,:)) ! Save height for later
@@ -335,7 +335,7 @@ ZP_EXNA        (1) = (ZP_PA/XP00)**(XRD/XCPD) ! Exner function at atm level => N
 ZP_TA          (1) = tair_isbaes_1d(JI) * ZP_EXNA(1)      ! DOIT ETRE LA TEMPERATURE ABSOLUE = multiplier tpot par fonction exner air temperature at atm. level 
 ZP_TG          (1) = t_i_1d(JI,1)       * ZP_EXNS(1) ! Ground T° => 1st ice level 
 ZP_ALB         (1) = albi_isbaes_1d(JI) ! green areas albedo => snow free albedo   
-ZP_RRSNOW      (1) = 0. !rain_isbaes_1d(JI) !* a_i_1d(JI) !* ZP_A_S_FRA(JI) ! rain rate over snow [kg/(m2 s)] !!!!!!! MULTIPLIER PAR LA FRACTION DE NEIGE 
+ZP_RRSNOW      (1) = rain_isbaes_1d(JI) !* a_i_1d(JI) !* ZP_A_S_FRA(JI) ! rain rate over snow [kg/(m2 s)] !!!!!!! MULTIPLIER PAR LA FRACTION DE NEIGE 
 ZP_SOILCOND    (1) = cnd_i_isbaes_1d(JI) ! Temporary heat conductivity of litter + soil => conductivity of 1st ice layer 
 ZP_PEW_A_COEF  (1) = 0. ! XUNDEF !0. !ZP_VMOD(JI) ! 0. ! Coeff flux => No flux computation no need ! B COEFF 0 et A COEFF 1
 ZP_PEW_B_COEF  (1) = ZP_VMOD(1) ! => No flux computation no need
@@ -514,7 +514,7 @@ qns_ice_1d(JI) = ZP_GFLUXSNOW(1) - ZP_SWNETSNOWS(1)
 
 qsr_ice_1d(JI) = ZP_SWNETSNOWS(1) 
 qemp_ice_1d(JI) = ZP_DELHEAT_SNWFL(1) * r1_Dt_ice
-
+PRINT*,'albs_isbaes(JI) end of call',albs_isbaes_1d(JI)
 !  qcn_ice_top_1d(JI) = ZP_RESTOREN(JI)
 !  qtr_ice_top_1d(JI) =  ZP_SW_RAD(JI) * ZP_SNOWALB     (JI)
 !rho_s_1d(JI,:) = 330.

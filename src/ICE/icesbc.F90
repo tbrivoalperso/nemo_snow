@@ -145,8 +145,8 @@ CONTAINS
            ELSE
               qsr_ice_isbaes(:,:,jl) =          sf(jp_qsr)%fnow(:,:,1)
            ENDIF
-           rain_isbaes(:,:,jl)  = sf(jp_prec)%fnow(:,:,1) * rn_pfac
            snow_isbaes(:,:,jl)  = sf(jp_snow)%fnow(:,:,1) * rn_pfac
+           rain_isbaes(:,:,jl)  = MAX(sf(jp_prec)%fnow(:,:,1) * rn_pfac - snow_isbaes(:,:,jl),0.)
         ENDIF
       ENDDO
 
