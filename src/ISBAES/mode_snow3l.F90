@@ -2838,7 +2838,7 @@ CHARACTER(3)                       :: HSNOWFALL
 !
 !
 !
-HSNOWFALL = 'R21' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
+HSNOWFALL = 'V12' !R21' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
 
 INI             = SIZE(PSNOWDZ(:,:),1)
 INLVLS          = SIZE(PSNOWDZ(:,:),2)
@@ -2939,10 +2939,10 @@ WHERE (PSR(:) > 0.0)
 END WHERE
 
 
-IF( HSNOWFALL == 'L22') THEN
-   ! Lackney et al. 2022 = Change in snow precip by blowing snow
-   WHERE((ZWIND_RHO(:) > 3.) .AND. PSR(:) > 0.0 ) ZSNOWFALL(:) = ((ZSNOWFALL(:)/ PTSTEP) * (0.1 + 0.3 * MIN(ZWIND_RHO(:), 10.))) * PTSTEP 
-ENDIF
+!IF( HSNOWFALL == 'L22') THEN
+!   ! Lackney et al. 2022 = Change in snow precip by blowing snow
+!   WHERE((ZWIND_RHO(:) > 3.) .AND. PSR(:) > 0.0 ) ZSNOWFALL(:) = ((ZSNOWFALL(:)/ PTSTEP) * (0.1 + 0.3 * MIN(ZWIND_RHO(:), 10.))) * PTSTEP 
+!ENDIF
 
 WHERE (PSR(:) > 0.0)
 

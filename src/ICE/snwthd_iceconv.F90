@@ -135,12 +135,18 @@ CONTAINS
       DO ji = 1, npti
          zdh = 0._wp
          IF((SUM(zh_s(ji,:)) .ne. 0._wp) .OR. (h_i_1d(ji) .ne. 0._wp)) THEN     
-            ! Loop over snow layers
+
+            !!! Calculate snow ice formation 
+            zden = (SUM(mass_snow(ji,:)) / SUM(dh_s_1d(ji,:)))  + rho0 - rhoi ! denominator
+            zdh  = MAX( SUM(mass_snow(ji,:)) + ( rhoi - rho0 ) * zhi(ji) , 0._wp ) / zden ! snow ice for layer jk
+
+            
             DO jk = nlay_s, 1, -1
-               IF((zh_s(ji,jk)) >  0._wp) THEN
-                  !!! Calculate snow ice formation for layer k
-                  zden = zrhos(ji,jk) + rho0 - rhoi ! denominator
-                  zdh  = MAX( SUM(mass_snow(ji,:)) + ( rhoi - rho0 ) * zhi(ji) , 0._wp ) / zden ! snow ice for layer jk
+               IF(((zh_s(ji,jk)) >  0._wp) .AND. (zdh > 0._wp)) THEN
+                   ! Loop over snow layers
+!                  !!! Calculate snow ice formation for layer k
+!                  zden = zrhos(ji,jk) + rho0 - rhoi ! denominator
+!                  zdh  = MAX( SUM(mass_snow(ji,:)) + ( rhoi - rho0 ) * zhi(ji) , 0._wp ) / zden ! snow ice for layer jk
                   dh_sni(ji,jk) = MIN( zdh, zh_s(ji,jk) ) ! snow ice cannot exceed available thickness
                   zfrac = dh_sni(ji,jk) / zh_s(ji,jk)       ! fraction of layer k consumed by snow ice (between 0 and 1)
 
@@ -152,6 +158,7 @@ CONTAINS
 
                   !!! Update thickness, mass and enthalpy of layer
                   zh_s(ji,jk)     = zh_s(ji,jk) - dh_sni(ji,jk)
+                  zdh = zdh - zh_s(ji,jk)
 !                  h_s_1d(ji) = h_s_1d(ji) - dh_sni(ji,jk) 
                 ENDIF
             END DO
