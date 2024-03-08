@@ -170,7 +170,7 @@ CONTAINS
    diag2_2D(:,:) = SUM((qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3)
 #if defined key_isbaes
    ! Save before solar & non solar heat flux for later
-
+   isnow_save(:,:,) = 0._wp
    qns_ice_b(:,:,:) = qns_ice(:,:,:)
    qsr_ice_b(:,:,:) = qsr_ice(:,:,:)
 !   diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3) 
@@ -193,7 +193,7 @@ CONTAINS
 #if defined key_isbaes
       dv_s(:,:,:,:) = rhov_s(:,:,:,:) / rho_s(:,:,:,:)
       DO jk=1, nlay_s
-         dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i(:,:,:)
+         WHERE(a_i(:,:,:) > 0._wp) dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i(:,:,:)
       ENDDO  
       h_s(:,:,:) = SUM(dh_s(:,:,:,:) , DIM=3) 
 #endif
@@ -637,11 +637,11 @@ CONTAINS
 #if defined key_isbaes
          DO jk = 1, nlay_s
             ! Conversion is done after isbaes  
-            WHERE( h_s_1d(1:npti)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))    
+            WHERE( dh_s_1d(1:npti,jk)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))    
             ! Recompute the mass and the volume, which are the variables that will be advected later on
-            WHERE( h_s_1d(1:npti)>0._wp ) dh_s_1d (1:npti,jk) = dv_s_1d (1:npti,jk) / a_i_1d (1:npti)
-            WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d (1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
-            WHERE( h_s_1d(1:npti)>0._wp ) o_s_1d (1:npti,jk) = ov_s_1d(1:npti,jk) / dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
+            WHERE( dh_s_1d(1:npti,jk)>0._wp ) dh_s_1d (1:npti,jk) = dv_s_1d (1:npti,jk) / a_i_1d (1:npti)
+            WHERE( dh_s_1d(1:npti,jk)>0._wp ) rho_s_1d (1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
+            WHERE( dh_s_1d(1:npti,jk)>0._wp ) o_s_1d (1:npti,jk) = ov_s_1d(1:npti,jk) / dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
 !            WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d(1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d(1:npti,jk)
          END DO
          DO ji = 1, npti

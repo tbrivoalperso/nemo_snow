@@ -134,7 +134,7 @@ CONTAINS
 
       DO ji = 1, npti
          zdh = 0._wp
-         IF((SUM(zh_s(ji,:)) .ne. 0._wp) .OR. (h_i_1d(ji) .ne. 0._wp)) THEN     
+         IF((SUM(zh_s(ji,:)) .ne. 0._wp) .AND. (h_i_1d(ji) .ne. 0._wp)) THEN     
 
             !!! Calculate snow ice formation 
             zden = (SUM(mass_snow(ji,:)) / SUM(dh_s_1d(ji,:)))  + rho0 - rhoi ! denominator

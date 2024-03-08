@@ -489,7 +489,7 @@ hfx_spr_1d(JI)  = hfx_spr_1d(JI)  - ZP_SNOWHMASS  (1) * r1_Dt_ice ! Minus factor
 !hfx_snw_1d(JI)  = hfx_snw_1d(JI)  + ZP_DELHEAT_MLT(1) * r1_Dt_ice
 hfx_snw_1d(JI)  = hfx_snw_1d(JI)  + ((ZP_GFLUXSNOW(1) - ZP_GRNDFLUX(1) - ZP_GFLXCOR(1) - ZP_RADXS(1)) & 
         + ZP_DELHEAT_SUB(1) * r1_Dt_ice ) !
-hfx_res_1d(JI)  = hfx_res_1d(JI)  - ZP_BDG(1)
+hfx_res_1d(JI)  = hfx_res_1d(JI)  + ZP_BDG(1)
 
 wfx_spr_1d    (JI)   = wfx_spr_1d    (JI) -(ZP_SRSNOW(1) + ZP_RRSNOW(1) ) * a_i_1d(JI) ! METTRE EVAP A SUB 
 wfx_snw_sub_1d   (JI)   =  wfx_snw_sub_1d   (JI) + ((ZP_PSN3L(1)*ZP_LES3L(1)/XLSTT) - (ZP_EVAPCOR(1) + ZP_SOILCOR(1))) * a_i_1d(JI)
