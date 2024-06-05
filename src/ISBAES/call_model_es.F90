@@ -49,6 +49,8 @@ REAL(wp), DIMENSION(1,KSIZE2) :: ZP_SNOWGRAN1
 REAL(wp), DIMENSION(1,KSIZE2) :: ZP_SNOWGRAN2
 REAL(wp), DIMENSION(1,KSIZE2) :: ZP_SNOWHIST
 REAL(wp), DIMENSION(1,KSIZE2) :: ZP_SNOWAGE
+REAL(wp), DIMENSION(1,KSIZE2) :: ZP_SCOND_ES
+
 REAL(wp),DIMENSION(1)         :: ZP_SNOWALB
 REAL(wp),DIMENSION(1)         :: ZP_SWNETSNOW
 REAL(wp),DIMENSION(1)         :: ZP_SWNETSNOWS
@@ -175,7 +177,7 @@ HIMPLICIT_WIND = 'OLD'
 OMEB = .false.
 OSI3 = .true.
 !OMEB = OSI3
-OSNOWDRIFT = 'NONE' !'DFLT' ! 'NONE' 
+OSNOWDRIFT = 'DFLT' !'DFLT' ! 'NONE' 
 OSNOWDRIFT_SUBLIM = .false.
 
 PRINT*,'nday_year',nday_year
@@ -322,6 +324,7 @@ ZP_HPSNOW  (1)     = qprec_ice_1d(JI) ! heat release from rainfall
 
 ZP_PS          (1) = slp_isbaes_1d(JI)      ! pressure at the surface => slp !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 ZP_SRSNOW      (1) = snow_isbaes_1d(JI) * ZP_SNOWBLOW / at_i_1d(JI)      ! Snow rate => sprecip_1d (Kg/m2/s) => 
+PRINT*,'SRSNOW',ZP_SRSNOW
 ZP_CT          (1) = 1. / (rcpi * SUM(rho_s_1d(JI,:)) ) !inverse of the product of snow heat capacity and layer thickness [(m2 K)/J] 
 ZP_DELHEATG    (1) = 0. ! ground heat content change (diagnostic) (W/m2) JUST NEED TO DECLARE POINTER  
 ZP_DELHEATG_SFC(1) = 0. ! ground heat content change in sfc only (diagnostic) (W/m2) JUST NEED TO DECLARE POINTER
@@ -396,7 +399,7 @@ CALL SNOW3L(JI, HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,                   
            ZP_EMISNOW, ZP_CDSNOW, ZP_USTARSNOW,                          &
            ZP_CHSNOW, ZP_SNOWHMASS, ZP_QS, ZP_RADXS, ZP_VEGTYPE,  ZP_FOREST,       &
            ZP_ZENITH, ZP_LAT, ZP_LON, OSNOWDRIFT,OSNOWDRIFT_SUBLIM,      &
-           ZP_DELHEAT_SNWFL, ZP_DELHEAT_SUB, ZP_DELHEAT_MLT, ZP_DELHEAT_DIF)
+           ZP_DELHEAT_SNWFL, ZP_DELHEAT_SUB, ZP_DELHEAT_MLT, ZP_DELHEAT_DIF, ZP_SCOND_ES)
 
 ! unpack variables
 !
@@ -421,6 +424,11 @@ DO JWRK=1,KSIZE2
 
 ENDDO
 h_s_1d(JI) = SUM(dh_s_1d(JI,:))
+IF(h_s_1d(JI) >  0.000001) THEN
+   cnd_s_isbaes_1d(JI) = SUM(ZP_SCOND_ES(1,:) * dh_s_1d(JI,:)) / h_s_1d(JI)
+ELSE
+   cnd_s_isbaes_1d(JI) = 0.
+ENDIF   
 
 !Ensure that if no snow, all variables equals to 0
 

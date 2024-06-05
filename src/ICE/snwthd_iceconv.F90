@@ -138,7 +138,7 @@ CONTAINS
 
             !!! Calculate snow ice formation 
             zden = (SUM(mass_snow(ji,:)) / SUM(dh_s_1d(ji,:)))  + rho0 - rhoi ! denominator
-            zdh  = MAX( SUM(mass_snow(ji,:)) + ( rhoi - rho0 ) * zhi(ji) , 0._wp ) / zden ! snow ice for layer jk
+            zdh  = 0. !MAX( SUM(mass_snow(ji,:)) + ( rhoi - rho0 ) * zhi(ji) , 0._wp ) / zden ! snow ice for layer jk
 
             
             DO jk = nlay_s, 1, -1

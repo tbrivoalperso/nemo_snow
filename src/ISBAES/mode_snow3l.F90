@@ -2535,14 +2535,22 @@ INLVLS = SIZE(PSNOWRHO(:,:),2)
 ! 1. Snow thermal conductivity
 ! ----------------------------
 !
-YSNOWCOND='YEN81' !should be in namelist
+YSNOWCOND='STU02' !'STU02' !'YEN81' !should be in namelist
 !
 IF(YSNOWCOND=='AND76')THEN
 !  Thermal conductivity coefficients from Anderson (1976)
   PSCOND(:,:) = (XSNOWTHRMCOND1 + XSNOWTHRMCOND2*PSNOWRHO(:,:)*PSNOWRHO(:,:))
-ELSE
+ELSEIF(YSNOWCOND=='YEN81')THEN
 ! Thermal conductivity coefficients from Yen (1981)
   PSCOND(:,:) = XCONDI * EXP(XVRKZ6*LOG(PSNOWRHO(:,:)/XRHOLW))
+ELSE
+  ! STU02 ! Sturm et al., (2002)      
+  WHERE((PSNOWRHO(:,:) / 1000.) > 0.156) 
+          PSCOND(:,:) = 0.138 - 1.01 * (PSNOWRHO(:,:) / 1000.) + 3.233 * (PSNOWRHO(:,:) / 1000.)**2
+  ELSEWHERE
+          PSCOND(:,:) = 0.023 + 0.234 * (PSNOWRHO(:,:) / 1000.)
+  ENDWHERE 
+
 ENDIF
 !
 ! 2. Implicit vapor diffn effects
@@ -2838,7 +2846,7 @@ CHARACTER(3)                       :: HSNOWFALL
 !
 !
 !
-HSNOWFALL = 'V12' !R21' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
+HSNOWFALL = 'R21' !R21' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
 
 INI             = SIZE(PSNOWDZ(:,:),1)
 INLVLS          = SIZE(PSNOWDZ(:,:),2)
@@ -2914,8 +2922,9 @@ ELSEIF( HSNOWFALL == 'OPT') THEN ! OPT (XSNOWFALL_C_SN * 1)
                                    XSNOWFALL_B_SN_OPT * ( PTA(:)-XTT ) + &
                                    XSNOWFALL_C_SN_OPT * SQRT(ZWIND_RHO(:) ) )
 ELSEIF ( HSNOWFALL == 'SI3' ) THEN
-    ZRHOSNEW(:) = 330.
+    ZRHOSNEW(:) = 330. !100.
 END IF
+
 PRINT*,'PSNOWHEAT bef snwfl direct',PSNOWHEAT
 PRINT*,'ZSNOWTEMP in snwfl 1',ZSNOWTEMP
 

@@ -24,7 +24,7 @@
                 PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS,ZRADXS,    &
                 PPERMSNOWFRAC,PFORESTFRAC,PZENITH,PXLAT,PXLON,            &
                 HSNOWDRIFT,OSNOWDRIFT_SUBLIM, PDELHEAT_SNWFL,             & 
-                PDELHEAT_SUB, PDELHEAT_MLT, PDELHEAT_DIF                     )  
+                PDELHEAT_SUB, PDELHEAT_MLT, PDELHEAT_DIF, ZSCOND_ES                  )  
 !     ##########################################################################
 !
 !!****  *SNOW3L*
@@ -297,7 +297,7 @@ CHARACTER(4), INTENT(IN)          :: HSNOWDRIFT  ! Snowdrift scheme :
 
 LOGICAL, INTENT(IN)               ::  OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
 REAL, DIMENSION(:), INTENT(OUT)   ::  PDELHEAT_SNWFL, PDELHEAT_SUB, PDELHEAT_MLT, PDELHEAT_DIF ! Heat change diagnostics for SI3
-
+REAL, DIMENSION(:,:), INTENT(OUT)   :: ZSCOND_ES
 !
 !*      0.2    declarations of local variables
 !
@@ -825,6 +825,7 @@ ELSEWHERE
   PSNOWAGE(:,:)= XUNDEF
 ENDWHERE
 !
+ZSCOND_ES(:,:) = ZSCOND ! TBRIVOAL - Save conductivity for outputs
 !
 !*      16.     Update surface specific humidity:
 !               ---------------------------------
@@ -1111,18 +1112,18 @@ DO JJ=1,INLVLS
 !       computation of the drift index inclunding the decay by overburden snow 
         ZRT(JI,JJ) = MAX(0.0,ZRDRIFT(JI,JJ)*EXP(-ZPROFEQU(JI)*100.0))
 !     
-!        ZDRIFT_EFFECT(JI,JJ) = (ZQS_EFFECT(JI,JJ)+XCOEF_EFFECT)*ZRT(JI,JJ)/(XVTIME*XCOEF_FF)
+        ZDRIFT_EFFECT(JI,JJ) = (ZQS_EFFECT(JI,JJ)+XCOEF_EFFECT)*ZRT(JI,JJ)/(XVTIME*XCOEF_FF)
 !
-!!       settling by wind transport only in case of not too dense snow
-!        ZDRO(JI,JJ) = (XVROMAX - PSNOWRHO(JI,JJ)) * ZDRIFT_EFFECT(JI,JJ) * PTSTEP
-!! 
-!!       Calculate new snow density:
-!        ZSNOWRHO2(JI,JJ) = MIN(XVROMAX,PSNOWRHO(JI,JJ)+ZDRO(JI,JJ))
-
-!       Royer et al., 2021
-        ZDRIFT_EFFECT(JI,JJ) = (ZQS_EFFECT(JI,JJ)+XCOEF_EFFECT_R21)*ZRT(JI,JJ)/(XVTIME*XCOEF_FF)
 !       settling by wind transport only in case of not too dense snow
-        ZDRO(JI,JJ) = (XVROMAX_R21 - PSNOWRHO(JI,JJ)) * ZDRIFT_EFFECT(JI,JJ) * PTSTEP
+        ZDRO(JI,JJ) = (XVROMAX - PSNOWRHO(JI,JJ)) * ZDRIFT_EFFECT(JI,JJ) * PTSTEP
+! 
+!       Calculate new snow density:
+        ZSNOWRHO2(JI,JJ) = MIN(XVROMAX,PSNOWRHO(JI,JJ)+ZDRO(JI,JJ))
+
+!!       Royer et al., 2021
+!        ZDRIFT_EFFECT(JI,JJ) = (ZQS_EFFECT(JI,JJ)+XCOEF_EFFECT_R21)*ZRT(JI,JJ)/(XVTIME*XCOEF_FF)
+!!       settling by wind transport only in case of not too dense snow
+!        ZDRO(JI,JJ) = (XVROMAX_R21 - PSNOWRHO(JI,JJ)) * ZDRIFT_EFFECT(JI,JJ) * PTSTEP
 ! 
 !       Calculate new snow density:
         ZSNOWRHO2(JI,JJ) = MIN(XVROMAX_R21,PSNOWRHO(JI,JJ)+ZDRO(JI,JJ))

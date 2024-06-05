@@ -63,6 +63,10 @@ CONTAINS
       REAL(wp) ::   zdiag_area_sh, zdiag_extt_sh, zdiag_volu_sh
       !!-------------------------------------------------------------------
       !
+#if defined key_isbaes
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s) :: rho_s_3D, dh_s_3D      
+
+#endif
       IF( ln_timing )   CALL timing_start('icewri')
 
       ! get missing value from xml
@@ -133,10 +137,17 @@ CONTAINS
       IF( iom_use('snwtemp' ) )   CALL iom_put( 'snwtemp', ( tm_s  - rt0 ) * zmsksn + zmiss_val * ( 1._wp - zmsksn ) )      ! snw mean temperature
 #if defined key_isbaes
       IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn )      ! snw mean density
+      IF( iom_use('cnd_s_isbaes' ) )   CALL iom_put( 'cnd_s_isbaes', SUM(cnd_s_isbaes(:,:,:) * a_i(:,:,:),DIM=3)  * zmsksn )      !  snw conductivity 
+
       IF( iom_use('snwrho_1' ) )   CALL iom_put( 'snwrho_1', SUM(rho_s(:,:,1,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw top density
       IF( iom_use('snwrho_N' ) )   CALL iom_put( 'snwrho_N', SUM(rho_s(:,:,nlay_s,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw bottom density
       IF( iom_use('hbdg_isbaes') )       CALL iom_put( 'hbdg_isbaes'   , hbdg_isbaes(:,:,: )) ! ISBAES heat budget
-
+      DO jk=1, nlay_s 
+         rho_s_3D(:,:,jk) = SUM(rho_s(:,:,jk,:) * a_i(:,:,:),DIM=3)
+         !dh_s_3D(:,:,jk)  = SUM(dh_s(:,:,jk,:) * a_i(:,:,:),DIM=3) 
+      ENDDO
+      IF( iom_use('snwrho_3D' ) )   CALL iom_put( 'snwrho_3D', rho_s_3D(:,:,:)  )      ! snw mean density
+      IF( iom_use('dh_s_3D' ) )   CALL iom_put( 'dh_s_3D', dhm_s(:,:,:)  )      ! snow thickness  
 #endif 
       IF( iom_use('icettop' ) )   CALL iom_put( 'icettop', ( tm_su - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice surface
       IF( iom_use('icetbot' ) )   CALL iom_put( 'icetbot', ( t_bo  - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice bottom
@@ -297,7 +308,10 @@ CONTAINS
       CALL iom_rstput( 0, 0, kid, 'siconcat', a_i        )   ! Ice concentration
       CALL iom_rstput( 0, 0, kid, 'sisalcat', s_i        )   ! Ice salinity
       CALL iom_rstput( 0, 0, kid, 'snthicat', h_s        )   ! Snw thickness
-
+      CALL iom_rstput( 0, 0, kid, 'sntemcat', tm_s        )   ! Snw temperature
+#if defined key_isbaes
+      CALL iom_rstput( 0, 0, kid, 's', rhom_s        )        ! Snw density
+#endif
     END SUBROUTINE ice_wri_state
 
 #else

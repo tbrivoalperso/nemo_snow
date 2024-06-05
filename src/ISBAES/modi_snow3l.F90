@@ -22,7 +22,7 @@ INTERFACE
                 PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS,ZRADXS,    &
                 PPERMSNOWFRAC,PFORESTFRAC,PZENITH,PXLAT,PXLON,            &
                 HSNOWDRIFT,OSNOWDRIFT_SUBLIM,PDELHEAT_SNWFL,              &
-                PDELHEAT_SUB, PDELHEAT_MLT, PDELHEAT_DIF                             )
+                PDELHEAT_SUB, PDELHEAT_MLT, PDELHEAT_DIF,ZSCOND_ES                   )
                 
                 
 USE MODD_CSTS,     ONLY : XTT, XRHOLW, XLMTT, XCL, XDAY
@@ -214,7 +214,7 @@ CHARACTER(4), INTENT(IN)          :: HSNOWDRIFT  ! Snowdrift scheme :
 
 LOGICAL, INTENT(IN)               ::  OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
 REAL, DIMENSION(:), INTENT(OUT)   ::  PDELHEAT_SNWFL, PDELHEAT_SUB, PDELHEAT_MLT, PDELHEAT_DIF 
-
+REAL, DIMENSION(:,:), INTENT(OUT)   :: ZSCOND_ES
 
 END SUBROUTINE SNOW3L
 

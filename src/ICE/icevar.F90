@@ -162,6 +162,9 @@ CONTAINS
          hm_i(:,:) = vt_i(:,:) * z1_at_i(:,:)
          hm_s(:,:) = vt_s(:,:) * z1_at_i(:,:)
          !
+#if defined key_isbaes            
+         dvt_s(:,:,:) = SUM( dv_s (:,:,:,:)      , dim=4 )  
+#endif
          !                          ! mean temperature (K), salinity and age
          tm_si(:,:) = SUM( t_si(:,:,:) * a_i(:,:,:) , dim=3 ) * z1_at_i(:,:)
          om_i (:,:) = SUM( oa_i(:,:,:)              , dim=3 ) * z1_at_i(:,:)
@@ -170,6 +173,7 @@ CONTAINS
          tm_i(:,:) = 0._wp
          tm_s(:,:) = 0._wp
          rhom_s(:,:) = 0._wp
+         dhm_s(:,:,:)  = 0._wp
          DO jl = 1, jpl
             DO jk = 1, nlay_i
                tm_i(:,:) = tm_i(:,:) + r1_nlay_i * t_i (:,:,jk,jl) * v_i(:,:,jl) * z1_vt_i(:,:)
@@ -178,6 +182,7 @@ CONTAINS
 #if defined key_isbaes            
                tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * dv_s(:,:,jk,jl) * z1_vt_s(:,:) !(dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
                rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * dv_s(:,:,jk,jl) * z1_vt_s(:,:) !* (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
+               dhm_s(:,:,jk) = dvt_s(:,:,jk) * z1_at_i(:,:)
 #else
 
                tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)

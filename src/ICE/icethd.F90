@@ -170,7 +170,7 @@ CONTAINS
    diag2_2D(:,:) = SUM((qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3)
 #if defined key_isbaes
    ! Save before solar & non solar heat flux for later
-   isnow_save(:,:,) = 0._wp
+   isnow_save(:,:,:) = 0._wp
    qns_ice_b(:,:,:) = qns_ice(:,:,:)
    qsr_ice_b(:,:,:) = qsr_ice(:,:,:)
 !   diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3) 
@@ -207,7 +207,7 @@ CONTAINS
                nptidx(npti) = (jj - 1) * jpi + ji
             ENDIF
          END_2D
-
+         PRINT*,'icethic',h_i
          IF( npti > 0 ) THEN  ! If there is no ice, do nothing.
             !
 
@@ -280,7 +280,8 @@ CONTAINS
                   zpa_t(ji) = pres_temp(qair_isbaes_1d(ji), slp_isbaes_1d(ji), 2., ptpot=tair_isbaes_1d(ji), l_ice=.true. )
 
                   zsnowfall = snow_isbaes_1d(ji)*rn_Dt/XRHOSMAX_ES ! maximum possible snowfall depth (m)
-                  PRINT*,'e_sbef',e_s_1d
+                  PRINT*,'snwfl',zsnowfall
+                  PRINT*,'h_s_1d',SUM(dh_s_1d(ji,:))
                   IF ((SUM(dh_s_1d(ji,:)) > XSNOWDMIN .OR. zsnowfall > XSNOWDMIN)) THEN   
                      CALL CALL_MODEL(kt,ji,nlay_s, rn_Dt, za_s_fra(ji),zsnowblow(ji), zpa_t(ji), ZP_RADXS, zq_rema(ji), &
                           &   zevap_rema(ji), hbdg_isbaes_1d(ji))
@@ -380,6 +381,9 @@ CONTAINS
       !diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3) - diag1_2D(:,:) 
       diag3_2D(:,:) = SUM((qns_ice(:,:,:) ) * a_i_b(:,:,:),DIM=3)
       diag4_2D(:,:) = SUM((qsr_ice(:,:,:) ) * a_i_b(:,:,:),DIM=3)
+
+      PRINT*,'icethic',h_i
+
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'icethd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (1, 'icethd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
       !
@@ -612,6 +616,7 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), albi_isbaes_1d    (1:npti), albi_isbaes (:,:,kl)       )
          CALL tab_2d_1d( npti, nptidx(1:npti), albs_isbaes_1d    (1:npti), albs_isbaes (:,:,kl)       )
          CALL tab_2d_1d( npti, nptidx(1:npti), cnd_i_isbaes_1d   (1:npti), cnd_i_isbaes(:,:,kl)       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), cnd_s_isbaes_1d   (1:npti), cnd_s_isbaes(:,:,kl)       )
          CALL tab_2d_1d( npti, nptidx(1:npti), glamt_1d    (1:npti), glamt       )
          CALL tab_2d_1d( npti, nptidx(1:npti), gphit_1d    (1:npti), gphit       )
 
@@ -794,6 +799,7 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), albi_isbaes_1d    (1:npti), albi_isbaes(:,:,kl)       )
          CALL tab_1d_2d( npti, nptidx(1:npti), albs_isbaes_1d    (1:npti), albs_isbaes(:,:,kl)       )
          CALL tab_1d_2d( npti, nptidx(1:npti), cnd_i_isbaes_1d    (1:npti), cnd_i_isbaes(:,:,kl)       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), cnd_s_isbaes_1d    (1:npti), cnd_s_isbaes(:,:,kl)       )
 
          CALL tab_1d_2d( npti, nptidx(1:npti), rho_air_isbaes_1d    (1:npti), rho_air_isbaes       )
          CALL tab_1d_2d( npti, nptidx(1:npti), qsr_ice_isbaes_1d    (1:npti), qsr_ice_isbaes(:,:,kl)       )

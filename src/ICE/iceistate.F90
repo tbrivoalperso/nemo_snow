@@ -201,7 +201,8 @@ CONTAINS
       o_s (:,:,:,:) = 1._wp
       albs_isbaes(:,:,:) = 0.85 
       albi_isbaes(:,:,:) = 0._wp
-      cnd_i_isbaes(:,:,:) = rcnd_i 
+      cnd_i_isbaes(:,:,:) = rcnd_i
+      cnd_s_isbaes(:,:,:) = rn_cnd_s 
       qla_ice_isbaes(:,:,:) = 0._wp
       qsb_ice_isbaes(:,:,:) = 0._wp
       qlw_ice_isbaes(:,:,:) = 0._wp
@@ -422,7 +423,7 @@ CONTAINS
                DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
                   t_s(ji,jj,jk,jl) = zts_3d(ji,jj,jl)
 #if defined key_isbaes
-                  rho_s(ji,jj,jk,jl) = rhos
+                  rho_s(ji,jj,jk,jl) = 191. !rhos
                    
                           ZSCAP     = rho_s(ji,jj,jk,jl) * XCI  ! In isba-es, capacity = rho x cst, with cst=XCI
                           swe_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dh_s(ji,jj,jk,jl)

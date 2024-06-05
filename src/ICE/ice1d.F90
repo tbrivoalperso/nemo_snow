@@ -178,7 +178,7 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   albs_isbaes_1d        !: Snow albedo
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   albi_isbaes_1d        !: Ice albedo
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   cnd_i_isbaes_1d        !: Conductivity of the 1st ice layer
-
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   cnd_s_isbaes_1d        !: Average conductivity of the snow layer
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   slp_isbaes_1d        !: Sea-level pressure
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   tair_isbaes_1d        !: Air T°
@@ -295,7 +295,7 @@ CONTAINS
 
 #if defined key_isbaes
       ii = ii + 1
-      ALLOCATE( swe_s_1d(jpij,nlay_s), albs_isbaes_1d(jpij), albi_isbaes_1d(jpij), cnd_i_isbaes_1d(jpij),          &
+      ALLOCATE( swe_s_1d(jpij,nlay_s), albs_isbaes_1d(jpij), albi_isbaes_1d(jpij), cnd_i_isbaes_1d(jpij), cnd_s_isbaes_1d(jpij),          &
          &     rho_s_1d(jpij,nlay_s), o_s_1d(jpij,nlay_s), lwc_s_1d(jpij,nlay_s),  &
          &     dv_s_1d(jpij,nlay_s),rhov_s_1d(jpij,nlay_s),ov_s_1d(jpij,nlay_s),                                                      & 
          &      tair_isbaes_1d(jpij), qair_isbaes_1d(jpij), slp_isbaes_1d(jpij), wndm_isbaes_1d(jpij), rain_isbaes_1d(jpij),   & 
