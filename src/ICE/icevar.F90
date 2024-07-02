@@ -163,7 +163,8 @@ CONTAINS
          hm_s(:,:) = vt_s(:,:) * z1_at_i(:,:)
          !
 #if defined key_isbaes            
-         dvt_s(:,:,:) = SUM( dv_s (:,:,:,:)      , dim=4 )  
+         dvt_s(:,:,:) = SUM( dv_s (:,:,:,:)      , dim=4 ) 
+         rhovt_s(:,:,:) = SUM( rhov_s (:,:,:,:)      , dim=4 ) 
 #endif
          !                          ! mean temperature (K), salinity and age
          tm_si(:,:) = SUM( t_si(:,:,:) * a_i(:,:,:) , dim=3 ) * z1_at_i(:,:)
@@ -628,7 +629,7 @@ CONTAINS
    END SUBROUTINE ice_var_zapsmall
 
 
-   SUBROUTINE ice_var_zapneg( pdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i )
+   SUBROUTINE ice_var_zapneg( pdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, pdv_s, prhov_s )
       !!-------------------------------------------------------------------
       !!                   ***  ROUTINE ice_var_zapneg ***
       !!
@@ -646,6 +647,10 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   pv_il      ! melt pond lid volume
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_s       ! snw heat content
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_i       ! ice heat content
+#if defined key_isbaes
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout), OPTIONAL ::   pdv_s       ! snw heat content
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout), OPTIONAL ::   prhov_s       ! snw heat content
+#endif
       !
       INTEGER  ::   ji, jj, jl, jk   ! dummy loop indices
       REAL(wp) ::   z1_dt
@@ -653,6 +658,8 @@ CONTAINS
       !
       z1_dt = 1._wp / pdt
       !
+      pv_s(:,:,:) = SUM(pdv_s(:,:,:,:), DIM=3) ! Make sure that the volume used is the right one (not sure if needed)
+
       DO jl = 1, jpl       !==  loop over the categories  ==!
          !
          ! make sure a_i=0 where v_i<=0
@@ -683,10 +690,20 @@ CONTAINS
                wfx_res(ji,jj)    = wfx_res(ji,jj) + pv_i (ji,jj,jl) * rhoi * z1_dt
                pv_i   (ji,jj,jl) = 0._wp
             ENDIF
+#if defined key_isbaes
+            IF( pv_s(ji,jj,jl) < 0._wp .OR. pa_i(ji,jj,jl) <= 0._wp ) THEN
+               wfx_res(ji,jj)    = wfx_res(ji,jj) + SUM(prhov_s (ji,jj,:,jl) ) * z1_dt
+               pv_s   (ji,jj,jl) = 0._wp
+               pdv_s(ji,jj,:,jl) = 0._wp
+               prhov_s(ji,jj,:,jl) = 0._wp
+
+            ENDIF
+#else
             IF( pv_s(ji,jj,jl) < 0._wp .OR. pa_i(ji,jj,jl) <= 0._wp ) THEN
                wfx_res(ji,jj)    = wfx_res(ji,jj) + pv_s (ji,jj,jl) * rhos * z1_dt
                pv_s   (ji,jj,jl) = 0._wp
             ENDIF
+#endif
             IF( psv_i(ji,jj,jl) < 0._wp .OR. pa_i(ji,jj,jl) <= 0._wp .OR. pv_i(ji,jj,jl) <= 0._wp ) THEN
                sfx_res(ji,jj)    = sfx_res(ji,jj) + psv_i(ji,jj,jl) * rhoi * z1_dt
                psv_i  (ji,jj,jl) = 0._wp

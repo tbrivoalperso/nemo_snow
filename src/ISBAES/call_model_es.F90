@@ -21,6 +21,7 @@ USE MODI_SNOW3L
 USE MODE_SNOW3L
 USE sbcblk
 USE in_out_manager ! I/O manager
+USE daymod
 
 IMPLICIT NONE
 !
@@ -128,6 +129,7 @@ REAL(wp),DIMENSION(1)         :: ZP_PSN
 REAL(wp),DIMENSION(1)         :: ZP_PSN_GFLXCOR
 REAL(wp),DIMENSION(1)         :: ZP_WORK
 REAL(wp),DIMENSION(1) :: ZP_DELHEAT_SNWFL, ZP_DELHEAT_SUB, ZP_DELHEAT_MLT, ZP_DELHEAT_DIF 
+REAL(wp),DIMENSION(1)         :: ZP_TSUN, ZP_AZIMSOL
 
 !
 
@@ -170,6 +172,8 @@ LOGICAL                 :: OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation d
 
 TYPE(DATE_TIME)         :: TPTIME      ! current date and time
 
+PRINT*,'YEAR MONTH DAY PTIME',nyear,nmonth, nday, nsec_day
+
 
 ! Define options
 HSNOWRES = 'DEF'
@@ -177,7 +181,7 @@ HIMPLICIT_WIND = 'OLD'
 OMEB = .false.
 OSI3 = .true.
 !OMEB = OSI3
-OSNOWDRIFT = 'DFLT' !'DFLT' ! 'NONE' 
+OSNOWDRIFT = 'DLFT' !'DFLT' ! 'NONE' 
 OSNOWDRIFT_SUBLIM = .false.
 
 PRINT*,'nday_year',nday_year
@@ -306,7 +310,6 @@ DO JWRK=1,KSIZE2
    ZP_SNOWHIST (1,JWRK) = XUNDEF ! Not used
 ENDDO
 !
-PRINT*,'albs_isbaes_1d call',albs_isbaes_1d(JI)
 ZP_D_G          = h_i_1d(JI) * r1_nlay_i ! Assumed first soil layer thickness (m) 
 !
 h_s_bef            = SUM(ZP_SNOWDZ  (1,:)) ! Save height for later
@@ -324,7 +327,6 @@ ZP_HPSNOW  (1)     = qprec_ice_1d(JI) ! heat release from rainfall
 
 ZP_PS          (1) = slp_isbaes_1d(JI)      ! pressure at the surface => slp !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 ZP_SRSNOW      (1) = snow_isbaes_1d(JI) * ZP_SNOWBLOW / at_i_1d(JI)      ! Snow rate => sprecip_1d (Kg/m2/s) => 
-PRINT*,'SRSNOW',ZP_SRSNOW
 ZP_CT          (1) = 1. / (rcpi * SUM(rho_s_1d(JI,:)) ) !inverse of the product of snow heat capacity and layer thickness [(m2 K)/J] 
 ZP_DELHEATG    (1) = 0. ! ground heat content change (diagnostic) (W/m2) JUST NEED TO DECLARE POINTER  
 ZP_DELHEATG_SFC(1) = 0. ! ground heat content change in sfc only (diagnostic) (W/m2) JUST NEED TO DECLARE POINTER
@@ -348,7 +350,11 @@ ZP_PEQ_A_COEF  (1) =  0.
 ZP_PEQ_B_COEF  (1) =  ZP_QA(1)
 ZP_LAT         (1) = gphit_1d(JI) 
 ZP_LON         (1) = glamt_1d(JI) ! => glamt_1d
-ZP_ZENITH      (1) = 0. ! solar zenith angle
+PRINT*,'LAT, LON', ZP_LAT, ZP_LON
+
+CALL SUNPOS (nyear, nmonth, nday, nsec_day, ZP_LON(1), ZP_LAT(1), ZP_TSUN, ZP_ZENITH, ZP_AZIMSOL)
+PRINT*,'SOLAR ZENITHAL ANGLE',ZP_ZENITH
+!ZP_ZENITH      (1) = 0. ! solar zenith angle
 ZP_GRNDFLUX    (1) = 0. !qcn_snw_bot_1d(JI) ! snow-ground flux before correction (W m-2) 
 ZP_DELHEATN    (1) = 0. ! total snow heat content change in the surface layer (W m-2)
 ZP_DELHEATN_SFC(1) = 0. ! total snow heat content change during the timestep (W m-2)
@@ -375,10 +381,11 @@ ZP_FOREST(1)   = 0. ! => ?????
 !  ZP_SNOWHEAT(:,:) = ZP_SNOWHEAT(:,:) / ZP_SNOWRHO (:,:) * ZP_SNOWSWE (:,:) 
 ! ===============================================================
 !
+
+!WHERE(ZP_SNOWRHO (1,:) > XRHOSMAX_ES) ZP_SNOWRHO (1,:) = XRHOSMAX_ES 
 ZP_PSN_INV       = 0.
 ZP_PSN           = ZP_PSN3L 
 !
-PRINT*,'Call model, ts=',KT
 !
 CALL SNOW3L(JI, HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,                   &
            ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                 &
@@ -481,14 +488,10 @@ qcn_snw_bot_1d(JI)  = (ZP_GRNDFLUX(1) ) !    + ZP_GFLXCOR(1))     ! Somme des fl
    !qns_ice_1d(JI) = ZP_LWNETSNOW   (JI)
 !  ZSWNET_NS  (JI) = ZP_SWNETSNOWS  (JI)
 !  ZLWNET_N   (JI) = ZP_LWNETSNOW   (JI)
-PRINT*,'ZP_SWNETSNOW',ZP_SWNETSNOW
-PRINT*,'ZP_SW_RAD',ZP_SW_RAD
-PRINT*,'(ZP_SWNETSNOW/ ZP_SW_RAD)',(ZP_SWNETSNOW/ ZP_SW_RAD)   
 ! Heat fluxes for budget diagnostics
   ! We put 0 to all heat fluxes except from hfx_snw that we now consider as the total heat content change in the snow
 
 ZP_BDG(1) = - zdq * r1_Dt_ice - (ZP_GFLUXSNOW(1) + ZP_SNOWHMASS(1)* r1_Dt_ice - ZP_GRNDFLUX(1) - ZP_GFLXCOR(1) - ZP_RADXS(1))
-PRINT*,'rho_s_1d(JI) after call',rho_s_1d(JI,:)
 
 !hfx_res_bef = hfx_res_1d(JI)
 hfx_sub_1d(JI)  = hfx_sub_1d(JI)  - ZP_DELHEAT_SUB(1) * r1_Dt_ice ! Minus factor following SI3 conventions
@@ -522,7 +525,6 @@ qns_ice_1d(JI) = ZP_GFLUXSNOW(1) - ZP_SWNETSNOWS(1)
 
 qsr_ice_1d(JI) = ZP_SWNETSNOWS(1) 
 qemp_ice_1d(JI) = ZP_DELHEAT_SNWFL(1) * r1_Dt_ice
-PRINT*,'albs_isbaes(JI) end of call',albs_isbaes_1d(JI)
 !  qcn_ice_top_1d(JI) = ZP_RESTOREN(JI)
 !  qtr_ice_top_1d(JI) =  ZP_SW_RAD(JI) * ZP_SNOWALB     (JI)
 !rho_s_1d(JI,:) = 330.

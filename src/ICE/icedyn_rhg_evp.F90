@@ -264,7 +264,11 @@ CONTAINS
       zsshdyn(:,:) = ice_var_sshdyn( ssh_m, snwice_mass, snwice_mass_b)
 
       DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+#if defined key_isbaes
+         zm1          = ( SUM(rhovt_s(ji,jj,:)) + rhoi * vt_i(ji,jj) )  ! Ice/snow mass at U-V points
+#else
          zm1          = ( rhos * vt_s(ji,jj) + rhoi * vt_i(ji,jj) )  ! Ice/snow mass at U-V points
+#endif
          zmf  (ji,jj) = zm1 * ff_t(ji,jj)                            ! Coriolis at T points (m*f)
          zdt_m(ji,jj) = zdtevp / MAX( zm1, zmmin )                   ! dt/m at T points (for alpha and beta coefficients)
       END_2D
@@ -276,9 +280,18 @@ CONTAINS
          zaV(ji,jj) = 0.5_wp * ( at_i(ji,jj) * e1e2t(ji,jj) + at_i(ji,jj+1) * e1e2t(ji,jj+1) ) * r1_e1e2v(ji,jj) * vmask(ji,jj,1)
 
          ! Ice/snow mass at U-V points
+#if defined key_isbaes
+         zm1 = ( SUM(rhovt_s(ji  ,jj  ,:)) + rhoi * vt_i(ji  ,jj  ) )
+         zm2 = ( SUM(rhovt_s(ji+1,jj  ,:)) + rhoi * vt_i(ji+1,jj  ) )
+         zm3 = ( SUM(rhovt_s(ji  ,jj+1,:)) + rhoi * vt_i(ji  ,jj+1) )
+
+#else
+
          zm1 = ( rhos * vt_s(ji  ,jj  ) + rhoi * vt_i(ji  ,jj  ) )
          zm2 = ( rhos * vt_s(ji+1,jj  ) + rhoi * vt_i(ji+1,jj  ) )
          zm3 = ( rhos * vt_s(ji  ,jj+1) + rhoi * vt_i(ji  ,jj+1) )
+#endif
+
          zmassU = 0.5_wp * ( zm1 * e1e2t(ji,jj) + zm2 * e1e2t(ji+1,jj) ) * r1_e1e2u(ji,jj) * umask(ji,jj,1)
          zmassV = 0.5_wp * ( zm1 * e1e2t(ji,jj) + zm3 * e1e2t(ji,jj+1) ) * r1_e1e2v(ji,jj) * vmask(ji,jj,1)
 
@@ -895,9 +908,14 @@ CONTAINS
             zdiag_xmtrp_ice(ji,jj) = rhoi * zfac_x * ( vt_i(ji+1,jj) + vt_i(ji,jj) ) ! ice mass transport, X-component
             zdiag_ymtrp_ice(ji,jj) = rhoi * zfac_y * ( vt_i(ji,jj+1) + vt_i(ji,jj) ) !        ''           Y-   ''
 
+#if defined key_isbaes
+            zdiag_xmtrp_snw(ji,jj) = zfac_x * ( SUM(rhovt_s(ji+1,jj,:)) + SUM(rhovt_s(ji,jj,:) )) ! snow mass transport, X-component
+            zdiag_ymtrp_snw(ji,jj) = zfac_y * ( SUM(rhovt_s(ji,jj+1,:)) + SUM(rhovt_s(ji,jj,:)) ) !          ''          Y-   ''
+
+#else
             zdiag_xmtrp_snw(ji,jj) = rhos * zfac_x * ( vt_s(ji+1,jj) + vt_s(ji,jj) ) ! snow mass transport, X-component
             zdiag_ymtrp_snw(ji,jj) = rhos * zfac_y * ( vt_s(ji,jj+1) + vt_s(ji,jj) ) !          ''          Y-   ''
-
+#endif
             zdiag_xatrp(ji,jj)     = zfac_x * ( at_i(ji+1,jj) + at_i(ji,jj) )        ! area transport,      X-component
             zdiag_yatrp(ji,jj)     = zfac_y * ( at_i(ji,jj+1) + at_i(ji,jj) )        !        ''            Y-   ''
 

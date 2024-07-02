@@ -2726,11 +2726,8 @@ ZPRES_EFFECT(:) = XVALB10*MIN(MAX(PPS(:)/XVPRES1,XVRPRE1),XVRPRE2)
 !Snow optical diameter do not depend on snow age over glacier or polar regions
 ZAGE(:) = (1.0-PPERMSNOWFRAC(:))*PSNOWAGE(:)
 
-PRINT*,'AGE ALB',ZAGE
-PRINT*,'RHO ALB',PSNOWRHO
 !
 ZDIAM(:) = SNOW3LDOPT(PSNOWRHO(:),ZAGE(:))
-PRINT*,'ZDIAM',ZDIAM
 !
 ! 2. spectral albedo over 3 bands :
 ! ---------------------------------
@@ -2739,24 +2736,20 @@ PRINT*,'ZDIAM',ZDIAM
 ZAGE(:) = MIN(365.,PSNOWAGE(:))
 !
 ZWORK(:)=SQRT(ZDIAM(:))
-PRINT*,'XVALB2-XVALB3*ZWORK(:)',XVALB2-XVALB3*ZWORK(:)
 !
 ! Visible
 ZALB1(:)=MIN(XVALB4,XVALB2-XVALB3*ZWORK(:))
-PRINT*,'ZALB1',ZALB1
 ZALB1(:)=MAX(XVALB11,ZALB1(:)-ZPRES_EFFECT(:)*ZAGE(:)/ZVAGING(:))
 !
 ! near Infra-red 1
 ZALB2(:)=XVALB5-XVALB6*ZWORK(:)
 ZALB2(:)=MAX(ZALBNIR1,ZALB2(:))
-PRINT*,'ZALB2',ZALB2
 !
 ! near Infra-red 2
 ZDIAM(:)=MIN(XVDIOP1,ZDIAM(:))
 ZWORK(:)=SQRT(ZDIAM(:))
 ZALB3(:)=XVALB7*ZDIAM(:)-XVALB8*ZWORK(:)+XVALB9
 ZALB3(:)=MAX(ZALBNIR2,ZALB3(:))
-PRINT*,'ZALB3',ZALB3
 !
 PSPECTRALALBEDO(:,1)=ZALB1(:)
 PSPECTRALALBEDO(:,2)=ZALB2(:)
@@ -2766,7 +2759,7 @@ PSPECTRALALBEDO(:,3)=ZALB3(:)
 ! -----------------
 !
 PALBEDOSC(:)=XVSPEC1*ZALB1(:)+XVSPEC2*ZALB2(:)+XVSPEC3*ZALB3(:)
-PRINT*,'ALBEDO ENDO OF ALB',PALBEDOSC
+!PALBEDOSC(:) = 0.8
 !
 !
 !-------------------------------------------------------------------------------
@@ -2891,7 +2884,6 @@ END WHERE
 !
 ZWIND_RHO(:)   = PVMOD(:)*LOG(PPHREF_WIND_RHO/PZ0EFF)/          &
                           LOG(PUREF(:)/PZ0EFF)
-PRINT*,'WINRHO',ZWIND_RHO
 IF ( HSNOWFALL == 'V12' ) THEN ! Crocus original law (Pahaut 1976)
    ZRHOSNEW(:)   = MAX(XRHOSMIN_ES, XSNOWFALL_A_SN + XSNOWFALL_B_SN*(PTA(:)-XTT)+         &
                      XSNOWFALL_C_SN*SQRT(PVMOD(:)))
@@ -2924,9 +2916,6 @@ ELSEIF( HSNOWFALL == 'OPT') THEN ! OPT (XSNOWFALL_C_SN * 1)
 ELSEIF ( HSNOWFALL == 'SI3' ) THEN
     ZRHOSNEW(:) = 330. !100.
 END IF
-
-PRINT*,'PSNOWHEAT bef snwfl direct',PSNOWHEAT
-PRINT*,'ZSNOWTEMP in snwfl 1',ZSNOWTEMP
 
 
 WHERE (PSR(:) > 0.0)
@@ -2973,8 +2962,6 @@ WHERE (PSR(:) > 0.0)
    PSNOWHEAT(:,1)  = PSNOWHEAT(:,1) + PSNOWHMASS(:)
 !
 END WHERE
-PRINT*,'HMASS',PSNOWHMASS
-PRINT*,'PSNOWHEAT aft snwfl direct',PSNOWHEAT
 !
 !
 ! 2. Case of new snowfall on a previously snow-free surface:
@@ -2989,7 +2976,6 @@ ZSNOWFALL_DELTA(:)    = 0.0
 WHERE(ZSNOW(:) == 0.0 .AND. PSR(:) > 0.0)
    ZSNOWFALL_DELTA(:) = 1.0
 END WHERE
-PRINT*,'ZSNOWFALL_DELTA',ZSNOWFALL_DELTA
 !
 DO JJ=1,INLVLS
    DO JI=1,INI
@@ -3009,8 +2995,6 @@ DO JJ=1,INLVLS
    ENDDO
 ENDDO
 !
-PRINT*,'RHO snwfl',PSNOWRHO
-PRINT*,'ZRHOSNEW', ZRHOSNEW
 PSNOWHMASS1(:) = (1.0-ZSNOWFALL_DELTA(:)) * PSNOWHMASS(:)  &
                +      ZSNOWFALL_DELTA(:)  * PSNOWHMASS(:)/INLVLS 
 !

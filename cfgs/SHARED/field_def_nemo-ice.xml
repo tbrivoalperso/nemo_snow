@@ -43,6 +43,7 @@
       <field id="snwvolu"      long_name="snow volume"                                                                                                       unit="m"    />
       <field id="icefrb"       long_name="Sea-ice freeboard"                                       standard_name="sea_ice_freeboard"                         unit="m"    />
       <field id="icealb"       long_name="Sea-ice or snow albedo"                                  standard_name="sea_ice_albedo"                            unit=""    detect_missing_value="true" />
+      <field id="snwalb"       long_name="Snow albedo"                                             standard_name="snow_albedo"                unit=""    detect_missing_value="true" />
 
       <!-- melt ponds -->
       <field id="iceapnd"      long_name="melt pond concentration"                                 standard_name="sea_ice_meltpond_concentration"            unit=""  />
@@ -63,7 +64,8 @@
       <field id="icetsni"      long_name="temperature at the snow-ice interface"                                                                             unit="degC" detect_missing_value="true" />
       <field id="icehc"        long_name="ice heat content"                                                                                                  unit="J/m2" />
       <field id="snwhc"        long_name="snow heat content"                                                                                                 unit="J/m2" />
-      
+      <field id="cnd_s_isbaes"        long_name="snow conductivity"                                                                                          unit="W/(m.K)" />
+ 
       <field id="snwrho"      long_name="Mean snow density"                                                                                             unit="kg/m3" detect_missing_value="true" />
 
       <field id="snwrho_1"      long_name="Top snow density"                                                                                             unit="kg/m3" detect_missing_value="true" />
@@ -319,6 +321,13 @@
       <field id="strait_arfl"      long_name="Sea ice area flux through straits"      standard_name="sea_area_mass_transport_across_line"  unit="m2/s"  freq_op="1mo"  grid_ref="grid_4strait_ice" > xstrait_arfl + ystrait_arfl </field>
 
     </field_group> <!-- SBC_2D -->
+    <field_group id="SBC_3D_nlay_s" grid_ref="grid_T_nlay_s" >
+        
+	    <field id="snwrho_3D"  long_name="vertical profiles of snow density"                unit="g/m3"        />
+	    <field id="snwtemp_3D"  long_name="vertical profiles of snow temperature"                unit="°C"        />
+            <field id="dh_s_3D"      long_name="vertical profiles of snow height"                unit="m"        />
+
+    </field_group> <!-- SBC_3D_nlay_s -->
 
     <!-- categories -->
     <field_group id="SBC_3D" grid_ref="grid_T_ncatice" >
@@ -435,6 +444,7 @@
       <field field_ref="icettop"          name="sittop" />
       <field field_ref="icetbot"          name="sitbot" />
       <field field_ref="icetsni"          name="sitsni" />
+      <field field_ref="cnd_s_isbaes"          name="cnd_s_isbaes" />
 
       <field field_ref="snwrho"          name="snrho" />
       <field field_ref="snwrho_1"          name="snrho_1" />

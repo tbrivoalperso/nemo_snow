@@ -161,6 +161,23 @@ CONTAINS
          z3d(:,:,:) = e_s(:,:,jk,:)
          CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
       END DO
+#if defined key_isbaes         
+
+      ! Snow volume
+      DO jk = 1, nlay_s
+         WRITE(zchar1,'(I2.2)') jk
+         znam = 'dv_s'//'_l'//zchar1
+         z3d(:,:,:) = dv_s(:,:,jk,:)
+         CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
+      END DO
+      ! Snow mass
+      DO jk = 1, nlay_s
+         WRITE(zchar1,'(I2.2)') jk
+         znam = 'rhov_s'//'_l'//zchar1
+         z3d(:,:,:) = rhov_s(:,:,jk,:)
+         CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
+      END DO
+#endif
       ! Ice enthalpy
       DO jk = 1, nlay_i
          WRITE(zchar1,'(I2.2)') jk
@@ -265,6 +282,23 @@ CONTAINS
             CALL iom_get( numrir, jpdom_auto, znam , z3d )
             e_s(:,:,jk,:) = z3d(:,:,:)
          END DO
+
+#if defined key_isbaes         
+         ! Snow layer volume 
+         DO jk = 1, nlay_s
+            WRITE(zchar1,'(I2.2)') jk
+            znam = 'dv_s'//'_l'//zchar1
+            CALL iom_get( numrir, jpdom_auto, znam , z3d )
+            dv_s(:,:,jk,:) = z3d(:,:,:)
+         END DO
+         ! Snow layer mass
+         DO jk = 1, nlay_s
+            WRITE(zchar1,'(I2.2)') jk
+            znam = 'rhov_s'//'_l'//zchar1
+            CALL iom_get( numrir, jpdom_auto, znam , z3d )
+            rhov_s(:,:,jk,:) = z3d(:,:,:)
+         END DO
+#endif
          ! Ice enthalpy
          DO jk = 1, nlay_i
             WRITE(zchar1,'(I2.2)') jk

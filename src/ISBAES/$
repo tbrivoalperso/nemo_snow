@@ -385,7 +385,7 @@ REAL, PARAMETER :: XAGREG_COEF_2 = 4.5
 REAL, PARAMETER :: XVTIME = 48*3600. ! characteristic time for
 !compaction and metamorphism by wind drift
 !
-REAL, PARAMETER :: XVROMAX = 600.! 350. !  maximum density for
+REAL, PARAMETER :: XVROMAX = 600. !350. !  maximum density for
 ! drift compaction     UNIT : kg m-3
 REAL, PARAMETER :: XVROMIN = 50.  !  minimum density for
 ! mobility computation UNIT : kg m-3

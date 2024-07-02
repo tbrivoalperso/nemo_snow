@@ -497,7 +497,8 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::     qsr_ice_b
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::     hbdg_isbaes ! Heat budget of isbaes
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dhm_s           !: Snow thickness averaged over categories         [m]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dvt_s 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dvt_s
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   rhovt_s !Total mass per layer 
 !: Snow layer density X olume per unit area               (m)
 #endif
    !
@@ -612,7 +613,7 @@ CONTAINS
       ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) ,swe_s(jpi,jpj,nlay_s,jpl) , o_s(jpi,jpj,nlay_s,jpl), lwc_s(jpi,jpj,nlay_s,jpl), ov_s(jpi,jpj,nlay_s,jpl), albs_isbaes(jpi,jpj,jpl), & 
                 & albi_isbaes(jpi,jpj,jpl),cnd_i_isbaes(jpi,jpj,jpl), cnd_s_isbaes(jpi,jpj,jpl), dh_s(jpi,jpj,nlay_s,jpl),dv_s(jpi,jpj,nlay_s,jpl),rhov_s(jpi,jpj,nlay_s,jpl), & 
                 & rhov_s_b(jpi,jpj,nlay_s,jpl), qns_ice_b(jpi,jpj,jpl), qsr_ice_b(jpi,jpj,jpl), &
-                & hbdg_isbaes(jpi,jpj,jpl),dvt_s(jpi,jpj,nlay_s), dhm_s(jpi,jpj,nlay_s), STAT=ierr(ii) )
+                & hbdg_isbaes(jpi,jpj,jpl),dvt_s(jpi,jpj,nlay_s), rhovt_s(jpi,jpj,nlay_s), dhm_s(jpi,jpj,nlay_s), STAT=ierr(ii) )
 #endif
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )

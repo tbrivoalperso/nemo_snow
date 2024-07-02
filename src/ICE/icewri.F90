@@ -64,7 +64,7 @@ CONTAINS
       !!-------------------------------------------------------------------
       !
 #if defined key_isbaes
-      REAL(wp), DIMENSION(jpi,jpj,nlay_s) :: rho_s_3D, dh_s_3D      
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s) :: rho_s_3D, t_s_3D, dh_s_3D      
 
 #endif
       IF( ln_timing )   CALL timing_start('icewri')
@@ -144,9 +144,17 @@ CONTAINS
       IF( iom_use('hbdg_isbaes') )       CALL iom_put( 'hbdg_isbaes'   , hbdg_isbaes(:,:,: )) ! ISBAES heat budget
       DO jk=1, nlay_s 
          rho_s_3D(:,:,jk) = SUM(rho_s(:,:,jk,:) * a_i(:,:,:),DIM=3)
+
+         WHERE(SUM(dv_s(:,:,jk,:), DIM=3) > 1e-04_wp) 
+                 t_s_3D(:,:,jk) = SUM(t_s(:,:,jk,:) * dv_s(:,:,jk,:),DIM=3) / SUM(dv_s(:,:,jk,:), DIM=3)
+         ELSEWHERE 
+                 t_s_3D(:,:,jk) = rt0
+         ENDWHERE
          !dh_s_3D(:,:,jk)  = SUM(dh_s(:,:,jk,:) * a_i(:,:,:),DIM=3) 
       ENDDO
-      IF( iom_use('snwrho_3D' ) )   CALL iom_put( 'snwrho_3D', rho_s_3D(:,:,:)  )      ! snw mean density
+      IF( iom_use('snwrho_3D' ) )   CALL iom_put( 'snwrho_3D', rho_s_3D(:,:,:)  )      ! snw mean density per layer
+      IF( iom_use('snwtemp_3D' ) )   CALL iom_put( 'snwtemp_3D', t_s_3D(:,:,:)  )      ! snw mean temperature per layer
+
       IF( iom_use('dh_s_3D' ) )   CALL iom_put( 'dh_s_3D', dhm_s(:,:,:)  )      ! snow thickness  
 #endif 
       IF( iom_use('icettop' ) )   CALL iom_put( 'icettop', ( tm_su - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice surface
@@ -187,10 +195,27 @@ CONTAINS
          END WHERE
          CALL iom_put( 'icealb' , zalb * zmskalb + zmiss_val * ( 1._wp - zmskalb ) )
          ! ice+ocean albedo
-         zalb(:,:) = SUM( alb_ice * a_i_b, dim=3 ) !+ rn_alb_oce * ( 1._wp - at_i_b )
+         zalb(:,:) = SUM( alb_ice * a_i_b, dim=3 ) + rn_alb_oce * ( 1._wp - at_i_b )
          CALL iom_put( 'albedo' , zalb )
          DEALLOCATE( zalb, zmskalb )
       ENDIF
+
+      IF( iom_use('snwalb') ) THEN                                                                   ! ice albedo and surface albedo
+         ALLOCATE( zalb(jpi,jpj), zmskalb(jpi,jpj) )
+         ! ice albedo
+         WHERE( at_i_b < 1.e-03 )
+            zmskalb(:,:) = 0._wp
+            zalb   (:,:) = 0._wp 
+         ELSEWHERE
+            zmskalb(:,:) = 1._wp
+            zalb   (:,:) = SUM( albs_isbaes * a_i_b, dim=3 ) / at_i_b
+         END WHERE
+         CALL iom_put( 'snwalb' , zalb * zmskalb + zmiss_val * ( 1._wp - zmskalb ) )
+         ! ice+ocean albedo
+         DEALLOCATE( zalb, zmskalb )
+      ENDIF
+
+
       !
       ! --- category-dependent fields --- !
       IF( iom_use('icemask_cat' ) )   CALL iom_put( 'icemask_cat' ,                  zmsk00l                                   ) ! ice mask 0%

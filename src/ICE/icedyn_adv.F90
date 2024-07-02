@@ -18,6 +18,10 @@ MODULE icedyn_adv
    USE icevar         ! sea-ice: operations
    USE icedyn_adv_pra ! sea-ice: advection scheme (Prather)
    USE icedyn_adv_umx ! sea-ice: advection scheme (ultimate-macho)
+#if defined key_isbaes
+   USE icedyn_adv_pra_isbaes ! sea-ice: advection scheme (Prather)
+   USE icedyn_adv_umx_isbaes ! sea-ice: advection scheme (ultimate-macho)
+#endif
    USE icectl         ! sea-ice: control prints
    !
    USE in_out_manager ! I/O manager
@@ -77,6 +81,18 @@ CONTAINS
       !== Advection ==!
       !---------------!
       SELECT CASE( nice_adv )
+#if defined key_isbaes
+      !                                !-----------------------!
+      CASE( np_advUMx )                ! ULTIMATE-MACHO scheme !
+         !                             !-----------------------!
+         CALL ice_dyn_adv_umx_isbaes( nn_UMx, kt, u_ice, v_ice, h_i, h_s, h_ip, &
+            &                          ato_i, v_i, v_s, sv_i, oa_i, a_i, a_ip, v_ip, v_il, e_s, e_i, dv_s, rhov_s)
+         !                             !-----------------------!
+      CASE( np_advPRA )                ! PRATHER scheme        !
+         !                             !-----------------------!
+         CALL ice_dyn_adv_pra_isbaes(         kt, u_ice, v_ice, h_i, h_s, h_ip, &
+            &                          ato_i, v_i, v_s, sv_i, oa_i, a_i, a_ip, v_ip, v_il, e_s, e_i, dv_s, rhov_s)
+#else
       !                                !-----------------------!
       CASE( np_advUMx )                ! ULTIMATE-MACHO scheme !
          !                             !-----------------------!
@@ -87,6 +103,7 @@ CONTAINS
          !                             !-----------------------!
          CALL ice_dyn_adv_pra(         kt, u_ice, v_ice, h_i, h_s, h_ip, &
             &                          ato_i, v_i, v_s, sv_i, oa_i, a_i, a_ip, v_ip, v_il, e_s, e_i )
+#endif
       END SELECT
 
       !------------

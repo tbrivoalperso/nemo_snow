@@ -17,6 +17,7 @@
   <axis id="nfloat"  long_name="Float number"      unit="-"                 />
   <axis id="icbcla"  long_name="Iceberg class"      unit="1"               />
   <axis id="ncatice" long_name="Ice category"       unit="1"               />
+  <axis id="nlay_s"  long_name="snow layer"         unit="1"               />
   <axis id="iax_20C" long_name="20 degC isotherm"   unit="degC"            />
   <axis id="iax_26C" long_name="26 degC isotherm"   unit="degC"            />
   <axis id="iax_28C" long_name="28 degC isotherm"   unit="degC"            />
