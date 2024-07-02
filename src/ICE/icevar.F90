@@ -628,8 +628,11 @@ CONTAINS
       !
    END SUBROUTINE ice_var_zapsmall
 
-
+#if defined key_isbaes
    SUBROUTINE ice_var_zapneg( pdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, pdv_s, prhov_s )
+#else
+   SUBROUTINE ice_var_zapneg( pdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i )
+#endif
       !!-------------------------------------------------------------------
       !!                   ***  ROUTINE ice_var_zapneg ***
       !!
