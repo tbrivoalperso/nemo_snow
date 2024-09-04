@@ -193,7 +193,12 @@ CONTAINS
 #if defined key_isbaes
       dv_s(:,:,:,:) = rhov_s(:,:,:,:) / rho_s(:,:,:,:)
       DO jk=1, nlay_s
-         WHERE(a_i(:,:,:) > 0._wp) dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i(:,:,:)
+         WHERE(a_i(:,:,:) > 0._wp) 
+            dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i(:,:,:)
+         ELSEWHERE
+            dh_s(:,:,jk,:) = 0._wp
+            dv_s(:,:,jk,:) = 0._wp
+         ENDWHERE
       ENDDO  
       h_s(:,:,:) = SUM(dh_s(:,:,:,:) , DIM=3) 
 #endif
@@ -382,7 +387,6 @@ CONTAINS
       diag3_2D(:,:) = SUM((qns_ice(:,:,:) ) * a_i_b(:,:,:),DIM=3)
       diag4_2D(:,:) = SUM((qsr_ice(:,:,:) ) * a_i_b(:,:,:),DIM=3)
 
-      PRINT*,'icethic',h_i
 
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'icethd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (1, 'icethd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)

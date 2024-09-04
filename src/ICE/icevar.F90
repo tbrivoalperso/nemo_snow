@@ -590,12 +590,21 @@ CONTAINS
             ! update exchanges with ocean
             sfx_res(ji,jj)  = sfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * sv_i(ji,jj,jl)   * rhoi * r1_Dt_ice
             wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * v_i (ji,jj,jl)   * rhoi * r1_Dt_ice
+#if defined key_isbaes
+            wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * SUM(rhov_s(ji,jj,:,jl)) * r1_Dt_ice
+#else
             wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * v_s (ji,jj,jl)   * rhos * r1_Dt_ice
+#endif
             wfx_pnd(ji,jj)  = wfx_pnd(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * ( v_ip(ji,jj,jl)+v_il(ji,jj,jl) ) * rhow * r1_Dt_ice
             !
             a_i  (ji,jj,jl) = a_i (ji,jj,jl) * zswitch(ji,jj)
             v_i  (ji,jj,jl) = v_i (ji,jj,jl) * zswitch(ji,jj)
             v_s  (ji,jj,jl) = v_s (ji,jj,jl) * zswitch(ji,jj)
+#if defined key_isbaes
+            dv_s  (ji,jj,:,jl) = dv_s (ji,jj,:,jl) * zswitch(ji,jj)
+            rhov_s  (ji,jj,:,jl) = rhov_s (ji,jj,:,jl) * zswitch(ji,jj)
+#endif
+
             t_su (ji,jj,jl) = t_su(ji,jj,jl) * zswitch(ji,jj) + t_bo(ji,jj) * ( 1._wp - zswitch(ji,jj) )
             oa_i (ji,jj,jl) = oa_i(ji,jj,jl) * zswitch(ji,jj)
             sv_i (ji,jj,jl) = sv_i(ji,jj,jl) * zswitch(ji,jj)
@@ -767,6 +776,49 @@ CONTAINS
       ENDIF
       !
    END SUBROUTINE ice_var_roundoff
+
+   SUBROUTINE ice_var_roundoff_isbaes( pa_i, pv_i, pv_s, psv_i, poa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, prhov_s, pdv_s )
+      !!-------------------------------------------------------------------
+      !!                   ***  ROUTINE ice_var_roundoff ***
+      !!
+      !! ** Purpose :   Remove negative sea ice values arising from roundoff
+      !errors
+      !!-------------------------------------------------------------------
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pa_i       ! ice concentration
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pv_i       ! ice volume
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pv_s       ! snw volume
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   psv_i      ! salt content
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   poa_i      ! age content
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pa_ip      ! melt pond fraction
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pv_ip      ! melt pond volume
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pv_il      ! melt pond lid volume
+      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   pe_s       ! snw heat content
+      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   pe_i       ! ice heat content
+      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   prhov_s      ! snw 3D mass
+      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   pdv_s       ! snw 3D volume
+
+      !!-------------------------------------------------------------------
+      !
+
+      WHERE( pa_i (1:npti,:)   < 0._wp )   pa_i (1:npti,:)   = 0._wp   !  a_i must be >= 0
+      WHERE( pv_i (1:npti,:)   < 0._wp )   pv_i (1:npti,:)   = 0._wp   !  v_i must be >= 0
+      WHERE( pv_s (1:npti,:)   < 0._wp )   pv_s (1:npti,:)   = 0._wp   !  v_s must be >= 0
+      WHERE( psv_i(1:npti,:)   < 0._wp )   psv_i(1:npti,:)   = 0._wp   ! sv_i must be >= 0
+      WHERE( poa_i(1:npti,:)   < 0._wp )   poa_i(1:npti,:)   = 0._wp   ! oa_i must be >= 0
+      WHERE( pe_i (1:npti,:,:) < 0._wp )   pe_i (1:npti,:,:) = 0._wp   !  e_i must be >= 0
+      WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+      WHERE( pdv_s (1:npti,:,:) < 0._wp )   pdv_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+      WHERE( prhov_s (1:npti,:,:) < 0._wp )   prhov_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+
+      IF( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
+         WHERE( pa_ip(1:npti,:) < 0._wp )    pa_ip(1:npti,:)   = 0._wp   ! a_ip must be >= 0
+         WHERE( pv_ip(1:npti,:) < 0._wp )    pv_ip(1:npti,:)   = 0._wp   ! v_ip must be >= 0
+         IF( ln_pnd_lids ) THEN
+            WHERE( pv_il(1:npti,:) < 0._wp .AND. pv_il(1:npti,:) > -epsi10 ) pv_il(1:npti,:)   = 0._wp   ! v_il must be >= 0
+         ENDIF
+      ENDIF
+      !
+   END SUBROUTINE ice_var_roundoff_isbaes
 
 
    SUBROUTINE ice_var_bv

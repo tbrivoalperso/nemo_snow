@@ -260,7 +260,8 @@ ZP_SOILD        = 0.
 !
 ! --- diag error on heat diffusion - PART 1 --- !
 zq_ini = SUM( e_s_1d(JI,1:nlay_s))!  * dh_s_1d(JI,1:nlay_s) )!* r1_nlay_s 
-zm_ini = SUM(rho_s_1d(JI,1:nlay_s) * dh_s_1d(JI,1:nlay_s)) * a_i_1d(JI) 
+!zm_ini = SUM(rho_s_1d(JI,1:nlay_s) * dh_s_1d(JI,1:nlay_s)) * a_i_1d(JI) 
+zm_ini = SUM(rho_s_1d(JI,1:nlay_s) * dv_s_1d(JI,1:nlay_s))
 
 !WHERE (e_s_1d(:,:) .eq. XUNDEF) e_s_1d(:,:) = 0._wp
 !WHERE (e_s_1d(:,:) .eq. XUNDEF) dh_s_1d(:,:) = 0._wp
@@ -282,20 +283,20 @@ DO JWRK=1,KSIZE2
      IF(dh_s_1d(JI,JWRK) .eq. 0.) THEN
         ZP_SNOWSWE (1,JWRK) = 0. 
         ZP_SNOWRHO (1,JWRK) = 400. 
-        ZP_SNOWTEMP(1,JWRK) = t_su_1d(JI) !273.15 
+        ZP_SNOWTEMP(1,JWRK) = 273.15 ! t_su_1d(JI) !273.15 
         ZP_SNOWAGE (1,JWRK) = 10.
         ZP_SNOWLIQ (1,JWRK) = 0.
         ZP_SNOWDZ  (1,JWRK) = 0. 
         ZP_SNOWHEAT(1,JWRK) = 0.
      ELSE
  
-        ZP_SNOWSWE (1,JWRK) = rho_s_1d(JI,JWRK) * dh_s_1d(JI,JWRK) !swe_s_1d(JI,JWRK) ! Snow layer(s) liquid Water Equivalent (SWE:kg m-2) 
+        ZP_SNOWSWE (1,JWRK) = rhov_s_1d(JI,JWRK) !* dh_s_1d(JI,JWRK) !swe_s_1d(JI,JWRK) ! Snow layer(s) liquid Water Equivalent (SWE:kg m-2) 
         ZP_SNOWRHO (1,JWRK) = rho_s_1d(JI,JWRK) ! Snow layer(s) averaged density (kg/m3) 
         ZSCAP     = SNOW3LSCAP(ZP_SNOWRHO(1,JWRK))
         ZP_SNOWTEMP(1,JWRK) = t_s_1d(JI,JWRK)   ! Snow temperature => °C ou K ?
         ZP_SNOWAGE (1,JWRK) = o_s_1d (JI,JWRK)  ! Snow age (verifier si c'est x area ou pas)  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
         ZP_SNOWLIQ (1,JWRK) = lwc_s_1d(JI,JWRK) ! Diagnostique => Pas besoin d'advecter 
-        ZP_SNOWDZ  (1,JWRK) = dh_s_1d(JI,JWRK)       ! Snow layer(s) thickness (m) (per layer 
+        ZP_SNOWDZ  (1,JWRK) = dh_s_1d(JI,JWRK)  ! Snow layer(s) thickness (m) (per layer 
 !        ! Compute the snow heat from SI3 T°
 !         ZP_SNOWHEAT(JI,JWRK) = ZP_SNOWDZ(JI,JWRK)*( !         ZSCAP*(ZP_SNOWTEMP(JI,JWRK)-XTT)        &
 !                      - XLMTT*ZP_SNOWRHO(JI,JWRK) ) +
@@ -350,10 +351,8 @@ ZP_PEQ_A_COEF  (1) =  0.
 ZP_PEQ_B_COEF  (1) =  ZP_QA(1)
 ZP_LAT         (1) = gphit_1d(JI) 
 ZP_LON         (1) = glamt_1d(JI) ! => glamt_1d
-PRINT*,'LAT, LON', ZP_LAT, ZP_LON
 
 CALL SUNPOS (nyear, nmonth, nday, nsec_day, ZP_LON(1), ZP_LAT(1), ZP_TSUN, ZP_ZENITH, ZP_AZIMSOL)
-PRINT*,'SOLAR ZENITHAL ANGLE',ZP_ZENITH
 !ZP_ZENITH      (1) = 0. ! solar zenith angle
 ZP_GRNDFLUX    (1) = 0. !qcn_snw_bot_1d(JI) ! snow-ground flux before correction (W m-2) 
 ZP_DELHEATN    (1) = 0. ! total snow heat content change in the surface layer (W m-2)
@@ -411,7 +410,7 @@ CALL SNOW3L(JI, HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,                   
 ! unpack variables
 !
 !h_s_1d(JI) = 0.
-h_s_1d(JI) = 0.
+!h_s_1d(JI) = 0.
 DO JWRK=1,KSIZE2
 
 !     IF(ZP_SNOWSWE(1,JWRK) .eq. XUNDEF) swe_s_1d(JI,JWRK)   = 0.
@@ -427,12 +426,14 @@ DO JWRK=1,KSIZE2
      o_s_1d(JI,JWRK)   = ZP_SNOWAGE  (1,JWRK)
      t_s_1d(JI,JWRK)   = ZP_SNOWTEMP (1,JWRK)
      lwc_s_1d(JI,JWRK) = ZP_SNOWLIQ  (1,JWRK) ! No need because it is a diagnostic
-     dh_s_1d(JI,JWRK)  = ZP_SNOWSWE(1,JWRK)/ZP_SNOWRHO(1,JWRK) !ZP_SNOWDZ   (JI,JWRK) 
-
+     dv_s_1d(JI,JWRK)  = ZP_SNOWSWE(1,JWRK)/ZP_SNOWRHO(1,JWRK) !ZP_SNOWDZ   (JI,JWRK) 
+     IF (a_i_1d(JI) > 0._wp ) dh_s_1d(JI,JWRK)  = dv_s_1d(JI,JWRK) / a_i_1d(JI)
 ENDDO
+v_s_1d(JI) = SUM(dv_s_1d(JI,:))
 h_s_1d(JI) = SUM(dh_s_1d(JI,:))
-IF(h_s_1d(JI) >  0.000001) THEN
-   cnd_s_isbaes_1d(JI) = SUM(ZP_SCOND_ES(1,:) * dh_s_1d(JI,:)) / h_s_1d(JI)
+
+IF(v_s_1d(JI) >  0.000001) THEN
+   cnd_s_isbaes_1d(JI) = SUM(ZP_SCOND_ES(1,:) * dv_s_1d(JI,:)) / v_s_1d(JI)
 ELSE
    cnd_s_isbaes_1d(JI) = 0.
 ENDIF   
@@ -452,7 +453,7 @@ ENDIF
 !ENDDO
 
 zdq = SUM( e_s_1d(JI,1:nlay_s)) - zq_ini  !  * dh_s_1d(JI,1:nlay_s) )
-zdm = - zm_ini + SUM(rho_s_1d(JI,1:nlay_s) * dh_s_1d(JI,1:nlay_s)) * a_i_1d(JI) 
+zdm = - zm_ini + SUM(rho_s_1d(JI,1:nlay_s) * dv_s_1d(JI,1:nlay_s))  
 
 t_su_1d(JI) = t_s_1d(JI,1)
 albs_isbaes_1d(JI)   = ZP_SNOWALB(1)     

@@ -154,10 +154,19 @@ CONTAINS
       !!------------------------------------------------------------------
 
       ! --- diag error on heat diffusion - PART 1 --- !
+#if defined key_isbaes
+      ! --- diag error on heat diffusion - PART 1 --- !
       DO ji = 1, npti
-         zq_ini(ji) = ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i  +  &
+         zq_ini(ji) = SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i
+      END DO
+#else
+      ! --- diag error on heat diffusion - PART 1 --- !
+      DO ji = 1, npti
+         zq_ini(ji) = ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i +  &
             &           SUM( e_s_1d(ji,1:nlay_s) ) * h_s_1d(ji) * r1_nlay_s )
       END DO
+#endif
+
       !------------------
       ! 1) Initialization
       !------------------
@@ -657,8 +666,13 @@ CONTAINS
 
         ! zhfx_err = correction on the diagnosed heat flux due to non-convergence of the algorithm used to solve heat equation
         DO ji = 1, npti
+#if defined key_isbaes
+           zdq = - zq_ini(ji) +  SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i 
+
+#else
            zdq = - zq_ini(ji) + ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i +  &
                &                   SUM( e_s_1d(ji,1:nlay_s) ) * h_s_1d(ji) * r1_nlay_s )
+#endif
            IF( k_cnd == np_cnd_OFF ) THEN
 
               IF( t_su_1d(ji) < rt0 ) THEN  ! case T_su < 0degC

@@ -428,8 +428,8 @@ CONTAINS
                           ZSCAP     = rho_s(ji,jj,jk,jl) * XCI  ! In isba-es, capacity = rho x cst, with cst=XCI
                           swe_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dh_s(ji,jj,jk,jl)
                           lwc_s(ji,jj,jk,jl) = MAX(0.0,t_s(ji,jj,jk,jl)-rt0)*ZSCAP*dh_s(ji,jj,jk,jl)/(XLMTT*XRHOLW)
-                          e_s(ji,jj,jk,jl) =  - dh_s(ji,jj,jk,jl)*( ZSCAP*(t_s(ji,jj,jk,jl)-rt0)- XLMTT*rho_s(ji,jj,jk,jl)) + &
-                          & XLMTT*XRHOLW*lwc_s(ji,jj,jk,jl) ! Minus factor to match SI3 convention for enthalpy 
+                          e_s(ji,jj,jk,jl) =  (- dh_s(ji,jj,jk,jl)*( ZSCAP*(t_s(ji,jj,jk,jl)-rt0)- XLMTT*rho_s(ji,jj,jk,jl)) + &
+                          & XLMTT*XRHOLW*lwc_s(ji,jj,jk,jl)) * a_i(ji,jj,jl)  ! Minus factor to match SI3 convention for enthalpy 
                           rhov_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dv_s(ji,jj,jk,jl)
                           !e_s(ji,jj,jk,jl) = e_s(ji,jj,jk,jl) * dh_s_1d(1:npti,jk) * a_i_1d(1:npti)
                           !e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
@@ -440,6 +440,9 @@ CONTAINS
                  &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )            
 #endif         
                END_3D
+#if defined key_isbaes
+               rhovt_s(:,:,:) = SUM(rhov_s(:,:,:,:), DIM=4)
+#endif
             END DO
             !
             DO jl = 1, jpl
@@ -481,7 +484,12 @@ CONTAINS
       !----------------------------------------------------------
       ! 4) Adjust ssh and vertical scale factors to snow-ice mass
       !----------------------------------------------------------
+#if defined key_isbaes
+      snwice_mass  (:,:) = tmask(:,:,1) * SUM( SUM(rhov_s, DIM=3)  + rhoi * v_i + rhow * ( v_ip + v_il ), dim=3  )   ! snow+ice mass
+
+#else
       snwice_mass  (:,:) = tmask(:,:,1) * SUM( rhos * v_s + rhoi * v_i + rhow * ( v_ip + v_il ), dim=3  )   ! snow+ice mass
+#endif
       snwice_mass_b(:,:) = snwice_mass(:,:)
       !
       IF( ln_ice_embd ) THEN            ! embedded sea-ice: deplete the initial ssh below sea-ice area
