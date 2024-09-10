@@ -494,17 +494,17 @@ hfx_res_1d(JI)  = hfx_res_1d(JI)  + ZP_BDG(1) ! ZP_BDG already in J/m2 per unit 
 ! -------------------------------------------------------------------------------------------------------------------------------------------
 
 ! Precipitaion mass flux (kg/m2/s)
-wfx_spr_1d    (JI)   = wfx_spr_1d    (JI) -(ZP_SRSNOW(1) + ZP_RRSNOW(1) )  ! METTRE EVAP A SUB 
+wfx_spr_1d    (JI)   = wfx_spr_1d    (JI) -(ZP_SRSNOW(1) + ZP_RRSNOW(1) ) * a_i_1d(JI)  ! METTRE EVAP A SUB 
 
 ! Snow sublimation mass flux (kg/m2/s)
-wfx_snw_sub_1d   (JI)   =  wfx_snw_sub_1d   (JI) + ((ZP_PSN3L(1)*ZP_LES3L(1)/XLSTT) - (ZP_EVAPCOR(1) + ZP_SOILCOR(1))) 
+wfx_snw_sub_1d   (JI)   =  wfx_snw_sub_1d   (JI) + ((ZP_PSN3L(1)*ZP_LES3L(1)/XLSTT) - (ZP_EVAPCOR(1) + ZP_SOILCOR(1))) * a_i_1d(JI)
 
 ! Liquid water flux leaving the snowpack (kg/m2/s) 
-wfx_snw_sum_1d(JI)   = wfx_snw_sum_1d(JI) + ZP_THRUFAL(1)  ! rate that liquid water leaves snow pack (kg/(m2 s))
+wfx_snw_sum_1d(JI)   = wfx_snw_sum_1d(JI) + ZP_THRUFAL(1) * a_i_1d(JI)  ! rate that liquid water leaves snow pack (kg/(m2 s))
 
 ! Residual (kg/m2/s) (Should be very small)
 wfx_res_1d(JI)   = wfx_res_1d(JI) - zdm * r1_Dt_ice - (((ZP_PSN3L(1)*ZP_LES3L(1)/XLSTT) - (ZP_EVAPCOR(1) + ZP_SOILCOR(1))) &
-       -(ZP_SRSNOW(1) + ZP_RRSNOW(1) ) + ZP_THRUFAL(1) )
+       -(ZP_SRSNOW(1) + ZP_RRSNOW(1) ) + ZP_THRUFAL(1) ) * a_i_1d(JI)
 
 !
 END SUBROUTINE CALL_MODEL
