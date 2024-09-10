@@ -415,9 +415,12 @@ CONTAINS
       REAL(wp), DIMENSION(jpij,jpl)        ::   zaTsfn           !  -    -
       REAL(wp), DIMENSION(jpij,nlay_i,jpl) ::   ze_i_2d
       REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   ze_s_2d
+#if defined key_isbaes
+      ! With ISBA-ES, we need to exchange the mass and volume profiles between categories
       REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   zdv_s_2d
       REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   zrhov_s_2d
       REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   zov_s_2d
+#endif
 
       !!------------------------------------------------------------------
 
@@ -534,7 +537,7 @@ CONTAINS
          END DO
          !
 #if defined key_isbaes         
-
+            ! Exchange mass, volume and age profiles between categories
             DO jk = 1, nlay_s         !--- Snow volume
                DO ji = 1, npti
                   !
@@ -591,7 +594,7 @@ CONTAINS
                   IF(jl1 == jl) THEN  ;  jl2 = jl+1
                   ELSE                ;  jl2 = jl
                   ENDIF
-                  ztrans             = ze_i_2d(ji,jk,jl1) * zworkv(ji)
+                  ztrans             = ze_i_2d(ji,jk,jl1) * zworkv(ji) 
                   ze_i_2d(ji,jk,jl1) = ze_i_2d(ji,jk,jl1) - ztrans
                   ze_i_2d(ji,jk,jl2) = ze_i_2d(ji,jk,jl2) + ztrans
                ENDIF
@@ -605,8 +608,12 @@ CONTAINS
       !-------------------
       ! clem: The transfer between one category to another can lead to very small negative values (-1.e-20)
       !       because of truncation error ( i.e. 1. - 1. /= 0 )
+#if defined key_isbaes
+      CALL ice_var_roundoff_isbaes( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d, &
+              & zrhov_s_2d, zdv_s_2d)
+#else
       CALL ice_var_roundoff( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d )
-
+#endif
       ! at_i must be <= rn_amax
       zworka(1:npti) = SUM( a_i_2d(1:npti,:), dim=2 )
       DO jl  = 1, jpl

@@ -403,7 +403,9 @@ CONTAINS
       !
                               CALL ice_cor( kt , 2 )                ! --- Corrections --- !
       !
-
+      DO jk = 1, nlay_s 
+         WHERE( a_i(:,:,:)>0._wp ) dh_s (:,:,jk,:) = dv_s (:,:,jk,:) / a_i (:,:,:)
+      ENDDO
       oa_i(:,:,:) = oa_i(:,:,:) + a_i(:,:,:) * rDt_ice              ! --- Ice natural aging incrementation
       !
       DO_2D( 0, 0, 0, 0 )                                           ! --- Ice velocity corrections

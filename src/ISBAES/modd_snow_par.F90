@@ -385,7 +385,7 @@ REAL, PARAMETER :: XAGREG_COEF_2 = 4.5
 REAL, PARAMETER :: XVTIME = 48*3600. ! characteristic time for
 !compaction and metamorphism by wind drift
 !
-REAL, PARAMETER :: XVROMAX = 600.! 350. !  maximum density for
+REAL, PARAMETER :: XVROMAX = 350. ! 600 maximum density for
 ! drift compaction     UNIT : kg m-3
 REAL, PARAMETER :: XVROMIN = 50.  !  minimum density for
 ! mobility computation UNIT : kg m-3
@@ -410,7 +410,7 @@ REAL, PARAMETER :: XVSIZEMIN = 3.E-4 !  minimum size decrease
 ! a pour but de tenir compte du fait que le vent moyen est > rafales
 ! on en tient compte egalement pour diminuer la duree de l'effet
 REAL, PARAMETER :: XCOEF_FF = 1.25 ! coefficient for gust diagnosis from average wind 
-REAL, PARAMETER :: XCOEF_EFFECT = 1.5 ! 1.0 ! coefficient for impact on density du drift
+REAL, PARAMETER :: XCOEF_EFFECT = 1. ! 1.0 ! coefficient for impact on density du drift
 REAL, PARAMETER :: XQS_REF = 2.E-5 ! valeur de reference de ZQS pour effet neige
 !
 !--------------------------------------------------------------------------------

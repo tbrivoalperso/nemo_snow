@@ -77,6 +77,11 @@ MODULE icevar
    PUBLIC   ice_var_zapsmall
    PUBLIC   ice_var_zapneg
    PUBLIC   ice_var_roundoff
+
+#if defined key_isbaes   
+   PUBLIC   ice_var_roundoff_isbaes
+#endif
+
    PUBLIC   ice_var_bv
    PUBLIC   ice_var_enthalpy
    PUBLIC   ice_var_sshdyn
@@ -118,11 +123,19 @@ CONTAINS
       !
       INTEGER ::   ji, jj, jk, jl   ! dummy loop indices
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) ::   z1_at_i, z1_vt_i, z1_vt_s
+#if defined key_isbaes
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   z1_a_i
+#endif
       !!-------------------------------------------------------------------
       !
       !                                      ! integrated values
       vt_i(:,:) =       SUM( v_i (:,:,:)           , dim=3 )
 #if defined key_isbaes
+      ALLOCATE( z1_a_i(jpi,jpj,jpl) )
+      WHERE( a_i(:,:,:) > epsi20 )   ;   z1_a_i(:,:,:) = 1._wp / a_i(:,:,:)
+      ELSEWHERE                     ;   z1_a_i(:,:,:) = 0._wp
+      END WHERE
+
       vt_s(:,:) =       SUM(SUM( dv_s (:,:,:,:)      , dim=3 ), dim=3)
 #else
       vt_s(:,:) =       SUM( v_s (:,:,:)           , dim=3 )
@@ -162,7 +175,7 @@ CONTAINS
          hm_i(:,:) = vt_i(:,:) * z1_at_i(:,:)
          hm_s(:,:) = vt_s(:,:) * z1_at_i(:,:)
          !
-#if defined key_isbaes            
+#if defined key_isbaes           
          dvt_s(:,:,:) = SUM( dv_s (:,:,:,:)      , dim=4 ) 
          rhovt_s(:,:,:) = SUM( rhov_s (:,:,:,:)      , dim=4 ) 
 #endif
@@ -317,19 +330,12 @@ CONTAINS
       ! Snow temperature   [K]   (with a minimum value (rt0 - 100.))
       !--------------------
       zlay_s = REAL( nlay_s , wp )
-#if defined key_isbaes      
+#if defined key_isbaes 
+      ! With ISBA-ES, the snow temperature is not used elsewhere than inside the snow model.
+      ! Thus, we do not need to recompute the temperature
       DO jk = 1, nlay_s
          WHERE( dv_s(:,:,jk,:) > epsi20 )        !--- icy area
-!            dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)    
             rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
-            !o_s(:,:,jk,:) = ov_s(:,:,jk,:) / dv_s(:,:,jk,:)
-            !t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
-            !     &                MIN( r1_rcpi * ( -(1 / rho_s(:,:,jk,:)) * ( e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) ) + rLfus ) , 0._wp ) )
-            ZSCAP(:,:,jk,:)     = rho_s(:,:,jk,:) * XCI
-
-            !t_s(:,:,jk,:) = XTT + MIN(1.0, dh_s(:,:,jk,:)/XSNOWDMIN)*( (( - e_s(:,:,jk,:)/MAX(XSNOWDMIN,dh_s(:,:,jk,:)))  &
-            !&    + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) ) ! Minus factor for enthalpy to match SI3 conventions
-
             dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)
  
         ELSEWHERE                           !--- no ice
@@ -591,6 +597,7 @@ CONTAINS
             sfx_res(ji,jj)  = sfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * sv_i(ji,jj,jl)   * rhoi * r1_Dt_ice
             wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * v_i (ji,jj,jl)   * rhoi * r1_Dt_ice
 #if defined key_isbaes
+            ! Compute mass flux from mass variable
             wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * SUM(rhov_s(ji,jj,:,jl)) * r1_Dt_ice
 #else
             wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * v_s (ji,jj,jl)   * rhos * r1_Dt_ice
@@ -600,6 +607,7 @@ CONTAINS
             a_i  (ji,jj,jl) = a_i (ji,jj,jl) * zswitch(ji,jj)
             v_i  (ji,jj,jl) = v_i (ji,jj,jl) * zswitch(ji,jj)
             v_s  (ji,jj,jl) = v_s (ji,jj,jl) * zswitch(ji,jj)
+
 #if defined key_isbaes
             dv_s  (ji,jj,:,jl) = dv_s (ji,jj,:,jl) * zswitch(ji,jj)
             rhov_s  (ji,jj,:,jl) = rhov_s (ji,jj,:,jl) * zswitch(ji,jj)
@@ -777,6 +785,7 @@ CONTAINS
       !
    END SUBROUTINE ice_var_roundoff
 
+#if defined key_isbaes
    SUBROUTINE ice_var_roundoff_isbaes( pa_i, pv_i, pv_s, psv_i, poa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, prhov_s, pdv_s )
       !!-------------------------------------------------------------------
       !!                   ***  ROUTINE ice_var_roundoff ***
@@ -819,7 +828,7 @@ CONTAINS
       ENDIF
       !
    END SUBROUTINE ice_var_roundoff_isbaes
-
+#endif
 
    SUBROUTINE ice_var_bv
       !!-------------------------------------------------------------------
