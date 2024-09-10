@@ -436,17 +436,19 @@ qemp_ice_1d(JI) = ZP_DELHEAT_SNWFL(1) * r1_Dt_ice    ! Evaporation heat flux (W/
 
 
 ! Conductive heat flux at the snow/ice interface, used to force the sea-ice thermodynamics (W/m2)
-qcn_snw_bot_1d(JI)  = ZP_GRNDFLUX(1)  !    + ZP_GFLXCOR(1))     ! Somme des flux radiatifs et convectif ??
+qcn_snw_bot_1d(JI)  = ZP_GRNDFLUX(1) ! * a_i_1d(JI) ! 
+!We do not multiply the conduction flux per a_i as it is used to force the resolution of the temperature equation 
+! that is writen for an enthalpy in J/m3  
 
-! Remaining heat after snow solving (J/m2) (GFLXCOR =! 0. when snow vanishes)
+! Remaining heat after snow solving (in J/m2 per unit area) (GFLXCOR =! 0. when snow vanishes)
 ZP_Q_REMA   =  (ZP_GFLXCOR(1)      + ZP_RADXS(1) ) * rDt_ice * a_i_1d(JI)
 
 ! Remaining evaporation (=! 0. when snow vanishes)
-ZP_EVAP_REMA      =  (ZP_EVAPCOR(1) + ZP_SOILCOR(1)) * rDt_ice
+ZP_EVAP_REMA      =  (ZP_EVAPCOR(1) + ZP_SOILCOR(1)) * a_i_1d(JI) * rDt_ice
 
 ! Snow conductivity
-IF(v_s_1d(JI) >  0.000001) THEN
-   cnd_s_isbaes_1d(JI) = SUM(ZP_SCOND_ES(1,:) * dv_s_1d(JI,:)) / v_s_1d(JI)
+IF(h_s_1d(JI) >  0.000001) THEN
+   cnd_s_isbaes_1d(JI) = SUM(ZP_SCOND_ES(1,:) * dh_s_1d(JI,:)) / h_s_1d(JI)
 ELSE
    cnd_s_isbaes_1d(JI) = 0.
 ENDIF   
