@@ -135,14 +135,21 @@ CONTAINS
             
             ! Contribution to salt flux
             sfx_lam_1d(ji) = sfx_lam_1d(ji) + rhoi *  h_i_1d(ji) * zda * s_i_1d(ji) * r1_Dt_ice
-            
+
+#if defined key_isbaes
+            ! Contribution to heat flux into the ocean [W.m-2], (<0)
+            hfx_thd_1d(ji) = hfx_thd_1d(ji) - zda * r1_Dt_ice * ( h_i_1d(ji) * r1_nlay_i * SUM( e_i_1d(ji,1:nlay_i) )  &
+                                                                + SUM(dh_s_1d(ji,1:nlay_s) * e_s_1d(ji,1:nlay_s) ) )
+
+            wfx_lam_1d(ji) =  wfx_lam_1d(ji) + zda * r1_Dt_ice * ( rhoi * h_i_1d(ji) + SUM(rho_s_1d(ji,1:nlay_s) * dh_s_1d(ji,1:nlay_s)) )
+#else
             ! Contribution to heat flux into the ocean [W.m-2], (<0)  
             hfx_thd_1d(ji) = hfx_thd_1d(ji) - zda * r1_Dt_ice * ( h_i_1d(ji) * r1_nlay_i * SUM( e_i_1d(ji,1:nlay_i) )  &
                                                                 + h_s_1d(ji) * r1_nlay_s * SUM( e_s_1d(ji,1:nlay_s) ) ) 
             
             ! Contribution to mass flux
             wfx_lam_1d(ji) =  wfx_lam_1d(ji) + zda * r1_Dt_ice * ( rhoi * h_i_1d(ji) + rhos * h_s_1d(ji) )
-            
+#endif            
             ! new concentration
             a_i_1d(ji) = a_i_1d(ji) - zda
 

@@ -133,7 +133,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zradab_i    ! Radiation absorbed in the ice
       REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zkappa_i    ! Kappa factor in the ice
       REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zeta_i      ! Eta factor in the ice
-      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zkappa_s    ! Kappa factor in the snow
+      !REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zkappa_s    ! Kappa factor in the snow
       REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zeta_s      ! Eta factor in the snow
       REAL(wp), DIMENSION(jpij)          ::   zkappa_comb ! Combined snow and ice surface conductivity
 
@@ -154,10 +154,19 @@ CONTAINS
       !!------------------------------------------------------------------
 
       ! --- diag error on heat diffusion - PART 1 --- !
+#if defined key_isbaes
+      ! --- diag error on heat diffusion - PART 1 --- !
       DO ji = 1, npti
-         zq_ini(ji) = ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i  +  &
+         zq_ini(ji) = SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i
+      END DO
+#else
+      ! --- diag error on heat diffusion - PART 1 --- !
+      DO ji = 1, npti
+         zq_ini(ji) = ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i +  &
             &           SUM( e_s_1d(ji,1:nlay_s) ) * h_s_1d(ji) * r1_nlay_s )
       END DO
+#endif
+
       !------------------
       ! 1) Initialization
       !------------------
@@ -181,18 +190,18 @@ CONTAINS
             zh_i  (ji) = 0._wp
             z1_h_i(ji) = 0._wp
          ENDIF
-      !   IF( ln_snwext ) THEN ! TEST 
-      !      ! snow thickness
-      !      IF( h_s_1d(ji) > 0._wp ) THEN
-      !         zh_s  (ji) = MAX( zh_min , h_s_1d(ji) ) * r1_nlay_s ! set a minimum thickness for conduction
-      !         z1_h_s(ji) = 1._wp / zh_s(ji)                       !       it must be very small
-      !         isnow (ji) = 1._wp
-      !      ELSE
-      !         zh_s  (ji) = 0._wp
-      !         z1_h_s(ji) = 0._wp
-      !         isnow (ji) = 0._wp
-      !      ENDIF
-      !   ENDIF
+         
+         ! snow thickness
+         IF( h_s_1d(ji) > 0._wp ) THEN
+
+            zh_s  (ji) = MAX( zh_min , h_s_1d(ji) ) * r1_nlay_s ! set a minimum thickness for conduction
+            z1_h_s(ji) = 1._wp / zh_s(ji)                       !       it must be very small
+        !    isnow (ji) = 1._wp
+         ELSE
+         !   zh_s  (ji) = 0._wp
+            z1_h_s(ji) = 0._wp
+         !   isnow (ji) = 0._wp
+         ENDIF
          ! for Met-Office
          IF( h_s_1d(ji) < zh_min ) THEN
             isnow_comb(ji) = h_s_1d(ji) / zh_min
@@ -285,7 +294,12 @@ CONTAINS
             END DO
             !
          ENDIF
-
+#if defined key_isbaes
+         ! Save thermal conductivity of the 1st ice layer for isbaes
+             DO ji = 1, npti    
+                cnd_i_isbaes_1d(ji) = ztcond_i_cp(ji,0)
+             END DO
+#endif
          ! Variable used after iterations
          ! Value must be frozen after convergence for MPP independance reason
          DO ji = 1, npti
@@ -318,17 +332,18 @@ CONTAINS
          !--- Snow
          ! Variable used after iterations
          ! Value must be frozen after convergence for MPP independance reason
-         DO jk = 0, nlay_s-1
-            DO ji = 1, npti
-               IF ( .NOT. l_T_converged(ji) ) &
-                  zkappa_s(ji,jk) = zghe(ji) * rn_cnd_s * z1_h_s(ji)
-            END DO
-         END DO
-         DO ji = 1, npti   ! Snow-ice interface
-            IF ( .NOT. l_T_converged(ji) ) &
-               zkappa_s(ji,nlay_s) = isnow(ji) * zghe(ji) * rn_cnd_s * ztcond_i(ji,0) &
-                  &                            / ( 0.5_wp * ( ztcond_i(ji,0) * zh_s(ji) + rn_cnd_s * zh_i(ji) ) )
-         END DO
+
+         !DO jk = 0, nlay_s-1
+         !   DO ji = 1, npti
+         !      IF ( .NOT. l_T_converged(ji) ) &
+         !         zkappa_s(ji,jk) = zghe(ji) * rn_cnd_s * z1_h_s(ji)
+         !   END DO
+         !END DO
+         !DO ji = 1, npti   ! Snow-ice interface
+         !   IF ( .NOT. l_T_converged(ji) ) &
+         !      zkappa_s(ji,nlay_s) = isnow(ji) * zghe(ji) * rn_cnd_s * ztcond_i(ji,0) &
+         !         &                            / ( 0.5_wp * ( ztcond_i(ji,0) * zh_s(ji) + rn_cnd_s * zh_i(ji) ) )
+         !END DO
 
          !--- Ice
          ! Variable used after iterations
@@ -339,14 +354,14 @@ CONTAINS
                   zkappa_i(ji,jk) = zghe(ji) * ztcond_i(ji,jk) * z1_h_i(ji)
             END DO
          END DO
-         DO ji = 1, npti   ! Snow-ice interface
-            IF ( .NOT. l_T_converged(ji) ) THEN
-               ! Calculate combined surface snow and ice conductivity to pass through the coupler (met-office)
-               zkappa_comb(ji) = isnow_comb(ji) * zkappa_s(ji,0) + ( 1._wp - isnow_comb(ji) ) * zkappa_i(ji,0)
-               ! If there is snow then use the same snow-ice interface conductivity for the top layer of ice
-               !IF( h_s_1d(ji) > 0._wp )   zkappa_i(ji,0) = zkappa_s(ji,nlay_s)
-           ENDIF
-         END DO
+         !DO ji = 1, npti   ! Snow-ice interface
+         !   IF ( .NOT. l_T_converged(ji) ) THEN
+         !      ! Calculate combined surface snow and ice conductivity to pass through the coupler (met-office)
+         !      zkappa_comb(ji) = isnow_comb(ji) * zkappa_s(ji,0) + ( 1._wp - isnow_comb(ji) ) * zkappa_i(ji,0)
+         !      ! If there is snow then use the same snow-ice interface conductivity for the top layer of ice
+         !      !IF( h_s_1d(ji) > 0._wp )   zkappa_i(ji,0) = zkappa_s(ji,nlay_s)
+         !  ENDIF
+         !END DO
          !
          !--------------------------------------
          ! 5) Sea ice specific heat, eta factors
@@ -622,8 +637,7 @@ CONTAINS
       IF( k_cnd == np_cnd_OFF .OR. k_cnd == np_cnd_EMU ) THEN
          !
          DO ji = 1, npti
-            IF(isnow(ji) == 0._wp) qcn_ice_top_1d(ji) = -           isnow(ji)   * zkappa_s(ji,0) * zg1s * ( t_s_1d(ji,1) - t_su_1d(ji) ) &
-               &                 - ( 1._wp - isnow(ji) ) * zkappa_i(ji,0) * zg1  * ( t_i_1d(ji,1) - t_su_1d(ji) )
+            IF(isnow(ji) == 0._wp) qcn_ice_top_1d(ji) = - ( 1._wp - isnow(ji) ) * zkappa_i(ji,0) * zg1  * ( t_i_1d(ji,1) - t_su_1d(ji) )
          END DO
          !
       ELSEIF( k_cnd == np_cnd_ON ) THEN
@@ -652,8 +666,13 @@ CONTAINS
 
         ! zhfx_err = correction on the diagnosed heat flux due to non-convergence of the algorithm used to solve heat equation
         DO ji = 1, npti
+#if defined key_isbaes
+           zdq = - zq_ini(ji) +  SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i 
+
+#else
            zdq = - zq_ini(ji) + ( SUM( e_i_1d(ji,1:nlay_i) ) * h_i_1d(ji) * r1_nlay_i +  &
                &                   SUM( e_s_1d(ji,1:nlay_s) ) * h_s_1d(ji) * r1_nlay_s )
+#endif
            IF( k_cnd == np_cnd_OFF ) THEN
 
               IF( t_su_1d(ji) < rt0 ) THEN  ! case T_su < 0degC
@@ -689,8 +708,8 @@ CONTAINS
       ! this is a conductivity at mid-layer, hence the factor 2
       DO ji = 1, npti
          IF( h_i_1d(ji) >= zhi_ssl ) THEN
-            cnd_ice_1d(ji) = 2._wp * zkappa_comb(ji)
-            !!cnd_ice_1d(ji) = 2._wp * zkappa_i(ji,0)
+            !cnd_ice_1d(ji) = 2._wp * zkappa_comb(ji)
+            cnd_ice_1d(ji) = 2._wp * zkappa_i(ji,0)
          ELSE
             cnd_ice_1d(ji) = 2._wp * ztcond_i(ji,0) / zhi_ssl ! cnd_ice is capped by: cond_i/zhi_ssl
          ENDIF

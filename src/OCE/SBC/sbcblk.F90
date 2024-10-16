@@ -44,7 +44,7 @@ MODULE sbcblk
    !
 #if defined key_si3
    USE sbc_ice        ! Surface boundary condition: ice fields #LB? ok to be in 'key_si3' ???
-   USE ice     , ONLY :   u_ice, v_ice, jpl, a_i_b, at_i_b, t_su, rn_cnd_s, hfx_err_dif, nn_qtrice
+   USE ice     , ONLY :   u_ice, v_ice, jpl, a_i_b, at_i_b, t_su, rn_cnd_s, hfx_err_dif, nn_qtrice, ln_isbaes
    USE icevar         ! for CALL ice_var_snwblow
    USE sbcblk_algo_ice_an05
    USE sbcblk_algo_ice_lu12
@@ -117,7 +117,7 @@ MODULE sbcblk
    REAL(wp) ::   rn_stau_a      ! Alpha and Beta coefficients of Renault et al. 2020, eq. 10: Stau = Alpha * Wnd + Beta
    REAL(wp) ::   rn_stau_b      !
    !
-   REAL(wp)         ::   rn_pfac   ! multiplication factor for precipitation
+   REAL(wp), PUBLIC ::   rn_pfac   ! multiplication factor for precipitation
    REAL(wp), PUBLIC ::   rn_efac   ! multiplication factor for evaporation
    REAL(wp)         ::   rn_zqt    ! z(q,t) : height of humidity and temperature measurements
    REAL(wp)         ::   rn_zu     ! z(u)   : height of wind measurements
@@ -564,6 +564,24 @@ CONTAINS
             theta_air_zt(:,:) = theta_exner( sf(jp_tair)%fnow(:,:,1), zpre(:,:) )
          ENDIF
          !
+         !IF(ln_isbaes) THEN ! Save atmospheric variables for isbaes use
+         !   qsr_ice_isbaes(:,:) = sf(jp_qsr  )%fnow(:,:,1)
+         !   IF( MOD( kt - 1, nn_fsbc ) == 0 )   THEN
+         !      qlwdwn_ice_isbaes(:,:)   = sf(jp_qlw )%fnow(:,:,1)
+         !      IF( ln_dm2dc ) THEN
+         !         qsr_ice_isbaes(:,:) = sbc_dcy( sf(jp_qsr)%fnow(:,:,1) )
+         !      ELSE
+         !         qsr_ice_isbaes(:,:) =          sf(jp_qsr)%fnow(:,:,1)
+         !      ENDIF
+         !      tair_isbaes(:,:) = sf(jp_tair)%fnow(:,:,1)    !#LB: should it be POTENTIAL temperature (theta_air_zt) instead ????
+         !      qair_isbaes(:,:) = q_air_zt(:,:)
+         !      rain_isbaes(:,:)  = sf(jp_prec)%fnow(:,:,1) * rn_pfac
+         !      snow_isbaes(:,:)  = sf(jp_snow)%fnow(:,:,1) * rn_pfac
+         !      wndm_isbaes(:,:) = SQRT(sf(jp_wndi)%fnow(:,:,1) **2 + sf(jp_wndj)%fnow(:,:,1)**2)
+         !      slp_isbaes(:,:)  = sf(jp_slp )%fnow(:,:,1)
+         !   ENDIF
+
+         !ENDIF
          CALL blk_oce_1( kt, sf(jp_wndi )%fnow(:,:,1), sf(jp_wndj )%fnow(:,:,1),   &   !   <<= in
             &                theta_air_zt(:,:), q_air_zt(:,:),                     &   !   <<= in
             &                sf(jp_slp  )%fnow(:,:,1), sst_m, ssu_m, ssv_m,        &   !   <<= in
@@ -1075,11 +1093,11 @@ CONTAINS
             pvtaui(ji,jj) = zztmp1 * pwndj(ji,jj)
          END_2D
 
-         !#LB: saving the module, and x-y components, of the ai wind-stress at T-points: NOT weighted by the ice concentration !!!
-         IF(iom_use('taum_ice')) CALL iom_put('taum_ice', SQRT( putaui*putaui + pvtaui*pvtaui )*ztmp )
-         !#LB: These 2 lines below mostly here for 'STATION_ASF' test-case, otherwize "utau_oi" (U-grid) and vtau_oi" (V-grid) does the job in: [ICE/icedyn_rhg_evp.F90])
-         IF(iom_use('utau_ice')) CALL iom_put("utau_ice", putaui*ztmp)  ! utau at T-points!
-         IF(iom_use('vtau_ice')) CALL iom_put("vtau_ice", pvtaui*ztmp)  ! vtau at T-points!
+!         !#LB: saving the module, and x-y components, of the ai wind-stress at T-points: NOT weighted by the ice concentration !!!
+!         IF(iom_use('taum_ice')) CALL iom_put('taum_ice', SQRT( putaui*putaui + pvtaui*pvtaui )*ztmp )
+!         !#LB: These 2 lines below mostly here for 'STATION_ASF' test-case, otherwize "utau_oi" (U-grid) and vtau_oi" (V-grid) does the job in: [ICE/icedyn_rhg_evp.F90])
+!         IF(iom_use('utau_ice')) CALL iom_put("utau_ice", putaui*ztmp)  ! utau at T-points!
+!         IF(iom_use('vtau_ice')) CALL iom_put("vtau_ice", pvtaui*ztmp)  ! vtau at T-points!
 
          !
          DO_2D( 0, 0, 0, 0 )    ! U & V-points (same as ocean).
@@ -1176,7 +1194,7 @@ CONTAINS
             z_qlw(ji,jj,jl)   = emiss_i * ( pdqlw(ji,jj) - stefan * zst * zst3 ) * tmask(ji,jj,1)
             ! lw sensitivity
             z_dqlw(ji,jj,jl)  = zcoef_dqlw * zst3
-
+            
             ! ----------------------------!
             !     II    Turbulent FLUXES  !
             ! ----------------------------!
@@ -1200,6 +1218,16 @@ CONTAINS
             !qla_ice( ji,jj,jl) = zztmp1 * (zsq - q_zu_i(ji,jj))
             !dqla_ice(ji,jj,jl) = zztmp1 * dq_sat_dt_ice(zst, pslp(ji,jj)) ! ==> Qlat sensitivity  (dQlat/dT)
 
+#if defined key_isbaes
+!               qsb_ice_isbaes(ji,jj,jl) = z_qsb (ji,jj,jl)
+!               qla_ice_isbaes(ji,jj,jl) = qla_ice (ji,jj,jl)
+!               qlw_ice_isbaes(ji,jj,jl) = z_qlw (ji,jj,jl)
+               rho_air_isbaes(ji,jj) = rhoa(ji,jj)
+!               IF(qsb_ice_isbaes(ji,jj,jl) .ne. 0. ) z_qsb (ji,jj,jl) = qsb_ice_isbaes(ji,jj,jl)
+!               IF(qla_ice_isbaes(ji,jj,jl) .ne. 0. ) qla_ice (ji,jj,jl) = qla_ice_isbaes(ji,jj,jl)
+!               IF(qlw_ice_isbaes(ji,jj,jl) .ne. 0. ) z_qlw (ji,jj,jl) = qlw_ice_isbaes(ji,jj,jl)
+
+#endif
 
             ! ----------------------------!
             !     III    Total FLUXES     !
@@ -1310,12 +1338,19 @@ CONTAINS
       ENDIF
 
       !#LB:
+#if defined key_isbaes
+      ! air-ice heat flux components that are not written from ice_stp()@icestp.F90:
+      IF( iom_use('qla_ice') )  CALL iom_put( 'qla_ice', SUM( - qla_ice_isbaes * a_i_b, dim=3 ) ) !#LB: sign consistent with what's done for ocean
+      IF( iom_use('qsb_ice') )  CALL iom_put( 'qsb_ice', SUM( - qsb_ice_isbaes * a_i_b, dim=3 ) ) !#LB:     ==> negative => loss of heat for sea-ice
+      IF( iom_use('qlw_ice') )  CALL iom_put( 'qlw_ice', SUM( qlw_ice_isbaes * a_i_b, dim=3 ) )
+#else
+
       ! air-ice heat flux components that are not written from ice_stp()@icestp.F90:
       IF( iom_use('qla_ice') )  CALL iom_put( 'qla_ice', SUM( - qla_ice * a_i_b, dim=3 ) ) !#LB: sign consistent with what's done for ocean
       IF( iom_use('qsb_ice') )  CALL iom_put( 'qsb_ice', SUM( -   z_qsb * a_i_b, dim=3 ) ) !#LB:     ==> negative => loss of heat for sea-ice
       IF( iom_use('qlw_ice') )  CALL iom_put( 'qlw_ice', SUM(     z_qlw * a_i_b, dim=3 ) )
       !#LB.
-
+#endif
    END SUBROUTINE blk_ice_2
 
 

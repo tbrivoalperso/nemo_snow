@@ -131,6 +131,7 @@ CONTAINS
          u_oce(:,:) = ssu_m(:,:)                  ! -- mean surface ocean current
          v_oce(:,:) = ssv_m(:,:)
          !
+
          CALL eos_fzp( sss_m(:,:) , t_bo(:,:) )   ! -- freezing temperature [Kelvin] (set to rt0 over land)
          t_bo(:,:) = ( t_bo(:,:) + rt0 ) * tmask(:,:,1) + rt0 * ( 1._wp - tmask(:,:,1) )
          !
@@ -191,6 +192,7 @@ CONTAINS
          IF( ln_icethd )                CALL ice_thd( kt )            ! -- Ice thermodynamics
          !
                                         CALL diag_trends( 2 )         ! record thermo trends
+
                                         CALL ice_var_glo2eqv          ! necessary calls (at least for coupling)
                                         CALL ice_var_agg( 2 )         ! necessary calls (at least for coupling)
          !
@@ -274,8 +276,10 @@ CONTAINS
       ELSE
          CALL ice_istate( nit000, Kbb, Kmm, Kaa )   ! start from rest or read a file
       ENDIF
+
       CALL ice_var_glo2eqv
       CALL ice_var_agg(1)
+
       !
       CALL ice_dyn_init                ! set ice dynamics parameters
       !
@@ -371,7 +375,12 @@ CONTAINS
       !
       a_i_b (:,:,:)   = a_i (:,:,:)     ! ice area
       v_i_b (:,:,:)   = v_i (:,:,:)     ! ice volume
+#if defined key_isbaes
+      v_s_b (:,:,:)   = SUM(dv_s (:,:,:,:),DIM=3)     ! snow volume
+      rhov_s_b(:,:,:,:) = rhov_s(:,:,:,:)
+#else
       v_s_b (:,:,:)   = v_s (:,:,:)     ! snow volume
+#endif
       v_ip_b(:,:,:)   = v_ip(:,:,:)     ! pond volume
       v_il_b(:,:,:)   = v_il(:,:,:)     ! pond lid volume
       sv_i_b(:,:,:)   = sv_i(:,:,:)     ! salt content
@@ -469,6 +478,9 @@ CONTAINS
 
             ! Diags to validate ln_snwext=T
             qcn_snw_bot(ji,jj,jl) = 0._wp
+            qrema(ji,jj,jl) = 0._wp
+            evaprema(ji,jj,jl) = 0._wp
+
          END_2D
       ENDDO
 
@@ -495,8 +507,13 @@ CONTAINS
             &             + SUM(     sv_i(:,:,:)          - sv_i_b(:,:,:)                  , dim=3 ) * r1_Dt_ice * rhoi
          diag_vice(:,:) = diag_vice(:,:) &
             &             + SUM(     v_i (:,:,:)          - v_i_b (:,:,:)                  , dim=3 ) * r1_Dt_ice * rhoi
+#if defined key_isbaes
+         diag_vsnw(:,:) = diag_vsnw(:,:) &
+            &             + SUM(     SUM(rhov_s (:,:,:,:)          - rhov_s_b (:,:,:,:) , dim=3 ), DIM=3) * r1_Dt_ice 
+#else        
          diag_vsnw(:,:) = diag_vsnw(:,:) &
             &             + SUM(     v_s (:,:,:)          - v_s_b (:,:,:)                  , dim=3 ) * r1_Dt_ice * rhos
+#endif
          diag_vpnd(:,:) = diag_vpnd(:,:) &
             &             + SUM(     v_ip + v_il          - v_ip_b - v_il_b                , dim=3 ) * r1_Dt_ice * rhow
          !

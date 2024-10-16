@@ -150,7 +150,7 @@ CONTAINS
                &             + SUM( a_i_b(ji,jj,:) * qtr_ice_bot(ji,jj,:) ) * ( 1._wp - frq_m(ji,jj) )
             !
          ELSE                                                       !-- cooling or no ice left
-            qsr(ji,jj) = zqsr
+           qsr(ji,jj) = zqsr
          ENDIF
          !
          ! the non-solar is simply derived from the solar flux
@@ -182,7 +182,11 @@ CONTAINS
          !----------------------------------------
          snwice_mass_b(ji,jj) = snwice_mass(ji,jj)       ! save mass from the previous ice time step
          !                                               ! new mass per unit area
+#if defined key_isbaes
+         snwice_mass  (ji,jj) = tmask(ji,jj,1) * ( SUM(rhov_s(ji,jj,:,:))  + rhoi * vt_i(ji,jj) + rhow * (vt_ip(ji,jj) + vt_il(ji,jj)) )
+#else
          snwice_mass  (ji,jj) = tmask(ji,jj,1) * ( rhos * vt_s(ji,jj) + rhoi * vt_i(ji,jj) + rhow * (vt_ip(ji,jj) + vt_il(ji,jj)) )
+#endif
          !                                               ! time evolution of snow+ice mass
          snwice_fmass (ji,jj) = ( snwice_mass(ji,jj) - snwice_mass_b(ji,jj) ) * r1_Dt_ice
 
@@ -269,7 +273,9 @@ CONTAINS
       IF( iom_use('qt_atm_oi'  ) )   CALL iom_put( 'qt_atm_oi'  , qt_atm_oi * tmask(:,:,1)                                   )   ! total heat flux at the oce-ice surface: interface atm-(ice+oce)
       IF( iom_use('qemp_oce'   ) )   CALL iom_put( 'qemp_oce'   , qemp_oce                                                   )   ! Downward Heat Flux from E-P over ocean
       IF( iom_use('qemp_ice'   ) )   CALL iom_put( 'qemp_ice'   , qemp_ice                                                   )   ! Downward Heat Flux from E-P over ice
-      IF( iom_use('qcn_snw_bot'   ) )    CALL iom_put('qcn_snw_bot', qcn_snw_bot) ! diag for ln_snwext validation
+      IF( iom_use('qcn_snw_bot'   ) )    CALL iom_put('qcn_snw_bot', SUM(qcn_snw_bot * a_i_b, dim=3 )) ! diag for ln_snwext validation
+      IF( iom_use('qrema'   ) )    CALL iom_put('qrema', qrema) ! diag for ln_snwext validation
+      IF( iom_use('evaprema'   ) )    CALL iom_put('evaprema', evaprema) ! diag for ln_snwext validation
 
       ! heat fluxes from ice transformations
       !                            ! hfxdhc = hfxbog + hfxbom + hfxsum + hfxopw + hfxdif + hfxsnw - ( hfxthd + hfxdyn + hfxres + hfxsub + hfxspr )
@@ -448,12 +454,20 @@ CONTAINS
                CALL iom_get( numrir, jpdom_auto, 'snwice_mass_b', snwice_mass_b )
             ELSE                                     ! start from rest
                IF(lwp) WRITE(numout,*) '   ==>>   previous run without snow-ice mass output then set it'
+#if defined key_isbaes
+               snwice_mass  (:,:) = tmask(:,:,1) * ( SUM(SUM(rhov_s(:,:,:,:), DIM= 3),DIM=3) + rhoi * vt_i(:,:) )
+#else
                snwice_mass  (:,:) = tmask(:,:,1) * ( rhos * vt_s(:,:) + rhoi * vt_i(:,:) )
+#endif
                snwice_mass_b(:,:) = snwice_mass(:,:)
             ENDIF
          ELSE                                   !* Start from rest
             IF(lwp) WRITE(numout,*) '   ==>>   start from rest: set the snow-ice mass'
+#if defined key_isbaes
+               snwice_mass  (:,:) = tmask(:,:,1) * ( SUM(SUM(rhov_s(:,:,:,:), DIM= 3),DIM=3) + rhoi * vt_i(:,:) )
+#else
             snwice_mass  (:,:) = tmask(:,:,1) * ( rhos * vt_s(:,:) + rhoi * vt_i(:,:) )
+#endif
             snwice_mass_b(:,:) = snwice_mass(:,:)
          ENDIF
          !

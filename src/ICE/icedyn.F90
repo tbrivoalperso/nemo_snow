@@ -78,6 +78,9 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kmm    ! ocean time level index
       !!
       INTEGER  ::   ji, jj        ! dummy loop indices
+#if defined key_isbaes
+      INTEGER  ::   jk        ! dummy loop indices
+#endif
       REAL(wp) ::   zcoefu, zcoefv
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) ::   zdivu_i
       !!--------------------------------------------------------------------
@@ -92,6 +95,25 @@ CONTAINS
       ENDIF
       !
       ! retrieve thickness from volume for landfast param. and UMx advection scheme
+#if defined key_isbaes
+      DO jk=1, nlay_s
+   
+         WHERE( a_i(:,:,:) >= epsi20 )
+            dh_s(:,:,jk,:) = dv_s(:,:,jk,:) / a_i_b(:,:,:)
+         ELSEWHERE
+            dh_s(:,:,jk,:) = 0._wp
+         END WHERE
+      END DO
+
+      h_s(:,:,:) = SUM(dh_s(:,:,:,:),DIM=3)
+
+      WHERE( a_i(:,:,:) >= epsi20 )
+         h_i(:,:,:) = v_i(:,:,:) / a_i_b(:,:,:)
+      ELSEWHERE
+         h_i(:,:,:) = 0._wp
+      END WHERE
+         
+#else
       WHERE( a_i(:,:,:) >= epsi20 )
          h_i(:,:,:) = v_i(:,:,:) / a_i_b(:,:,:)
          h_s(:,:,:) = v_s(:,:,:) / a_i_b(:,:,:)
@@ -99,6 +121,7 @@ CONTAINS
          h_i(:,:,:) = 0._wp
          h_s(:,:,:) = 0._wp
       END WHERE
+#endif
       !
       WHERE( a_ip(:,:,:) >= epsi20 )
          h_ip(:,:,:) = v_ip(:,:,:) / a_ip(:,:,:)

@@ -40,6 +40,7 @@ MODULE sbc_ice
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qns_ice        !: non solar heat flux over ice                  [W/m2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qsr_ice        !: solar heat flux over ice                      [W/m2]
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qla_ice        !: latent flux over ice                          [W/m2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dqla_ice       !: latent sensibility over ice                 [W/m2/K]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dqns_ice       !: non solar heat flux over ice (LW+SEN+LA)    [W/m2/K]
@@ -71,6 +72,20 @@ MODULE sbc_ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   sstfrz         !: sea surface freezing temperature            [degC]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   rCdU_ice       !: ice-ocean drag at T-point (<0)               [m/s]
 #endif
+
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   slp_isbaes             !: Sea level pressure (needed in 1d by isba-es)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   tair_isbaes            !: Air T° (needed in 1d by isba-es)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qair_isbaes            !: Air humidity (needed in 1d by isba-es)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   wndm_isbaes            !: Wind module (needed in 1d by isba-es)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   rain_isbaes            !: rain rate (needed in 1d by isba-es) (Kg/m2/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   snow_isbaes            !: snow rate (needed in 1d by isba-es) (Kg/m2/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   rho_air_isbaes            !:  air density  (needed in 1d by isba-es) (kg/m2)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   qsr_ice_isbaes         !: solar radiative flux (needed in 1d by isba-es) [W/m2] 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   qns_ice_isbaes         !: non solar radiative flux (needed in 1d by isba-es) [W/m2]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   qlw_ice_isbaes         !: Long wave net solar radiation (needed in 1d by isba-es) [W/m2]   
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   qlwdwn_ice_isbaes         !: Long wave down solar radiation (needed in 1d by isba-es) [W/m2]   
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   qsb_ice_isbaes         !: Sensible heat flux (needed in 1d by isba-es) [W/m2]   
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   qla_ice_isbaes         !: Latent heat flux (needed in 1d by isba-es) [W/m2]   
 
 #if defined key_cice
    !
@@ -121,15 +136,21 @@ CONTAINS
       ALLOCATE( snwice_mass(jpi,jpj) , snwice_mass_b(jpi,jpj), snwice_fmass(jpi,jpj) , STAT=ierr(1) )
 
 #if defined key_si3
-      ALLOCATE( qns_ice (jpi,jpj,jpl) , qsr_ice  (jpi,jpj,jpl) ,     &
-         &      qla_ice (jpi,jpj,jpl) , dqla_ice (jpi,jpj,jpl) ,     &
+      ALLOCATE( qns_ice (jpi,jpj,jpl) , qsr_ice  (jpi,jpj,jpl) ,                              &
+         &      qla_ice (jpi,jpj,jpl) , dqla_ice (jpi,jpj,jpl) ,                              &
          &      dqns_ice(jpi,jpj,jpl) , tn_ice   (jpi,jpj,jpl) , alb_ice    (jpi,jpj,jpl) ,   &
          &      qml_ice (jpi,jpj,jpl) , qcn_ice  (jpi,jpj,jpl) , qtr_ice_top(jpi,jpj,jpl) ,   &
          &      utau_ice(jpi,jpj)     , vtau_ice (jpi,jpj)     , wndm_ice   (jpi,jpj)     ,   &
          &      evap_ice(jpi,jpj,jpl) , devap_ice(jpi,jpj,jpl) , qprec_ice  (jpi,jpj)     ,   &
          &      qemp_ice(jpi,jpj)     , qevap_ice(jpi,jpj,jpl) , qemp_oce   (jpi,jpj)     ,   &
          &      qns_oce (jpi,jpj)     , qsr_oce  (jpi,jpj)     , emp_oce    (jpi,jpj)     ,   &
-         &      emp_ice (jpi,jpj)     , sstfrz   (jpi,jpj)     , rCdU_ice   (jpi,jpj)     , STAT= ierr(2) )
+         &      emp_ice (jpi,jpj)     , sstfrz   (jpi,jpj)     , rCdU_ice   (jpi,jpj)     ,   & 
+         &      slp_isbaes(jpi,jpj)   , tair_isbaes(jpi,jpj)   , qair_isbaes(jpi,jpj)     ,   &
+         &      wndm_isbaes(jpi,jpj)  , rain_isbaes(jpi,jpj,jpl)   , snow_isbaes(jpi,jpj,jpl)     ,   &
+         &      qsr_ice_isbaes(jpi,jpj,jpl), qns_ice_isbaes(jpi,jpj,jpl), qlw_ice_isbaes(jpi, jpj,jpl), &
+         &      qlwdwn_ice_isbaes(jpi, jpj,jpl), &
+         &      qla_ice_isbaes(jpi,jpj,jpl),qsb_ice_isbaes(jpi,jpj,jpl), rho_air_isbaes(jpi,jpj), &
+         &      STAT= ierr(2) )
 #endif
 
 #if defined key_cice

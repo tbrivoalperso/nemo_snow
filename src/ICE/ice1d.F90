@@ -32,7 +32,7 @@ MODULE ice1D
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qlead_1d     
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qtr_ice_bot_1d   
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qsr_ice_1d  
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qsr_ice_1d 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qns_ice_1d  
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   t_bo_1d     
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   rn_amax_1d
@@ -125,7 +125,8 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   v_s_1d        !:
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sv_i_1d       !:
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   oa_i_1d       !:
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   o_i_1d        !:
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   o_i_1d       !:
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   a_ip_1d       !: ice ponds
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   v_ip_1d       !:
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   h_ip_1d       !:
@@ -157,10 +158,50 @@ MODULE ice1D
    
    ! Variables for snow external routines (ln_snwext=T)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qcn_snw_bot_1d
-   
-   ! Variables needed for ISBA-ES coupling
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rho_s_1d      !:    Snow density per unit volume   
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   dh_s_1d        !: Snow layer thicknesses
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qrema_1d ! For isbaes use 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   evaprema_1d ! For isbaes
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   isnow_save_1d !  For isbaes use
 
+
+
+#if defined key_isbaes
+   ! Variables needed for ISBA-ES coupling
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rho_s_1d      !:    Snow density per unit volume  
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   swe_s_1d      !:    Snow water equivalent (kg m-2)  
+ 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   ov_s_1d       !: Snow age times volume
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   o_s_1d        !: Snow age
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   dv_s_1d        !: Snow layer volume
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rhov_s_1d        !: Snow layer density X volume
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   lwc_s_1d        !: Snow liquid water content
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   albs_isbaes_1d        !: Snow albedo
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   albi_isbaes_1d        !: Ice albedo
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   cnd_i_isbaes_1d        !: Conductivity of the 1st ice layer
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   cnd_s_isbaes_1d        !: Average conductivity of the snow layer
+
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   slp_isbaes_1d        !: Sea-level pressure
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   tair_isbaes_1d        !: Air T°
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qair_isbaes_1d        !: Air humidity 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wndm_isbaes_1d        !: Wind speed module 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   rho_air_isbaes_1d        !: air density
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   rain_isbaes_1d        !: rain rate
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   snow_isbaes_1d        !: snow rate
+
+
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qsr_ice_isbaes_1d ! For isbaes use 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qns_ice_isbaes_1d ! For isbaes use 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qlw_ice_isbaes_1d ! For isbaes use 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qlwdwn_ice_isbaes_1d ! For isbaes use
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qsb_ice_isbaes_1d ! For isbaes use 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qla_ice_isbaes_1d ! For isbaes use 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   qemp_ice_1d !  For isbaes use 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   hbdg_isbaes_1d ! For isbaes use 
+
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   glamt_1d ! For isbaes use 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   gphit_1d ! For isbaes use 
+
+#endif
    ! 
    !!----------------------
    !! * 2D Module variables
@@ -191,7 +232,7 @@ CONTAINS
       !!                ***  ROUTINE ice1D_alloc ***
       !!---------------------------------------------------------------------!
       INTEGER ::   ice1D_alloc   ! return value
-      INTEGER ::   ierr(9), ii
+      INTEGER ::   ierr(10), ii
       !!---------------------------------------------------------------------!
       ierr(:) = 0
 
@@ -230,7 +271,7 @@ CONTAINS
       !
       ii = ii + 1
       ALLOCATE( t_s_1d  (jpij,nlay_s)     , t_i_1d (jpij,nlay_i)     , sz_i_1d(jpij,nlay_i) ,  &            
-         &      e_i_1d  (jpij,nlay_i)     , e_s_1d (jpij,nlay_s)     , rho_s_1d(jpij,nlay_s),  &
+         &      e_i_1d  (jpij,nlay_i)     , e_s_1d (jpij,nlay_s) ,     &
          &      eh_i_old(jpij,0:nlay_i+1) , h_i_old(jpij,0:nlay_i+1) , STAT=ierr(ii) )
       !
       ii = ii + 1
@@ -248,8 +289,20 @@ CONTAINS
          &      a_ip_2d(jpij,jpl) , v_ip_2d(jpij,jpl) , t_su_2d(jpij,jpl) , v_il_2d(jpij,jpl) ,  &
          &      STAT=ierr(ii) )
 
+
        ii = ii + 1
-      ALLOCATE( qcn_snw_bot_1d(jpij) , STAT=ierr(ii) )
+      ALLOCATE( qcn_snw_bot_1d(jpij), dh_s_1d(jpij,nlay_s),qrema_1d(jpij),evaprema_1d(jpij), isnow_save_1d(jpij), STAT=ierr(ii) )
+
+#if defined key_isbaes
+      ii = ii + 1
+      ALLOCATE( swe_s_1d(jpij,nlay_s), albs_isbaes_1d(jpij), albi_isbaes_1d(jpij), cnd_i_isbaes_1d(jpij), cnd_s_isbaes_1d(jpij),          &
+         &     rho_s_1d(jpij,nlay_s), o_s_1d(jpij,nlay_s), lwc_s_1d(jpij,nlay_s),  &
+         &     dv_s_1d(jpij,nlay_s),rhov_s_1d(jpij,nlay_s),ov_s_1d(jpij,nlay_s),                                                      & 
+         &      tair_isbaes_1d(jpij), qair_isbaes_1d(jpij), slp_isbaes_1d(jpij), wndm_isbaes_1d(jpij), rain_isbaes_1d(jpij),   & 
+         &      snow_isbaes_1d(jpij), qsr_ice_isbaes_1d(jpij), qns_ice_isbaes_1d(jpij), qlwdwn_ice_isbaes_1d(jpij), qlw_ice_isbaes_1d(jpij),          & 
+         &      qla_ice_isbaes_1d(jpij), qsb_ice_isbaes_1d(jpij), qemp_ice_1d(jpij),                      &
+         &      rho_air_isbaes_1d(jpij), glamt_1d(jpij), gphit_1d(jpij), hbdg_isbaes_1d(jpij), STAT=ierr(ii) )
+#endif
 
       ice1D_alloc = MAXVAL( ierr(:) )
       IF( ice1D_alloc /= 0 )   CALL ctl_stop( 'STOP',  'ice1D_alloc: failed to allocate arrays.'  )

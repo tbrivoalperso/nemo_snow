@@ -17,8 +17,12 @@ MODULE iceistate
    USE phycst         ! physical constant
    USE oce            ! dynamics and tracers variables
    USE dom_oce        ! ocean domain
-   USE sbc_oce , ONLY : sst_m, sss_m, ln_ice_embd 
+   USE sbc_oce , ONLY : sst_m, sss_m, ln_ice_embd
+#if defined key_isbaes
+   USE sbc_ice , ONLY : tn_ice, snwice_mass, snwice_mass_b, qla_ice_isbaes, qsb_ice_isbaes, qlw_ice_isbaes
+#else 
    USE sbc_ice , ONLY : tn_ice, snwice_mass, snwice_mass_b
+#endif
    USE eosbn2         ! equation of state
 # if defined key_qco
    USE domqco         ! Quasi-Eulerian coord.
@@ -37,6 +41,12 @@ MODULE iceistate
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
    USE fldread        ! read input fields
+
+#if defined key_isbaes   
+   USE MODI_SNOW3L
+   USE MODE_SNOW3L   ! For isba-es
+   USE MODD_CSTS
+#endif
 
 # if defined key_agrif
    USE agrif_oce
@@ -107,6 +117,9 @@ CONTAINS
       !! ** Notes   : o_i, t_su, t_s, t_i, sz_i must be filled everywhere, even
       !!              where there is no ice
       !!--------------------------------------------------------------------
+      
+      !USE MODE_SNOW3L
+
       INTEGER, INTENT(in) :: kt            ! time step 
       INTEGER, INTENT(in) :: Kbb, Kmm, Kaa ! ocean time level indices
       !
@@ -119,6 +132,12 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj)     ::   zt_su_ini, zht_s_ini, zsm_i_ini, ztm_i_ini !data from namelist or nc file
       REAL(wp), DIMENSION(jpi,jpj)     ::   zapnd_ini, zhpnd_ini, zhlid_ini            !data from namelist or nc file
       REAL(wp), DIMENSION(jpi,jpj,jpl) ::   zti_3d , zts_3d                            !temporary arrays
+
+      ! Isba-es parameters (should be put in another routine)
+      REAL(wp), PARAMETER       :: XLMTT=333700.0
+      REAL(wp), PARAMETER       :: XRHOLW=1000.
+      REAL(wp), PARAMETER       :: XCI=2.106E+3
+      REAL(wp) ::  ZSCAP
       !!
       REAL(wp), DIMENSION(:,:), ALLOCATABLE ::   zhi_2d, zhs_2d, zai_2d, zti_2d, zts_2d, ztsu_2d, zsi_2d, zaip_2d, zhip_2d, zhil_2d
       !--------------------------------------------------------------------
@@ -158,7 +177,13 @@ CONTAINS
       ! heat contents
       e_i (:,:,:,:) = 0._wp
       e_s (:,:,:,:) = 0._wp
-      
+
+      ! THEO - diags for debug
+      diag1_2D(:,:) = 0._wp
+      diag2_2D(:,:) = 0._wp
+      diag3_2D(:,:) = 0._wp
+      diag4_2D(:,:) = 0._wp
+
       ! general fields
       a_i (:,:,:) = 0._wp
       v_i (:,:,:) = 0._wp
@@ -170,6 +195,20 @@ CONTAINS
       h_s (:,:,:) = 0._wp
       s_i (:,:,:) = 0._wp
       o_i (:,:,:) = 0._wp
+
+#if defined key_isbaes
+      ov_s(:,:,:,:) = 0._wp
+      o_s (:,:,:,:) = 1._wp
+      albs_isbaes(:,:,:) = 0.85 
+      albi_isbaes(:,:,:) = 0._wp
+      cnd_i_isbaes(:,:,:) = rcnd_i
+      cnd_s_isbaes(:,:,:) = rn_cnd_s 
+      qla_ice_isbaes(:,:,:) = 0._wp
+      qsb_ice_isbaes(:,:,:) = 0._wp
+      qlw_ice_isbaes(:,:,:) = 0._wp
+      hbdg_isbaes(:,:,:) = 0._wp
+
+#endif
       !
       ! melt ponds
       a_ip     (:,:,:) = 0._wp
@@ -363,6 +402,13 @@ CONTAINS
             DEALLOCATE( zhi_2d, zhs_2d, zai_2d , &
                &        zti_2d, zts_2d, ztsu_2d, zsi_2d, zaip_2d, zhip_2d, zhil_2d )
 
+#if defined key_isbaes
+            ! For ISBA-ES
+            DO jk = 1, nlay_s
+               dh_s(:,:,jk,:) = h_s(:,:,:) * r1_nlay_s
+               dv_s(:,:,jk,:) = dh_s(:,:,jk,:) * a_i(:,:,:)
+            END DO
+#endif
             ! calculate extensive and intensive variables
             CALL ice_var_salprof ! for sz_i
             DO jl = 1, jpl
@@ -376,11 +422,27 @@ CONTAINS
             DO jl = 1, jpl
                DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
                   t_s(ji,jj,jk,jl) = zts_3d(ji,jj,jl)
-                  e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
-                     &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
-                  ! Initialise rho_s (not used yet, but will be for ISBA-ES)
-                  rho_s(ji,jj,jk,jl) = rhos 
+#if defined key_isbaes
+                  rho_s(ji,jj,jk,jl) = 191. !rhos
+                   
+                          ZSCAP     = rho_s(ji,jj,jk,jl) * XCI  ! In isba-es, capacity = rho x cst, with cst=XCI
+                          swe_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dh_s(ji,jj,jk,jl)
+                          lwc_s(ji,jj,jk,jl) = MAX(0.0,t_s(ji,jj,jk,jl)-rt0)*ZSCAP*dh_s(ji,jj,jk,jl)/(XLMTT*XRHOLW)
+                          e_s(ji,jj,jk,jl) =  (- dh_s(ji,jj,jk,jl)*( ZSCAP*(t_s(ji,jj,jk,jl)-rt0)- XLMTT*rho_s(ji,jj,jk,jl)) + &
+                          & XLMTT*XRHOLW*lwc_s(ji,jj,jk,jl)) * a_i(ji,jj,jl)  ! Minus factor to match SI3 convention for enthalpy 
+                          rhov_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dv_s(ji,jj,jk,jl)
+                          !e_s(ji,jj,jk,jl) = e_s(ji,jj,jk,jl) * dh_s_1d(1:npti,jk) * a_i_1d(1:npti)
+                          !e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+                     !&               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )
+
+#else
+               e_s(ji,jj,jk,jl) = zswitch(ji,jj) * v_s(ji,jj,jl) * r1_nlay_s * &
+                 &               rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )            
+#endif         
                END_3D
+#if defined key_isbaes
+               rhovt_s(:,:,:) = SUM(rhov_s(:,:,:,:), DIM=4)
+#endif
             END DO
             !
             DO jl = 1, jpl
@@ -422,7 +484,12 @@ CONTAINS
       !----------------------------------------------------------
       ! 4) Adjust ssh and vertical scale factors to snow-ice mass
       !----------------------------------------------------------
+#if defined key_isbaes
+      snwice_mass  (:,:) = tmask(:,:,1) * SUM( SUM(rhov_s, DIM=3)  + rhoi * v_i + rhow * ( v_ip + v_il ), dim=3  )   ! snow+ice mass
+
+#else
       snwice_mass  (:,:) = tmask(:,:,1) * SUM( rhos * v_s + rhoi * v_i + rhow * ( v_ip + v_il ), dim=3  )   ! snow+ice mass
+#endif
       snwice_mass_b(:,:) = snwice_mass(:,:)
       !
       IF( ln_ice_embd ) THEN            ! embedded sea-ice: deplete the initial ssh below sea-ice area

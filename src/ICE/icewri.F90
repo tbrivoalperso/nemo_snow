@@ -63,6 +63,10 @@ CONTAINS
       REAL(wp) ::   zdiag_area_sh, zdiag_extt_sh, zdiag_volu_sh
       !!-------------------------------------------------------------------
       !
+#if defined key_isbaes
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s) :: rho_s_3D, t_s_3D, dh_s_3D      
+
+#endif
       IF( ln_timing )   CALL timing_start('icewri')
 
       ! get missing value from xml
@@ -97,7 +101,15 @@ CONTAINS
       !
       ! general fields
       IF( iom_use('icemass' ) )   CALL iom_put( 'icemass', vt_i * rhoi * zmsk00 )                                           ! Ice mass per cell area
+#if defined key_isbaes
+      IF(ln_isbaes) THEN
+         IF( iom_use('snwmass' ) )   CALL iom_put( 'snwmass', SUM(SUM(rhov_s, DIM=3),DIM=3) * zmsksn )                                  ! Snow mass per cell area    
+      ELSE
+#endif
       IF( iom_use('snwmass' ) )   CALL iom_put( 'snwmass', vt_s * rhos * zmsksn )                                           ! Snow mass per cell area
+#if defined key_isbaes
+      ENDIF
+#endif
       IF( iom_use('iceconc' ) )   CALL iom_put( 'iceconc', at_i        * zmsk00 )                                           ! ice concentration
       IF( iom_use('icevolu' ) )   CALL iom_put( 'icevolu', vt_i        * zmsk00 )                                           ! ice volume = mean ice thickness over the cell
       IF( iom_use('icethic' ) )   CALL iom_put( 'icethic', hm_i        * zmsk00 )                                           ! ice thickness
@@ -123,6 +135,28 @@ CONTAINS
       ! heat
       IF( iom_use('icetemp' ) )   CALL iom_put( 'icetemp', ( tm_i  - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! ice mean temperature
       IF( iom_use('snwtemp' ) )   CALL iom_put( 'snwtemp', ( tm_s  - rt0 ) * zmsksn + zmiss_val * ( 1._wp - zmsksn ) )      ! snw mean temperature
+#if defined key_isbaes
+      IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn )      ! snw mean density
+      IF( iom_use('cnd_s_isbaes' ) )   CALL iom_put( 'cnd_s_isbaes', SUM(cnd_s_isbaes(:,:,:) * a_i(:,:,:),DIM=3)  * zmsksn )      !  snw conductivity 
+
+      IF( iom_use('snwrho_1' ) )   CALL iom_put( 'snwrho_1', SUM(rho_s(:,:,1,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw top density
+      IF( iom_use('snwrho_N' ) )   CALL iom_put( 'snwrho_N', SUM(rho_s(:,:,nlay_s,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw bottom density
+      IF( iom_use('hbdg_isbaes') )       CALL iom_put( 'hbdg_isbaes'   , hbdg_isbaes(:,:,: )) ! ISBAES heat budget
+      DO jk=1, nlay_s 
+         rho_s_3D(:,:,jk) = SUM(rho_s(:,:,jk,:) * a_i(:,:,:),DIM=3)
+
+         WHERE(SUM(dv_s(:,:,jk,:), DIM=3) > 1e-04_wp) 
+                 t_s_3D(:,:,jk) = SUM(t_s(:,:,jk,:) * dv_s(:,:,jk,:),DIM=3) / SUM(dv_s(:,:,jk,:), DIM=3)
+         ELSEWHERE 
+                 t_s_3D(:,:,jk) = rt0
+         ENDWHERE
+         !dh_s_3D(:,:,jk)  = SUM(dh_s(:,:,jk,:) * a_i(:,:,:),DIM=3) 
+      ENDDO
+      IF( iom_use('snwrho_3D' ) )   CALL iom_put( 'snwrho_3D', rho_s_3D(:,:,:)  )      ! snw mean density per layer
+      IF( iom_use('snwtemp_3D' ) )   CALL iom_put( 'snwtemp_3D', t_s_3D(:,:,:)  )      ! snw mean temperature per layer
+
+      IF( iom_use('dh_s_3D' ) )   CALL iom_put( 'dh_s_3D', dhm_s(:,:,:)  )      ! snow thickness  
+#endif 
       IF( iom_use('icettop' ) )   CALL iom_put( 'icettop', ( tm_su - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice surface
       IF( iom_use('icetbot' ) )   CALL iom_put( 'icetbot', ( t_bo  - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice bottom
       IF( iom_use('icetsni' ) )   CALL iom_put( 'icetsni', ( tm_si - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the snow-ice interface
@@ -165,6 +199,23 @@ CONTAINS
          CALL iom_put( 'albedo' , zalb )
          DEALLOCATE( zalb, zmskalb )
       ENDIF
+
+      IF( iom_use('snwalb') ) THEN                                                                   ! ice albedo and surface albedo
+         ALLOCATE( zalb(jpi,jpj), zmskalb(jpi,jpj) )
+         ! ice albedo
+         WHERE( at_i_b < 1.e-03 )
+            zmskalb(:,:) = 0._wp
+            zalb   (:,:) = 0._wp 
+         ELSEWHERE
+            zmskalb(:,:) = 1._wp
+            zalb   (:,:) = SUM( albs_isbaes * a_i_b, dim=3 ) / at_i_b
+         END WHERE
+         CALL iom_put( 'snwalb' , zalb * zmskalb + zmiss_val * ( 1._wp - zmskalb ) )
+         ! ice+ocean albedo
+         DEALLOCATE( zalb, zmskalb )
+      ENDIF
+
+
       !
       ! --- category-dependent fields --- !
       IF( iom_use('icemask_cat' ) )   CALL iom_put( 'icemask_cat' ,                  zmsk00l                                   ) ! ice mask 0%
@@ -186,7 +237,12 @@ CONTAINS
       IF( iom_use('iceafpnd_cat') )   CALL iom_put( 'iceafpnd_cat',   a_ip_frac    * zmsk00l                                   ) ! melt pond frac per ice area for categories
       IF( iom_use('iceaepnd_cat') )   CALL iom_put( 'iceaepnd_cat',   a_ip_eff     * zmsk00l                                   ) ! melt pond effective frac for categories
       IF( iom_use('icealb_cat'  ) )   CALL iom_put( 'icealb_cat'  ,   alb_ice      * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! ice albedo for categories
+      IF( iom_use('qns_bef') )       CALL iom_put( 'qns_bef'   , diag1_2D )
+      IF( iom_use('qns_aft') )       CALL iom_put( 'qns_aft'   , diag3_2D )
 
+      IF( iom_use('qsr_bef') )       CALL iom_put( 'qsr_bef'   , diag2_2D )
+      IF( iom_use('qsr_aft') )       CALL iom_put( 'qsr_aft'   , diag4_2D )
+      
       !------------------
       ! Add-ons for SIMIP
       !------------------
@@ -277,7 +333,10 @@ CONTAINS
       CALL iom_rstput( 0, 0, kid, 'siconcat', a_i        )   ! Ice concentration
       CALL iom_rstput( 0, 0, kid, 'sisalcat', s_i        )   ! Ice salinity
       CALL iom_rstput( 0, 0, kid, 'snthicat', h_s        )   ! Snw thickness
-
+      CALL iom_rstput( 0, 0, kid, 'sntemcat', tm_s        )   ! Snw temperature
+#if defined key_isbaes
+      CALL iom_rstput( 0, 0, kid, 's', rhom_s        )        ! Snw density
+#endif
     END SUBROUTINE ice_wri_state
 
 #else

@@ -15,7 +15,12 @@ MODULE icealb
    !!----------------------------------------------------------------------
    USE phycst         ! physical constants
    USE dom_oce        ! domain: ocean
+#if defined key_isbaes
+   USE ice, ONLY: jpl, albs_isbaes, albi_isbaes ! sea-ice: number of categories, snow & ice albedo
+#else
    USE ice, ONLY: jpl ! sea-ice: number of categories
+#endif
+
    USE icevar         ! sea-ice: operations
    !
    USE in_out_manager ! I/O manager
@@ -155,11 +160,18 @@ CONTAINS
             ENDIF
             !
             !                       !--- Snow-covered ice albedo (freezing, melting cases)
+#if defined key_isbaes
+            zalb_snw = albs_isbaes(ji,jj,jl)
+            albi_isbaes(ji,jj,jl) = zalb_ice ! Save ice albedo for ISBA-ES                          |  ---------------------------------------------------------------------------------------------------
+
+#else
             IF( pt_su(ji,jj,jl) < rt0 ) THEN
                zalb_snw = rn_alb_sdry - ( rn_alb_sdry - zalb_ice ) * EXP( - ph_snw(ji,jj,jl) * z1_c3 )
             ELSE
                zalb_snw = rn_alb_smlt - ( rn_alb_smlt - zalb_ice ) * EXP( - ph_snw(ji,jj,jl) * z1_c4 )
             ENDIF
+
+#endif
             !                       !--- Ponded ice albedo
             zalb_pnd = rn_alb_dpnd - ( rn_alb_dpnd - zalb_ice ) * EXP( - ph_pnd(ji,jj,jl) * z1_href_pnd ) 
             !
@@ -171,7 +183,6 @@ CONTAINS
             !
             ! albedo depends on cloud fraction because of non-linear spectral effects
             palb_ice(ji,jj,jl) = ( 1._wp - pcloud_fra(ji,jj) ) * zalb_cs + pcloud_fra(ji,jj) * zalb_os
-
          END_2D
       END DO
       !

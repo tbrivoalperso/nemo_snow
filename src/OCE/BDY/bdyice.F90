@@ -255,6 +255,7 @@ CONTAINS
                DO jk = 1, nlay_s
                   t_s(ji,jj,jk,jl) = MIN( t_s(ji,jj,jk,jl), -0.15_wp + rt0 )           ! Force t_s to be lower than -0.15deg (arbitrary) => likely conservation issue
                   !                                                                    !       otherwise instant melting can occur
+                  !
                   e_s(ji,jj,jk,jl) = rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )   ! enthalpy in J/m3
                   e_s(ji,jj,jk,jl) = e_s(ji,jj,jk,jl) * v_s(ji,jj,jl) * r1_nlay_s           ! enthalpy in J/m2
                END DO               

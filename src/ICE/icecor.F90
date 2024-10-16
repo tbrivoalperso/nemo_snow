@@ -71,7 +71,10 @@ CONTAINS
       WHERE( a_i(:,:,:) >= epsi20 )   ;   h_i(:,:,:) = v_i(:,:,:) / a_i(:,:,:)
       ELSEWHERE                       ;   h_i(:,:,:) = 0._wp
       END WHERE
+#if ! defined key_isbaes
+      ! if key_isbaes, we remove this part because it gives weird results
       WHERE( h_i(:,:,:) < rn_himin )      a_i(:,:,:) = a_i(:,:,:) * h_i(:,:,:) / rn_himin
+#endif
       !
       !                             !-----------------------------------------------------
       !                             !  ice concentration should not exceed amax          !

@@ -63,6 +63,9 @@ MODULE icevar
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
 
+#if defined key_isbaes   
+   USE MODE_SNOW3L   ! For isba-es
+#endif
    IMPLICIT NONE
    PRIVATE
 
@@ -74,6 +77,11 @@ MODULE icevar
    PUBLIC   ice_var_zapsmall
    PUBLIC   ice_var_zapneg
    PUBLIC   ice_var_roundoff
+
+#if defined key_isbaes   
+   PUBLIC   ice_var_roundoff_isbaes
+#endif
+
    PUBLIC   ice_var_bv
    PUBLIC   ice_var_enthalpy
    PUBLIC   ice_var_sshdyn
@@ -115,11 +123,23 @@ CONTAINS
       !
       INTEGER ::   ji, jj, jk, jl   ! dummy loop indices
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) ::   z1_at_i, z1_vt_i, z1_vt_s
+#if defined key_isbaes
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   z1_a_i
+#endif
       !!-------------------------------------------------------------------
       !
       !                                      ! integrated values
       vt_i(:,:) =       SUM( v_i (:,:,:)           , dim=3 )
+#if defined key_isbaes
+      ALLOCATE( z1_a_i(jpi,jpj,jpl) )
+      WHERE( a_i(:,:,:) > epsi20 )   ;   z1_a_i(:,:,:) = 1._wp / a_i(:,:,:)
+      ELSEWHERE                     ;   z1_a_i(:,:,:) = 0._wp
+      END WHERE
+
+      vt_s(:,:) =       SUM(SUM( dv_s (:,:,:,:)      , dim=3 ), dim=3)
+#else
       vt_s(:,:) =       SUM( v_s (:,:,:)           , dim=3 )
+#endif
       st_i(:,:) =       SUM( sv_i(:,:,:)           , dim=3 )
       at_i(:,:) =       SUM( a_i (:,:,:)           , dim=3 )
       et_s(:,:)  = SUM( SUM( e_s (:,:,:,:), dim=4 ), dim=3 )
@@ -155,6 +175,10 @@ CONTAINS
          hm_i(:,:) = vt_i(:,:) * z1_at_i(:,:)
          hm_s(:,:) = vt_s(:,:) * z1_at_i(:,:)
          !
+#if defined key_isbaes           
+         dvt_s(:,:,:) = SUM( dv_s (:,:,:,:)      , dim=4 ) 
+         rhovt_s(:,:,:) = SUM( rhov_s (:,:,:,:)      , dim=4 ) 
+#endif
          !                          ! mean temperature (K), salinity and age
          tm_si(:,:) = SUM( t_si(:,:,:) * a_i(:,:,:) , dim=3 ) * z1_at_i(:,:)
          om_i (:,:) = SUM( oa_i(:,:,:)              , dim=3 ) * z1_at_i(:,:)
@@ -162,12 +186,21 @@ CONTAINS
          !
          tm_i(:,:) = 0._wp
          tm_s(:,:) = 0._wp
+         rhom_s(:,:) = 0._wp
+         dhm_s(:,:,:)  = 0._wp
          DO jl = 1, jpl
             DO jk = 1, nlay_i
                tm_i(:,:) = tm_i(:,:) + r1_nlay_i * t_i (:,:,jk,jl) * v_i(:,:,jl) * z1_vt_i(:,:)
             END DO
             DO jk = 1, nlay_s
+#if defined key_isbaes            
+               tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * dv_s(:,:,jk,jl) * z1_vt_s(:,:) !(dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
+               rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * dv_s(:,:,jk,jl) * z1_vt_s(:,:) !* (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
+               dhm_s(:,:,jk) = dvt_s(:,:,jk) * z1_at_i(:,:)
+#else
+
                tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
+#endif
             END DO
          END DO
          !
@@ -207,6 +240,13 @@ CONTAINS
       REAL(wp), PARAMETER ::   zhl_max =  0.015_wp  ! pond lid thickness above which the ponds disappear from the albedo calculation
       REAL(wp), PARAMETER ::   zhl_min =  0.005_wp  ! pond lid thickness below which the full pond area is used in the albedo calculation
       REAL(wp), DIMENSION(jpi,jpj,jpl) ::   z1_a_i, z1_v_i, z1_a_ip, za_s_fra
+#if defined key_isbaes
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) :: ZSCAP ! 
+      REAL(wp), PARAMETER       :: XLMTT=333700.0 ! isba_es parameter
+      REAL(wp), PARAMETER       :: XTT=273.16 ! isba_es parameter
+      REAL(wp), PARAMETER       :: XSNOWDMIN=0.000001 ! isba_es parameter
+      REAL(wp), PARAMETER       :: XCI=2.106E+3
+#endif
       !!-------------------------------------------------------------------
 
 !!gm Question 2:  It is possible to define existence of sea-ice in a common way between
@@ -290,6 +330,20 @@ CONTAINS
       ! Snow temperature   [K]   (with a minimum value (rt0 - 100.))
       !--------------------
       zlay_s = REAL( nlay_s , wp )
+#if defined key_isbaes 
+      ! With ISBA-ES, the snow temperature is not used elsewhere than inside the snow model.
+      ! Thus, we do not need to recompute the temperature
+      DO jk = 1, nlay_s
+         WHERE( dv_s(:,:,jk,:) > epsi20 )        !--- icy area
+            rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
+            dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)
+ 
+        ELSEWHERE                           !--- no ice
+            t_s(:,:,jk,:) = rt0
+            rho_s(:,:,jk,:) = 400.
+         END WHERE
+      END DO
+#else
       DO jk = 1, nlay_s
          WHERE( v_s(:,:,:) > epsi20 )        !--- icy area
             t_s(:,:,jk,:) = rt0 + MAX( -100._wp ,  &
@@ -298,10 +352,15 @@ CONTAINS
             t_s(:,:,jk,:) = rt0
          END WHERE
       END DO
+#endif
       !
       ! integrated values
       vt_i (:,:) = SUM( v_i , dim=3 )
+#if defined key_isbaes
+      vt_s (:,:) = SUM(SUM( dv_s , dim=3 ))
+#else
       vt_s (:,:) = SUM( v_s , dim=3 )
+#endif
       at_i (:,:) = SUM( a_i , dim=3 )
       !
    END SUBROUTINE ice_var_glo2eqv
@@ -537,12 +596,23 @@ CONTAINS
             ! update exchanges with ocean
             sfx_res(ji,jj)  = sfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * sv_i(ji,jj,jl)   * rhoi * r1_Dt_ice
             wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * v_i (ji,jj,jl)   * rhoi * r1_Dt_ice
+#if defined key_isbaes
+            ! Compute mass flux from mass variable
+            wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * SUM(rhov_s(ji,jj,:,jl)) * r1_Dt_ice
+#else
             wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * v_s (ji,jj,jl)   * rhos * r1_Dt_ice
+#endif
             wfx_pnd(ji,jj)  = wfx_pnd(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * ( v_ip(ji,jj,jl)+v_il(ji,jj,jl) ) * rhow * r1_Dt_ice
             !
             a_i  (ji,jj,jl) = a_i (ji,jj,jl) * zswitch(ji,jj)
             v_i  (ji,jj,jl) = v_i (ji,jj,jl) * zswitch(ji,jj)
             v_s  (ji,jj,jl) = v_s (ji,jj,jl) * zswitch(ji,jj)
+
+#if defined key_isbaes
+            dv_s  (ji,jj,:,jl) = dv_s (ji,jj,:,jl) * zswitch(ji,jj)
+            rhov_s  (ji,jj,:,jl) = rhov_s (ji,jj,:,jl) * zswitch(ji,jj)
+#endif
+
             t_su (ji,jj,jl) = t_su(ji,jj,jl) * zswitch(ji,jj) + t_bo(ji,jj) * ( 1._wp - zswitch(ji,jj) )
             oa_i (ji,jj,jl) = oa_i(ji,jj,jl) * zswitch(ji,jj)
             sv_i (ji,jj,jl) = sv_i(ji,jj,jl) * zswitch(ji,jj)
@@ -575,8 +645,11 @@ CONTAINS
       !
    END SUBROUTINE ice_var_zapsmall
 
-
+#if defined key_isbaes
+   SUBROUTINE ice_var_zapneg( pdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, pdv_s, prhov_s )
+#else
    SUBROUTINE ice_var_zapneg( pdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i )
+#endif
       !!-------------------------------------------------------------------
       !!                   ***  ROUTINE ice_var_zapneg ***
       !!
@@ -594,6 +667,10 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   pv_il      ! melt pond lid volume
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_s       ! snw heat content
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_i       ! ice heat content
+#if defined key_isbaes
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout), OPTIONAL ::   pdv_s       ! snw heat content
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout), OPTIONAL ::   prhov_s       ! snw heat content
+#endif
       !
       INTEGER  ::   ji, jj, jl, jk   ! dummy loop indices
       REAL(wp) ::   z1_dt
@@ -601,6 +678,8 @@ CONTAINS
       !
       z1_dt = 1._wp / pdt
       !
+      pv_s(:,:,:) = SUM(pdv_s(:,:,:,:), DIM=3) ! Make sure that the volume used is the right one (not sure if needed)
+
       DO jl = 1, jpl       !==  loop over the categories  ==!
          !
          ! make sure a_i=0 where v_i<=0
@@ -631,10 +710,20 @@ CONTAINS
                wfx_res(ji,jj)    = wfx_res(ji,jj) + pv_i (ji,jj,jl) * rhoi * z1_dt
                pv_i   (ji,jj,jl) = 0._wp
             ENDIF
+#if defined key_isbaes
+            IF( pv_s(ji,jj,jl) < 0._wp .OR. pa_i(ji,jj,jl) <= 0._wp ) THEN
+               wfx_res(ji,jj)    = wfx_res(ji,jj) + SUM(prhov_s (ji,jj,:,jl) ) * z1_dt
+               pv_s   (ji,jj,jl) = 0._wp
+               pdv_s(ji,jj,:,jl) = 0._wp
+               prhov_s(ji,jj,:,jl) = 0._wp
+
+            ENDIF
+#else
             IF( pv_s(ji,jj,jl) < 0._wp .OR. pa_i(ji,jj,jl) <= 0._wp ) THEN
                wfx_res(ji,jj)    = wfx_res(ji,jj) + pv_s (ji,jj,jl) * rhos * z1_dt
                pv_s   (ji,jj,jl) = 0._wp
             ENDIF
+#endif
             IF( psv_i(ji,jj,jl) < 0._wp .OR. pa_i(ji,jj,jl) <= 0._wp .OR. pv_i(ji,jj,jl) <= 0._wp ) THEN
                sfx_res(ji,jj)    = sfx_res(ji,jj) + psv_i(ji,jj,jl) * rhoi * z1_dt
                psv_i  (ji,jj,jl) = 0._wp
@@ -685,6 +774,7 @@ CONTAINS
       WHERE( poa_i(1:npti,:)   < 0._wp )   poa_i(1:npti,:)   = 0._wp   ! oa_i must be >= 0
       WHERE( pe_i (1:npti,:,:) < 0._wp )   pe_i (1:npti,:,:) = 0._wp   !  e_i must be >= 0
       WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+
       IF( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
          WHERE( pa_ip(1:npti,:) < 0._wp )    pa_ip(1:npti,:)   = 0._wp   ! a_ip must be >= 0
          WHERE( pv_ip(1:npti,:) < 0._wp )    pv_ip(1:npti,:)   = 0._wp   ! v_ip must be >= 0
@@ -695,6 +785,50 @@ CONTAINS
       !
    END SUBROUTINE ice_var_roundoff
 
+#if defined key_isbaes
+   SUBROUTINE ice_var_roundoff_isbaes( pa_i, pv_i, pv_s, psv_i, poa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, prhov_s, pdv_s )
+      !!-------------------------------------------------------------------
+      !!                   ***  ROUTINE ice_var_roundoff ***
+      !!
+      !! ** Purpose :   Remove negative sea ice values arising from roundoff
+      !errors
+      !!-------------------------------------------------------------------
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pa_i       ! ice concentration
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pv_i       ! ice volume
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pv_s       ! snw volume
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   psv_i      ! salt content
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   poa_i      ! age content
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pa_ip      ! melt pond fraction
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pv_ip      ! melt pond volume
+      REAL(wp), DIMENSION(:,:)  , INTENT(inout) ::   pv_il      ! melt pond lid volume
+      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   pe_s       ! snw heat content
+      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   pe_i       ! ice heat content
+      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   prhov_s      ! snw 3D mass
+      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   pdv_s       ! snw 3D volume
+
+      !!-------------------------------------------------------------------
+      !
+
+      WHERE( pa_i (1:npti,:)   < 0._wp )   pa_i (1:npti,:)   = 0._wp   !  a_i must be >= 0
+      WHERE( pv_i (1:npti,:)   < 0._wp )   pv_i (1:npti,:)   = 0._wp   !  v_i must be >= 0
+      WHERE( pv_s (1:npti,:)   < 0._wp )   pv_s (1:npti,:)   = 0._wp   !  v_s must be >= 0
+      WHERE( psv_i(1:npti,:)   < 0._wp )   psv_i(1:npti,:)   = 0._wp   ! sv_i must be >= 0
+      WHERE( poa_i(1:npti,:)   < 0._wp )   poa_i(1:npti,:)   = 0._wp   ! oa_i must be >= 0
+      WHERE( pe_i (1:npti,:,:) < 0._wp )   pe_i (1:npti,:,:) = 0._wp   !  e_i must be >= 0
+      WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+      WHERE( pdv_s (1:npti,:,:) < 0._wp )   pdv_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+      WHERE( prhov_s (1:npti,:,:) < 0._wp )   prhov_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+
+      IF( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
+         WHERE( pa_ip(1:npti,:) < 0._wp )    pa_ip(1:npti,:)   = 0._wp   ! a_ip must be >= 0
+         WHERE( pv_ip(1:npti,:) < 0._wp )    pv_ip(1:npti,:)   = 0._wp   ! v_ip must be >= 0
+         IF( ln_pnd_lids ) THEN
+            WHERE( pv_il(1:npti,:) < 0._wp .AND. pv_il(1:npti,:) > -epsi10 ) pv_il(1:npti,:)   = 0._wp   ! v_il must be >= 0
+         ENDIF
+      ENDIF
+      !
+   END SUBROUTINE ice_var_roundoff_isbaes
+#endif
 
    SUBROUTINE ice_var_bv
       !!-------------------------------------------------------------------

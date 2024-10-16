@@ -30,7 +30,7 @@ MODULE iom
    USE sbc_oce  , ONLY :   nn_fsbc, ght_abl, ghw_abl, e3t_abl, e3w_abl, jpka, jpkam1
    USE icb_oce  , ONLY :   nclasses, class_num       !  !: iceberg classes
 #if defined key_si3
-   USE ice      , ONLY :   jpl
+   USE ice      , ONLY :   jpl, nlay_s
 #endif
    USE phycst          ! physical constants
    USE dianam          ! build name of file
@@ -258,6 +258,11 @@ CONTAINS
          ! SIMIP diagnostics (4 main arctic straits)
          CALL iom_set_axis_attr( "nstrait", (/ (REAL(ji,wp), ji=1,4) /) )
 # endif
+#if defined key_isbaes
+         CALL iom_set_axis_attr( "nlay_s", (/ (REAL(ji,wp), ji=1,nlay_s) /) )
+
+#endif
+
 #if defined key_top
          IF( ALLOCATED(profsed) ) CALL iom_set_axis_attr( "profsed", paxis = profsed )
 #endif

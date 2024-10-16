@@ -19,6 +19,10 @@
     <domain domain_ref="grid_T" />
     <axis axis_ref="ncatice" />
   </grid>
+  <grid id="grid_T_nlay_s" >
+    <domain domain_ref="grid_T" />
+    <axis axis_ref="nlay_s" />
+  </grid>
   <grid id="grid_T_ncatice_inner" >
     <domain domain_ref="grid_T_inner" />
     <axis axis_ref="ncatice" />

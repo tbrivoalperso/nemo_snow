@@ -202,7 +202,8 @@ MODULE ice
    LOGICAL , PUBLIC ::   ln_icedO         ! activate ice growth in open-water (T) or not (F)
    LOGICAL , PUBLIC ::   ln_icedS         ! activate gravity drainage and flushing (T) or not (F)
    LOGICAL , PUBLIC ::   ln_leadhfx       ! heat in the leads is used to melt sea-ice before warming the ocean
-   LOGICAL , PUBLIC ::   ln_snwext       ! heat in the leads is used to melt sea-ice before warming the ocean
+   LOGICAL , PUBLIC ::   ln_snwext       ! flag to activate external snow routines 
+   LOGICAL , PUBLIC ::   ln_isbaes       ! flag to activate isba-es coupling
    LOGICAL , PUBLIC ::   ln_fcond       ! heat in the leads is used to melt sea-ice before warming the ocean
    
    !
@@ -369,6 +370,7 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   et_i , et_s   !: ice and snow total heat content                         (J/m2)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   tm_i          !: mean ice temperature over all categories                (K)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   tm_s          !: mean snw temperature over all categories                (K)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   rhom_s        !: mean snw density over all categories (kg/m3)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   bvm_i         !: brine volume averaged over all categories
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   sm_i          !: mean sea ice salinity averaged over all categories      (pss)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   tm_su         !: mean surface temperature over all categories            (K)
@@ -380,7 +382,6 @@ MODULE ice
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   t_s           !: Snow temperatures     [K]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_s           !: Snow enthalpy         [J/m2]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   rho_s           !: Snow density         [kg/m3]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   t_i           !: ice temperatures      [K]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_i           !: ice enthalpy          [J/m2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   sz_i          !: ice salinity          [PSS]
@@ -463,6 +464,43 @@ MODULE ice
    !! * Extra diagnotics for external snow (ln_snwext=T)
    !!----------------------------------------------------------------------
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_snw_bot   !: Conduction flux at snow / ice interface (W/m2)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   qrema
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   evaprema
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   isnow_save !: non solar flux per category
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::  diag1_2D
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::  diag2_2D 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::  diag3_2D
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::  diag4_2D
+
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::  diag1_3D
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::  diag2_3D
+   
+#if defined key_isbaes
+   !!----------------------------------------------------------------------
+   !! * Extra variables for ISBA-ES coupling
+   !!----------------------------------------------------------------------
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   albs_isbaes   !: snow albedo computed by isba-es
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   albi_isbaes   !: ice albedo read by isba-es 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   cnd_i_isbaes   !: Conductivity of the first ice layer
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   cnd_s_isbaes   !: Average conductivity of the snow
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   rho_s           !: Snow density         [kg/m3]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   swe_s           !: Snow layer(s) liquid Water Equivalent (SWE:kg m-2) 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   o_s           !: Snow Age                             (s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   lwc_s        !: Snow liquid water content   (m)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   ov_s          !: Snow Age times volume              (s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   dh_s           !: Snow layer thickness                          (m)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   dv_s           !: Snow layer volume per unit area               (m)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   rhov_s           !: Snow layer density X olume per unit area               (m)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::   rhov_s_b !: before Snow layer density X olume per unit area               (m)
+
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::     qns_ice_b
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::     qsr_ice_b
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::     hbdg_isbaes ! Heat budget of isbaes
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dhm_s           !: Snow thickness averaged over categories         [m]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dvt_s
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   rhovt_s !Total mass per layer 
+!: Snow layer density X olume per unit area               (m)
+#endif
    !
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
@@ -516,7 +554,7 @@ CONTAINS
       ii = ii + 1
       ALLOCATE( u_ice(jpi,jpj) , v_ice(jpi,jpj) ,                                   &
          &      vt_i (jpi,jpj) , vt_s (jpi,jpj) , st_i(jpi,jpj) , at_i(jpi,jpj) , ato_i(jpi,jpj) ,  &
-         &      et_i (jpi,jpj) , et_s (jpi,jpj) , tm_i(jpi,jpj) , tm_s(jpi,jpj) ,  &
+         &      et_i (jpi,jpj) , et_s (jpi,jpj) , tm_i(jpi,jpj) , tm_s(jpi,jpj) ,rhom_s(jpi,jpj),  &
          &      sm_i (jpi,jpj) , tm_su(jpi,jpj) , hm_i(jpi,jpj) , hm_s(jpi,jpj) ,  &
          &      om_i (jpi,jpj) , bvm_i(jpi,jpj) , tau_icebfr(jpi,jpj), icb_mask(jpi,jpj), STAT=ierr(ii) )
 
@@ -566,13 +604,17 @@ CONTAINS
 
       ! * Extra diagnotics for external snow (ln_snwext=T)
       ii = ii + 1 
-      ALLOCATE( qcn_snw_bot(jpi,jpj,jpl), STAT = ierr(ii) )
+      ALLOCATE( qcn_snw_bot(jpi,jpj,jpl),qrema(jpi,jpj,jpl),evaprema(jpi,jpj,jpl), isnow_save(jpi,jpj,jpl), diag1_2D(jpi,jpj), &
+              & diag2_2D(jpi,jpj),diag3_2D(jpi,jpj), diag4_2D(jpi,jpj), diag1_3D(jpi,jpj,jpl), diag2_3D(jpi,jpj,jpl), STAT = ierr(ii) )
 
-
+#if defined key_isbaes
       ! Variables needed for ISBA-ES coupling
       ii = ii + 1
-      ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) , STAT=ierr(ii) )
- 
+      ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) ,swe_s(jpi,jpj,nlay_s,jpl) , o_s(jpi,jpj,nlay_s,jpl), lwc_s(jpi,jpj,nlay_s,jpl), ov_s(jpi,jpj,nlay_s,jpl), albs_isbaes(jpi,jpj,jpl), & 
+                & albi_isbaes(jpi,jpj,jpl),cnd_i_isbaes(jpi,jpj,jpl), cnd_s_isbaes(jpi,jpj,jpl), dh_s(jpi,jpj,nlay_s,jpl),dv_s(jpi,jpj,nlay_s,jpl),rhov_s(jpi,jpj,nlay_s,jpl), & 
+                & rhov_s_b(jpi,jpj,nlay_s,jpl), qns_ice_b(jpi,jpj,jpl), qsr_ice_b(jpi,jpj,jpl), &
+                & hbdg_isbaes(jpi,jpj,jpl),dvt_s(jpi,jpj,nlay_s), rhovt_s(jpi,jpj,nlay_s), dhm_s(jpi,jpj,nlay_s), STAT=ierr(ii) )
+#endif
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )
       !

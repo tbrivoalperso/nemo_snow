@@ -202,9 +202,7 @@ CONTAINS
          zqns_ice_b (1:npti) = qns_ice_1d(1:npti)                       ! store previous qns_ice_1d value
          !
       ENDIF
-      
       ztsold (1:npti,:) = t_s_1d(1:npti,:)   ! Old snow temperature
-
       !-------------
       ! 2) Radiation
       !-------------
@@ -440,8 +438,8 @@ CONTAINS
                         zindtbis(ji,jm) = zindterm(ji,jm  ) - ztrid(ji,jm,1) * zindtbis(ji,jm-1  ) / zdiagbis(ji,jm-1)
                      END DO
                   ENDIF
-               END DO
 
+               END DO
                ! snow temperatures
                DO ji = 1, npti
                   ! Variables used after iterations
@@ -455,12 +453,12 @@ CONTAINS
                DO jm = nlay_s, 2, -1
                   DO ji = 1, npti
                      jk = jm - 1
-                     IF ( .NOT. l_T_converged(ji) .AND. h_s_1d(ji) > 0._wp ) &
-                        &   t_s_1d(ji,jk) = ( zindtbis(ji,jm) - ztrid(ji,jm,3) * t_s_1d(ji,jk+1) ) / zdiagbis(ji,jm)
-
+                     IF ( .NOT. l_T_converged(ji) .AND. h_s_1d(ji) > 0._wp ) THEN
+                           t_s_1d(ji,jk) = ( zindtbis(ji,jm) - ztrid(ji,jm,3) * t_s_1d(ji,jk+1) ) / zdiagbis(ji,jm)
+                     ENDIF       
                   END DO
                END DO
-
+               
                ! surface temperature
                DO ji = 1, npti
                   IF( .NOT. l_T_converged(ji) ) THEN
@@ -488,6 +486,7 @@ CONTAINS
                      ! Check convergence on surface T° only in the presence of snow. 
 
                      IF( h_s_1d(ji) > 0._wp ) THEN
+
                         t_su_1d(ji) = MAX( MIN( t_su_1d(ji) , rt0 ) , rt0 - 100._wp ) 
                         zdti_max    = MAX( zdti_max, ABS( t_su_1d(ji) - ztsub(ji) ) )    
                         DO jk = 1, nlay_s
