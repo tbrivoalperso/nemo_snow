@@ -117,7 +117,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kbb, Kmm ! ocean time level indices
       INTEGER, INTENT(in) ::   ksbc     ! flux formulation (user defined, bulk, or Pure Coupled)
       !
-      INTEGER ::   jl   ! dummy loop index
+      INTEGER ::   jl,ji,jj   ! dummy loop index
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('icestp')
@@ -159,6 +159,33 @@ CONTAINS
                                         CALL diag_set0                ! set diag of mass, heat and salt fluxes to 0
                                         CALL ice_rst_opn( kt )        ! Open Ice restart file (if necessary)
          !
+
+      DO jl = 1, jpl
+
+         DO_2D( 0, 0, 0, 0 )
+
+            IF((ABS(glamt(ji,jj) - (-143.999737468590)) .lt. 1e-4) .AND.  (ABS(gphit(ji,jj) - (-62.1951258146339)) .lt. 1e-4) ) THEN
+                PRINT*,'                   '
+                PRINT*,'                   '
+                PRINT*,'                   '
+                PRINT*,'TS=',kt,'BEFORE DYN'
+                PRINT*,'jl',jl
+                PRINT*,'a_i',a_i(ji-1:ji+1,jj-1:jj+1,jl)
+                PRINT*,'lon',glamt(ji-1:ji+1,jj-1:jj+1)
+                PRINT*,'lat',gphit(ji-1:ji+1,jj-1:jj+1)
+
+                PRINT*,'e_s',e_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'dh_s',dh_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'dv_s',dv_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'rhov_s',rhov_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'v_i',v_i(ji,jj,jl)
+                PRINT*,'rho_s',rho_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'t_s',t_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+
+            ENDIF
+         END_2D
+      END DO
+
          IF( ln_icedyn .AND. .NOT.ln_c1d )   &
             &                           CALL ice_dyn( kt, Kmm )       ! -- Ice dynamics
          !
@@ -167,6 +194,28 @@ CONTAINS
          !                          !==  lateral boundary conditions  ==!
          IF( ln_icethd .AND. ln_bdy )   CALL bdy_ice( kt )            ! -- bdy ice thermo
          !
+      DO jl = 1, jpl
+
+         DO_2D( 0, 0, 0, 0 )
+
+            IF((ABS(glamt(ji,jj) - (-143.999737468590)) .lt. 1e-4) .AND.  (ABS(gphit(ji,jj) - (-62.1951258146339)) .lt. 1e-4) ) THEN
+                PRINT*,'                   '
+                PRINT*,'                   '
+                PRINT*,'                   '
+                PRINT*,'TS=',kt,'AFTER DYN'
+                PRINT*,'jl',jl
+                PRINT*,'a_i',a_i(ji-1:ji+1,jj-1:jj+1,jl)
+                PRINT*,'e_s',e_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'dh_s',dh_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'dv_s',dv_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'rhov_s',rhov_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'v_i',v_i(ji,jj,jl)
+                PRINT*,'rho_s',rho_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+
+            ENDIF
+         END_2D
+      END DO
+
          !                          !==  previous lead fraction and ice volume for flux calculations
                                         CALL ice_var_glo2eqv          ! h_i and h_s for ice albedo calculation
                                         CALL ice_var_agg(1)           ! at_i for coupling
@@ -189,8 +238,53 @@ CONTAINS
          !----------------------------!
          ! --- ice thermodynamics --- !
          !----------------------------!
+      DO jl = 1, jpl
+
+         DO_2D( 0, 0, 0, 0 )
+
+            IF((ABS(glamt(ji,jj) - (-143.999737468590)) .lt. 1e-4) .AND.  (ABS(gphit(ji,jj) - (-62.1951258146339)) .lt. 1e-4) ) THEN
+                PRINT*,'                   '
+                PRINT*,'                   '
+                PRINT*,'                   '
+                PRINT*,'TS=',kt,'BEFORE THERMO'
+                PRINT*,'jl',jl
+                PRINT*,'a_i',a_i(ji-1:ji+1,jj-1:jj+1,jl)
+                PRINT*,'e_s',e_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'dh_s',dh_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'dv_s',dv_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'rhov_s',rhov_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'v_i',v_i(ji,jj,jl)
+                PRINT*,'rho_s',rho_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'t_s',t_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+
+            ENDIF
+         END_2D
+      END DO
+
          IF( ln_icethd )                CALL ice_thd( kt )            ! -- Ice thermodynamics
          !
+      DO jl = 1, jpl
+
+         DO_2D( 0, 0, 0, 0 )
+
+            IF((ABS(glamt(ji,jj) - (-143.999737468590)) .lt. 1e-4) .AND.  (ABS(gphit(ji,jj) - (-62.1951258146339)) .lt. 1e-4) ) THEN
+                PRINT*,'                   ' 
+                PRINT*,'                   '
+                PRINT*,'                   ' 
+                PRINT*,'TS=',kt,'AFTER THERMO'
+                PRINT*,'jl',jl
+                PRINT*,'a_i',a_i(ji-1:ji+1,jj-1:jj+1,jl)
+                PRINT*,'e_s',e_s(ji-1:ji+1,jj-1:jj+1,1,jl) 
+                PRINT*,'dh_s',dh_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'dv_s',dv_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'rhov_s',rhov_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+                PRINT*,'v_i',v_i(ji,jj,jl)
+                PRINT*,'rho_s',rho_s(ji-1:ji+1,jj-1:jj+1,1,jl)
+
+            ENDIF
+         END_2D
+      END DO
+
                                         CALL diag_trends( 2 )         ! record thermo trends
 
                                         CALL ice_var_glo2eqv          ! necessary calls (at least for coupling)
@@ -443,6 +537,9 @@ CONTAINS
 
          wfx_err_sub(ji,jj) = 0._wp
          !
+#if defined key_isbaes
+         hfx_res_adv(ji,jj) = 0._wp   ; wfx_res_adv(ji,jj) = 0._wp   ;
+#endif
          diag_heat(ji,jj) = 0._wp ;   diag_sice(ji,jj) = 0._wp
          diag_vice(ji,jj) = 0._wp ;   diag_vsnw(ji,jj) = 0._wp
          diag_aice(ji,jj) = 0._wp ;   diag_vpnd(ji,jj) = 0._wp

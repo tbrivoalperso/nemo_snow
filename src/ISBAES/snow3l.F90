@@ -646,6 +646,8 @@ DO JI=1,INI
                    - XLMTT*PSNOWRHO(JI,:) ) + XLMTT*XRHOLW*PSNOWLIQ(JI,:)) - PDELHEAT_DIF(JI)
 ENDDO
 
+
+
 !
 !*       8.     Surface fluxes
 !               --------------
@@ -688,6 +690,8 @@ ZSNOWLIQ0(:,:) = PSNOWLIQ(:,:) ! save liquid water profile before update
 !
 
 CALL SNOW3LMELT(PTSTEP,ZSCAP,ZSNOWTEMP,PSNOWDZ,PSNOWRHO,PSNOWLIQ,ZMELTXS)  
+
+
 
 !
 !
@@ -757,6 +761,7 @@ CALL SNOW3LEVAPGONE(PSNOWHEAT,PSNOWDZ,PSNOWRHO,ZSNOWTEMP,PSNOWLIQ)
 !   PDELHEAT_SUB(JI) = SUM(PSNOWHEAT(JI,:)) - PDELHEAT_SUB(JI)
 !ENDDO
 !
+
 !*      12.     Update surface albedo:
 !               ----------------------
 ! Snow clear sky albedo:
@@ -995,6 +1000,9 @@ REAL, DIMENSION(SIZE(PSNOWRHO,1)                 ) :: ZSNOWDZ1
 REAL, DIMENSION(SIZE(PSNOWRHO,1)                 ) :: ZFOREST_EFFECT
 !
 LOGICAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: GDRIFT
+CHARACTER(3)                       :: HSNOWDRIFT
+REAL                               :: HVROMAX, HCOEF_EFFECT
+
 !
 INTEGER                             :: JJ, JI
 !
@@ -1008,6 +1016,17 @@ INTEGER                             :: INLVLS
 ! 0. Initialization:
 ! ------------------
 !
+! Change coefficients if we want to used Royer et al. (2021) snowdrift parameters
+HSNOWDRIFT= 'V12' ! 'R21' 
+IF(HSNOWDRIFT == 'R21') THEN
+   HVROMAX = XVROMAX_R21
+   HCOEF_EFFECT = XCOEF_EFFECT_R21
+ELSE ! Default parameters
+   HVROMAX = XVROMAX
+   HCOEF_EFFECT = XCOEF_EFFECT
+ENDIF 
+
+
 INI    = SIZE(PSNOWDZ(:,:),1)
 INLVLS = SIZE(PSNOWDZ(:,:),2)
 !
@@ -1950,7 +1969,7 @@ WHERE(PSNOWDZ > 0.0)
    PSNOWDZ(:,:)    = PSNOWDZ(:,:)*ZCMPRSFACT(:,:)
    PSNOWRHO(:,:)   = ZSNOWLWE(:,:)*XRHOLW/PSNOWDZ(:,:)
 !   PSNOWRHO(:,:)   = 330. 
-!
+
 ! Make sure maximum density is not surpassed! If it is, lower the density
 ! and increase the snow thickness accordingly:
 
@@ -2047,6 +2066,7 @@ PDELPHASE_SFC(:) = 0.0
 PDELPHASE    (:) = 0.0
 !
 ZSNOWRHO(:,:)  = PSNOWRHO(:,:)
+!ZSNOWRHO(:,:)  = 330.
 ZSNOWLIQ(:,:)  = PSNOWLIQ(:,:)
 ZSNOWTEMP(:,:) = PSNOWTEMP(:,:)
 INI            = SIZE(PSNOWDZ(:,:),1)
@@ -2770,6 +2790,7 @@ DO JJ=1,INLVLS
         ZSNOW    (JI)    = MAX(0.5*XSNOWDMIN,ZSNOW(JI))
         PSNOWDZ  (JI,JJ) = ZSNOW(JI)/REAL(INLVLS)
         PSNOWHEAT(JI,JJ) = ZSNOWHEAT_1D(JI)/REAL(INLVLS)
+!        PSNOWRHO (JI,JJ) = 330.
         PSNOWRHO (JI,JJ) = ZMASS (JI)/ZSNOW(JI)
       ENDIF
     ENDDO

@@ -2839,7 +2839,7 @@ CHARACTER(3)                       :: HSNOWFALL
 !
 !
 !
-HSNOWFALL = 'R21' !R21' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
+HSNOWFALL = 'V12' !R21' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
 
 INI             = SIZE(PSNOWDZ(:,:),1)
 INLVLS          = SIZE(PSNOWDZ(:,:),2)
@@ -2931,7 +2931,6 @@ WHERE (PSR(:) > 0.0)
 !
 ! Augment total pack depth:
 !  
-!   ZRHOSNEW(:) = 330. !theo
    ZSNOWFALL(:)  = PSR(:)*PTSTEP/ZRHOSNEW(:)    ! snowfall thickness (m)
 !
 END WHERE

@@ -124,7 +124,9 @@ CONTAINS
       INTEGER ::   ji, jj, jk, jl   ! dummy loop indices
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) ::   z1_at_i, z1_vt_i, z1_vt_s
 #if defined key_isbaes
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   z1_a_i
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   z1_a_i 
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   z1_h_s 
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s)     :: t_s_3D, rho_s_3D
 #endif
       !!-------------------------------------------------------------------
       !
@@ -170,13 +172,26 @@ CONTAINS
          WHERE( vt_s(:,:) > epsi20 )   ;   z1_vt_s(:,:) = 1._wp / vt_s(:,:)
          ELSEWHERE                     ;   z1_vt_s(:,:) = 0._wp
          END WHERE
+
          !
          !                          ! mean ice/snow thickness
          hm_i(:,:) = vt_i(:,:) * z1_at_i(:,:)
          hm_s(:,:) = vt_s(:,:) * z1_at_i(:,:)
          !
 #if defined key_isbaes           
-         dvt_s(:,:,:) = SUM( dv_s (:,:,:,:)      , dim=4 ) 
+         dvt_s(:,:,:) = SUM( dv_s (:,:,:,:)      , dim=3 ) 
+         ALLOCATE( z1_h_s(jpi,jpj,jpl) )
+         DO jk=1, nlay_s
+            WHERE(a_i(:,:,:) > epsi20 ) ; dh_s(:,:,jk,:) = dv_s(:,:,jk,:) / a_i(:,:,:)
+            ELSEWHERE ;                   dh_s(:,:,jk,:) = 0._wp
+            END WHERE
+         END DO
+         h_s(:,:,:) = SUM(dh_s(:,:,:,:), DIM=3)
+   
+         WHERE( h_s(:,:,:) > epsi20 )   ;   z1_h_s(:,:,:) = 1._wp / h_s(:,:,:) 
+         ELSEWHERE                     ;   z1_h_s(:,:,:) = 0._wp
+         END WHERE
+
          rhovt_s(:,:,:) = SUM( rhov_s (:,:,:,:)      , dim=4 ) 
 #endif
          !                          ! mean temperature (K), salinity and age
@@ -192,17 +207,41 @@ CONTAINS
             DO jk = 1, nlay_i
                tm_i(:,:) = tm_i(:,:) + r1_nlay_i * t_i (:,:,jk,jl) * v_i(:,:,jl) * z1_vt_i(:,:)
             END DO
-            DO jk = 1, nlay_s
-#if defined key_isbaes            
-               tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * dv_s(:,:,jk,jl) * z1_vt_s(:,:) !(dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
-               rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * dv_s(:,:,jk,jl) * z1_vt_s(:,:) !* (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
-               dhm_s(:,:,jk) = dvt_s(:,:,jk) * z1_at_i(:,:)
-#else
+ !           DO jk = 1, nlay_s
+#if ! defined key_isbaes    
+           
+
+         
+           !    tm_s(:,:) = tm_s(:,:) + t_s (:,:,jk,jl) * (dh_s(:,:,jk,jl) * z1_h_s(:,:,jl))  * (a_i(:,:,jl) * z1_at_i(:,:))  !(dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl) !* v_s(:,:,jl) * z1_vt_s(:,:)
+           !    rhom_s(:,:) = rhom_s(:,:) + rho_s(:,:,jk,jl) * dv_s(:,:,jk,jl) * z1_h_s(:,:,jk) !* (dh_s(:,:,jk,jl)/h_s(:,:,jl)) !* a_i(:,:,jl)
+           !    dhm_s(:,:,jk) = SUM(dv_s(:,:,jk,:) * z1_a_i(:,:,:), DIM=3)
+           DO jk = 1, nlay_s
 
                tm_s(:,:) = tm_s(:,:) + r1_nlay_s * t_s (:,:,jk,jl) * v_s(:,:,jl) * z1_vt_s(:,:)
+           END DO
 #endif
-            END DO
          END DO
+
+         DO jk = 1, nlay_s
+
+            WHERE((SUM(a_i(:,:,:), DIM=3) > epsi06 ) )                      
+                    t_s_3D(:,:,jk) = SUM(t_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
+                    rho_s_3D(:,:,jk) = SUM(rho_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
+                    dhm_s(:,:,jk) = SUM(dh_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
+            ELSEWHERE
+                    t_s_3D(:,:,jk) = rt0
+                    rho_s_3D(:,:,jk) = 0._wp
+                    dhm_s(:,:,jk) = 0._wp
+            ENDWHERE
+         ENDDO
+         
+         WHERE(SUM(dhm_s(:,:,:),DIM=3) > 1e-5) 
+            tm_s(:,:) = SUM(t_s_3D(:,:,:) * dhm_s(:,:,:), DIM=3) / SUM(dhm_s(:,:,:),DIM=3)
+            rhom_s(:,:) = SUM(rho_s_3D(:,:,:) * dhm_s(:,:,:), DIM=3) / SUM(dhm_s(:,:,:),DIM=3)
+         ELSEWHERE
+            tm_s(:,:) = rt0
+            rhom_s(:,:) = 0._wp
+         ENDWHERE
          !
          !                           ! put rt0 where there is no ice
          WHERE( at_i(:,:)<=epsi20 )
@@ -246,6 +285,7 @@ CONTAINS
       REAL(wp), PARAMETER       :: XTT=273.16 ! isba_es parameter
       REAL(wp), PARAMETER       :: XSNOWDMIN=0.000001 ! isba_es parameter
       REAL(wp), PARAMETER       :: XCI=2.106E+3
+      REAL(wp), PARAMETER       :: XRHOLW= 1000.
 #endif
       !!-------------------------------------------------------------------
 
@@ -336,13 +376,35 @@ CONTAINS
       DO jk = 1, nlay_s
          WHERE( dv_s(:,:,jk,:) > epsi20 )        !--- icy area
             rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
+            ZSCAP(:,:,jk,:) = XCI * rho_s(:,:,jk,:) 
             dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)
+            t_s(:,:,jk,:) = rt0 + ( (- e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) &
+            &       + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) )
+            lwc_s(:,:,jk,:) = MAX(0._wp, t_s(:,:,jk,:) - rt0) * ZSCAP(:,:,jk,:) * dh_s(:,:,jk,:) / (XLMTT*XRHOLW)  
+            t_s(:,:,jk,:)   = MIN(rt0, t_s(:,:,jk,:))
  
         ELSEWHERE                           !--- no ice
             t_s(:,:,jk,:) = rt0
-            rho_s(:,:,jk,:) = 400.
-         END WHERE
+            rho_s(:,:,jk,:) = 330.
+        END WHERE
       END DO
+         ! After the advection, T° can be very cold over very thin snow layers,
+         ! We put this water into the ocean for now
+      DO jl = 1, jpl
+         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
+            IF(t_s(ji,jj,jk,jl) < (rt0 -100.) ) THEN
+
+               hfx_res(ji,jj) = hfx_res(ji,jj) - e_s(ji,jj,jk,jl) * r1_Dt_ice !  W.m-2 <0
+               wfx_res(ji,jj) = wfx_res(ji,jj) + rhov_s(ji,jj,jk,jl) * r1_Dt_ice !  mass flux 
+               dh_s(ji,jj,jk,jl) = 0._wp
+               t_s(ji,jj,jk,jl) = rt0
+               e_s(ji,jj,jk,jl) = 0._wp
+               dv_s(ji,jj,jk,jl) = 0._wp
+               rhov_s(ji,jj,jk,jl) = 0._wp
+            ENDIF
+         END_3D
+      END DO
+
 #else
       DO jk = 1, nlay_s
          WHERE( v_s(:,:,:) > epsi20 )        !--- icy area

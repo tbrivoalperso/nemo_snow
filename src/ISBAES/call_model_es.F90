@@ -168,7 +168,6 @@ LOGICAL                 :: OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation d
 
 TYPE(DATE_TIME)         :: TPTIME      ! current date and time
 
-PRINT*,'YEAR MONTH DAY PTIME',nyear,nmonth, nday, nsec_day
 
 ! -------------------------------------------------------------------------------------------------------------------------------------------
 ! Model options 
@@ -178,7 +177,7 @@ HSNOWRES = 'DEF'
 HIMPLICIT_WIND = 'OLD'
 OMEB = .false.
 OSI3 = .true.
-OSNOWDRIFT = 'NONE' !'DFLT' ! 'NONE' 
+OSNOWDRIFT = 'DFLT' !'DFLT' ! 'NONE' 
 OSNOWDRIFT_SUBLIM = .false.
 
 ! -------------------------------------------------------------------------------------------------------------------------------------------
@@ -272,13 +271,13 @@ ZP_SOILD        = 0.
 zq_ini = SUM( e_s_1d(JI,1:nlay_s))!  * dh_s_1d(JI,1:nlay_s) )!* r1_nlay_s 
 zm_ini = SUM(rho_s_1d(JI,1:nlay_s) * dv_s_1d(JI,1:nlay_s))
 
-
+!rho_s_1d(JI,:) = 330.
 ! Snow variables
 DO JWRK=1,KSIZE2
      IF (e_s_1d(JI,JWRK) .eq. 0._wp) dh_s_1d(JI,JWRK) = 0._wp
      IF((dh_s_1d(JI,JWRK) .eq. 0._wp) .OR. (a_i_1d(JI) .eq. 0._wp)) THEN
         ZP_SNOWSWE (1,JWRK) = 0. 
-        ZP_SNOWRHO (1,JWRK) = 400. 
+        ZP_SNOWRHO (1,JWRK) = 330. 
         ZP_SNOWTEMP(1,JWRK) = 273.15 ! t_su_1d(JI) !273.15 
         ZP_SNOWAGE (1,JWRK) = 10.
         ZP_SNOWLIQ (1,JWRK) = 0.
@@ -410,6 +409,8 @@ DO JWRK=1,KSIZE2
 
      swe_s_1d(JI,JWRK) = ZP_SNOWSWE  (1,JWRK) ! snow water equivalent (kg/m2)
      rho_s_1d(JI,JWRK) = ZP_SNOWRHO  (1,JWRK) ! density (kg/m3)
+     !rho_s_1d(JI,JWRK) = 330.
+
      e_s_1d(JI,JWRK)   =  - ZP_SNOWHEAT(1,JWRK) * a_i_1d(JI) ! Enthalpy (converted in J/m2 per unit area)
      o_s_1d(JI,JWRK)   = ZP_SNOWAGE  (1,JWRK) ! Snow age (s)
      t_s_1d(JI,JWRK)   = ZP_SNOWTEMP (1,JWRK) ! Temperature (K)
