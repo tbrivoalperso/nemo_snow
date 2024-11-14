@@ -265,7 +265,7 @@ CONTAINS
 
       DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
 #if defined key_isbaes
-         zm1          = ( SUM(rhovt_s(ji,jj,:)) + rhoi * vt_i(ji,jj) )  ! Ice/snow mass at U-V points
+         zm1          = ( SUM(rhov_s(ji,jj,:,:)) + rhoi * vt_i(ji,jj) )  ! Ice/snow mass at U-V points
 #else
          zm1          = ( rhos * vt_s(ji,jj) + rhoi * vt_i(ji,jj) )  ! Ice/snow mass at U-V points
 #endif
@@ -281,9 +281,9 @@ CONTAINS
 
          ! Ice/snow mass at U-V points
 #if defined key_isbaes
-         zm1 = ( SUM(rhovt_s(ji  ,jj  ,:)) + rhoi * vt_i(ji  ,jj  ) )
-         zm2 = ( SUM(rhovt_s(ji+1,jj  ,:)) + rhoi * vt_i(ji+1,jj  ) )
-         zm3 = ( SUM(rhovt_s(ji  ,jj+1,:)) + rhoi * vt_i(ji  ,jj+1) )
+         zm1 = ( SUM(rhov_s(ji  ,jj  ,:,:)) + rhoi * vt_i(ji  ,jj  ) )
+         zm2 = ( SUM(rhov_s(ji+1,jj  ,:,:)) + rhoi * vt_i(ji+1,jj  ) )
+         zm3 = ( SUM(rhov_s(ji  ,jj+1,:,:)) + rhoi * vt_i(ji  ,jj+1) )
 
 #else
 
@@ -909,8 +909,8 @@ CONTAINS
             zdiag_ymtrp_ice(ji,jj) = rhoi * zfac_y * ( vt_i(ji,jj+1) + vt_i(ji,jj) ) !        ''           Y-   ''
 
 #if defined key_isbaes
-            zdiag_xmtrp_snw(ji,jj) = zfac_x * ( SUM(rhovt_s(ji+1,jj,:)) + SUM(rhovt_s(ji,jj,:) )) ! snow mass transport, X-component
-            zdiag_ymtrp_snw(ji,jj) = zfac_y * ( SUM(rhovt_s(ji,jj+1,:)) + SUM(rhovt_s(ji,jj,:)) ) !          ''          Y-   ''
+            zdiag_xmtrp_snw(ji,jj) = zfac_x * ( SUM(rhov_s(ji+1,jj,:,:)) + SUM(rhov_s(ji,jj,:,:) )) ! snow mass transport, X-component
+            zdiag_ymtrp_snw(ji,jj) = zfac_y * ( SUM(rhov_s(ji,jj+1,:,:)) + SUM(rhov_s(ji,jj,:,:)) ) !          ''          Y-   ''
 
 #else
             zdiag_xmtrp_snw(ji,jj) = rhos * zfac_x * ( vt_s(ji+1,jj) + vt_s(ji,jj) ) ! snow mass transport, X-component

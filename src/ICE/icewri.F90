@@ -71,7 +71,7 @@ CONTAINS
 
       ! get missing value from xml
       CALL iom_miss_val( 'icetemp', zmiss_val )
-
+      !zmiss_val = -9999 
       ! brine volume
       CALL ice_var_bv
 
@@ -143,12 +143,13 @@ CONTAINS
       IF( iom_use('snwrho_N' ) )   CALL iom_put( 'snwrho_N', SUM(rho_s(:,:,nlay_s,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw bottom density
       IF( iom_use('hbdg_isbaes') )       CALL iom_put( 'hbdg_isbaes'   , hbdg_isbaes(:,:,: )) ! ISBAES heat budget
       DO jk=1, nlay_s 
-         rho_s_3D(:,:,jk) = SUM(rho_s(:,:,jk,:) * a_i(:,:,:),DIM=3)
 
-         WHERE(SUM(dv_s(:,:,jk,:), DIM=3) > 1e-04_wp) 
-                 t_s_3D(:,:,jk) = SUM(t_s(:,:,jk,:) * dv_s(:,:,jk,:),DIM=3) / SUM(dv_s(:,:,jk,:), DIM=3)
+         WHERE(SUM(dv_s(:,:,jk,:), DIM=3) > epsi20) 
+                 t_s_3D(:,:,jk) = SUM(t_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
+                 rho_s_3D(:,:,jk) = SUM(rho_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
          ELSEWHERE 
                  t_s_3D(:,:,jk) = rt0
+                 rho_s_3D(:,:,jk) = 330._wp
          ENDWHERE
          !dh_s_3D(:,:,jk)  = SUM(dh_s(:,:,jk,:) * a_i(:,:,:),DIM=3) 
       ENDDO

@@ -163,9 +163,6 @@ ENDIF
 !
 !cdir nodep
 DO JJ=1,SIZE(PT)
-  !WRITE(numout,*) '      ISBAES T° ', JJ, PT(JJ)
-  !WRITE(numout,*) '      ISBAES log T° ', LOG(PT(JJ))
-
   PPSAT(JJ) = EXP( ZALP(JJ) - ZBETA(JJ)/PT(JJ) - ZGAM(JJ)*LOG(PT(JJ)) )
 ENDDO
 !

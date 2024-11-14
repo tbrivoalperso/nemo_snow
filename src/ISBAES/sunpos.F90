@@ -120,7 +120,6 @@ ELSE
   ZDATE = FLOAT(KDAY + INOBIS(KMONTH-1)) - 1 + PTIME/XDAY
   ZAD = 2.0*XPI*ZDATE/365.0
 END IF
-PRINT*,'ZDATE',ZDATE
 ZA1 = (1.00554*ZDATE- 6.28306)*(XPI/180.0)
 ZA2 = (1.93946*ZDATE+23.35089)*(XPI/180.0)
 ZTSIDER = (7.67825*SIN(ZA1)+10.09176*SIN(ZA2)) / 60.0
@@ -138,7 +137,6 @@ ZCOSDEL = COS(ZDECSOL)
 !-------------------------------------------------------------------------------
 !
 !
-PRINT*,'size lat',SIZE(PLAT), 'PLAT',PLAT
 DO JJ = 1,SIZE(PLAT)
 !
 !*       3.    LOADS THE ZLAT, ZLON ARRAYS
@@ -146,7 +144,6 @@ DO JJ = 1,SIZE(PLAT)
 !
   ZLAT(JJ) = PLAT(JJ)*(XPI/180.)
   ZLON(JJ) = PLON(JJ)*(XPI/180.)
-  PRINT*,'LAT SUNPOS',ZLAT
 !
 !-------------------------------------------------------------------------------
 !
@@ -174,7 +171,6 @@ DO JJ = 1,SIZE(PLAT)
 !              --------------------
 !
   PZENITH(JJ) = ACOS(ZCOSZEN(JJ))
-PRINT*,'PZENITH SUNPOS',PZENITH
 !
 !-------------------------------------------------------------------------------
 !

@@ -423,7 +423,7 @@ CONTAINS
                DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
                   t_s(ji,jj,jk,jl) = zts_3d(ji,jj,jl)
 #if defined key_isbaes
-                  rho_s(ji,jj,jk,jl) = 191. !rhos
+                  rho_s(ji,jj,jk,jl) = 330. !191 for sheba !!rhos
                    
                           ZSCAP     = rho_s(ji,jj,jk,jl) * XCI  ! In isba-es, capacity = rho x cst, with cst=XCI
                           swe_s(ji,jj,jk,jl) = rho_s(ji,jj,jk,jl) * dh_s(ji,jj,jk,jl)

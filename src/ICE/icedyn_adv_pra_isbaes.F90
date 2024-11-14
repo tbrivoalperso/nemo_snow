@@ -104,7 +104,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpl)        ::   z0ice, z0snw, z0ai, z0smi, z0oi
       REAL(wp), DIMENSION(jpi,jpj,jpl)        ::   z0ap , z0vp, z0vl
       REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) ::   z0es
-      REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) ::   z0dvs, z0rhovs, zdvs_max, zrhovs_max 
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) ::   z0dvs, z0rhovs, zdh_s, zrho_s, zdhs_max, zrhovs_max, zrhos_max 
       REAL(wp), DIMENSION(jpi,jpj,nlay_i,jpl) ::   z0ei
       !! diagnostics
       REAL(wp), DIMENSION(jpi,jpj)            ::   zdiag_adv_mass, zdiag_adv_salt, zdiag_adv_heat
@@ -115,7 +115,7 @@ CONTAINS
 
       pv_s(:,:,:) = SUM(pdv_s(:,:,:,:), DIM=3) ! Make sure that the volume used is the right one (not sure if needed)
 
-      ! --- Record max of the surrounding 9-pts (for call Hbig) --- !
+      ! --- Record max of the surrounding 9-pts (for call Hbig_isbaes) --- !
       ! thickness and salinity
       WHERE( pv_i(:,:,:) >= epsi10 ) ; zs_i(:,:,:) = psv_i(:,:,:) / pv_i(:,:,:)
       ELSEWHERE                      ; zs_i(:,:,:) = 0._wp
@@ -133,19 +133,37 @@ CONTAINS
          END WHERE
       END DO
       DO jk = 1, nlay_s
-         WHERE( pv_s(:,:,:) >= epsi10 ) ; ze_s(:,:,jk,:) = pe_s(:,:,jk,:) / pdv_s(:,:,jk,:)
+         WHERE( pdv_s(:,:,jk,:) >= epsi10 ) ; ze_s(:,:,jk,:) = pe_s(:,:,jk,:) / pdv_s(:,:,jk,:)
          ELSEWHERE                      ; ze_s(:,:,jk,:) = 0._wp
          END WHERE
       END DO
 
+      DO jk = 1, nlay_s
+         WHERE( pdv_s(:,:,jk,:) >= epsi10 ) ; zrho_s(:,:,jk,:) = prhov_s(:,:,jk,:) / pdv_s(:,:,jk,:)
+         ELSEWHERE                      ; zrho_s(:,:,jk,:) = 330._wp
+         END WHERE
+      END DO
+
+      DO jk = 1, nlay_s
+         zdh_s(:,:,jk,:) = 0._wp
+         WHERE( a_i(:,:,:) >= epsi10 ) ; zdh_s(:,:,jk,:) = pdv_s(:,:,jk,:) / a_i(:,:,:)
+         ELSEWHERE                      ; zdh_s(:,:,jk,:) = 0._wp
+         END WHERE
+      END DO
+
+
       CALL icemax4D( ze_i , zei_max )
       CALL icemax4D( ze_s , zes_max )
-      CALL icemax4D( pdv_s, zdvs_max)
+      CALL icemax4D( zdh_s, zdhs_max)  ! Mettre dH à la place pour capper
+      CALL icemax4D( zrho_s, zrhos_max)
       CALL icemax4D( prhov_s, zrhovs_max)
-
-
       CALL lbc_lnk( 'icedyn_adv_pra_isbaes', zei_max, 'T', 1._wp )
       CALL lbc_lnk( 'icedyn_adv_pra_isbaes', zes_max, 'T', 1._wp )
+      CALL lbc_lnk( 'icedyn_adv_pra_isbaes', zdhs_max, 'T', 1._wp )
+
+      CALL lbc_lnk( 'icedyn_adv_pra_isbaes', zrhos_max, 'T', 1._wp )
+      CALL lbc_lnk( 'icedyn_adv_pra_isbaes', zrhovs_max, 'T', 1._wp )
+
       !
       !
       ! --- If ice drift is too fast, use  subtime steps for advection (CFL test for stability) --- !
@@ -351,10 +369,11 @@ CONTAINS
             pa_i (:,:,jl) = z0ai (:,:,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
             DO jk = 1, nlay_s
                pdv_s(:,:,jk,jl) = z0dvs(:,:,jk,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
-               prhov_s(:,:,jk,jl) = z0rhovs(:,:,jk,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
+               prhov_s(:,:,jk,jl) =  z0rhovs(:,:,jk,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
                pe_s(:,:,jk,jl) = z0es(:,:,jk,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
+               WHERE(pdv_s(:,:,jk,jl) > 0._wp) zrho_s(:,:,jk,jl) = prhov_s(:,:,jk,jl) / pdv_s(:,:,jk,jl)
             END DO
-            pv_s(:,:,jl) = SUM(pdv_s(:,:,:,jl),dim=3)
+
             DO jk = 1, nlay_i
                pe_i(:,:,jk,jl) = z0ei(:,:,jk,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
             END DO
@@ -392,14 +411,27 @@ CONTAINS
          !     (because advected fields are not perfectly bounded and tiny negative values can occur, e.g. -1.e-20)
          CALL ice_var_zapneg( zdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i , pdv_s, prhov_s)
          !
+
          ! --- Make sure ice thickness is not too big --- !
          !     (because ice thickness can be too large where ice concentration is very small)
-         CALL Hbig( zdt, zhi_max, zhs_max, zhip_max, zsi_max, zes_max,zdvs_max, zrhovs_max, zei_max, &
-            &            pv_i, pv_s, pa_i, pa_ip, pv_ip, psv_i, pe_s, pe_i, pdv_s,prhov_s )
+         CALL Hbig_isbaes( zdt, zhi_max, zhs_max, zhip_max, zsi_max, zes_max,zdhs_max, zrhos_max ,zrhovs_max, zei_max, &
+            &            pv_i, pv_s, pa_i, pa_ip, pv_ip, psv_i, pe_s, pe_i, pdv_s, zrho_s, prhov_s)
          !
-         ! --- Ensure snow load is not too big --- !
-         !CALL Hsnow( zdt, pv_i, pv_s, pa_i, pa_ip, pe_s ) ! We avoid this for now, since it has to be rewrited!
-         !
+         WHERE(dv_s(:,:,:,:) > 0._wp)
+             zrho_s(:,:,:,:) = prhov_s(:,:,:,:) / pdv_s(:,:,:,:) !zrho_s(:,:,:,:)
+         ELSEWHERE
+             zrho_s(:,:,:,:) = 330._wp
+         ENDWHERE
+
+         !! --- Ensure snow load is not too big --- !
+         CALL Hsnow_isbaes( zdt, pv_i, pv_s, pa_i, pa_ip, pe_s, zrho_s, pdv_s, prhov_s ) ! We avoid this for now, since it has to be rewrited!
+         !!
+         !!prhov_s(:,:,:,:) = zrho_s(:,:,:,:) * pdv_s(:,:,:,:)
+         WHERE(dv_s(:,:,:,:) > 0._wp) 
+             rho_s(:,:,:,:) = prhov_s(:,:,:,:) / pdv_s(:,:,:,:) !zrho_s(:,:,:,:)
+         ELSEWHERE
+             rho_s(:,:,:,:) = 330._wp
+         ENDWHERE
       END DO
       !
       IF( lrst_ice )   CALL adv_pra_isbaes_rst( 'WRITE', kt )   !* write Prather fields in the restart file
@@ -793,10 +825,10 @@ CONTAINS
    END SUBROUTINE adv_y
 
 
-   SUBROUTINE Hbig( pdt, phi_max, phs_max, phip_max, psi_max, pes_max,pdvs_max, prhovs_max, pei_max, &
-      &                  pv_i, pv_s, pa_i, pa_ip, pv_ip, psv_i, pe_s, pe_i, pdv_s, prhov_s )
+   SUBROUTINE Hbig_isbaes( pdt, phi_max, phs_max, phip_max, psi_max, pes_max,pdhs_max, prhos_max, prhovs_max, pei_max, &
+      &                  pv_i, pv_s, pa_i, pa_ip, pv_ip, psv_i, pe_s, pe_i, pdv_s, prho_s, prhov_s )
       !!-------------------------------------------------------------------
-      !!                  ***  ROUTINE Hbig  ***
+      !!                  ***  ROUTINE Hbig_isbaes  ***
       !!
       !! ** Purpose : Thickness correction in case advection scheme creates
       !!              abnormally tick ice or snow
@@ -811,13 +843,16 @@ CONTAINS
       REAL(wp)                    , INTENT(in   ) ::   pdt                                   ! tracer time-step
       REAL(wp), DIMENSION(:,:,:)  , INTENT(in   ) ::   phi_max, phs_max, phip_max, psi_max   ! max ice thick from surrounding 9-pts
       REAL(wp), DIMENSION(:,:,:,:), INTENT(in   ) ::   pes_max
-      REAL(wp), DIMENSION(:,:,:,:), INTENT(in   ) ::   pdvs_max, prhovs_max
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(in   ) ::   pdhs_max, prhos_max, prhovs_max
       REAL(wp), DIMENSION(:,:,:,:), INTENT(in   ) ::   pei_max
       REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   pv_i, pv_s, pa_i, pa_ip, pv_ip, psv_i
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_s
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_i
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pdv_s
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prho_s
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prhov_s
+
+
       !
       INTEGER  ::   ji, jj, jk, jl         ! dummy loop indices
       REAL(wp) ::   z1_dt, zhip, zhi, zhs, zsi, zes, zei, zfra
@@ -847,17 +882,44 @@ CONTAINS
                ENDIF
                !
                !                               ! -- check h_s -- !
+               pv_s(ji,jj,jl) = SUM(pdv_s(ji,jj,:,jl))
+               DO jk = 1, nlay_s
+                  zhs = pdv_s(ji,jj,jk,jl) / pa_i(ji,jj,jl)
+
+                  IF( pdv_s(ji,jj,jk,jl) > 0._wp .AND. zhs > pdhs_max(ji,jj,jk,jl) .AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
+                     zfra = pdhs_max(ji,jj,jk,jl) / MAX( zhs, epsi20 )
+                     !
+                     wfx_res(ji,jj) = wfx_res(ji,jj) + ( pdv_s(ji,jj,jk,jl) - pa_i(ji,jj,jl) * pdhs_max(ji,jj,jk,jl) ) *  prho_s(ji,jj,jk,jl) * z1_dt
+ 
+                     hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt ! W.m-2 <0
+                     !
+                     pe_s(ji,jj,jk,jl)    = pe_s(ji,jj,jk,jl) * zfra
+                     pdv_s(ji,jj,jk,jl)   = pdv_s(ji,jj,jk,jl) * zfra ! pa_i(ji,jj,jl) * pdhs_max(ji,jj,jk,jl)
+                     prhov_s(ji,jj,jk,jl) = prhov_s(ji,jj,jk,jl) * zfra  
+                  ENDIF
+               END DO 
+               pv_s(ji,jj,jl) = SUM(pdv_s(ji,jj,:,jl))
+
+               !                               ! -- check h_s -- !
                ! if h_s is larger than the surrounding 9 pts => put the snow excess in the ocean
                zhs = pv_s(ji,jj,jl) / pa_i(ji,jj,jl)
-               IF( pv_s(ji,jj,jl) > 0._wp .AND. zhs > phs_max(ji,jj,jl) .AND. pa_i(ji,jj,jl) < 0.15 ) THEN
+               IF( pv_s(ji,jj,jl) > 0._wp .AND. zhs > phs_max(ji,jj,jl) .AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
                   zfra = phs_max(ji,jj,jl) / MAX( zhs, epsi20 )
                   !
-                  wfx_res(ji,jj) = wfx_res(ji,jj) + ( SUM(prhov_s(ji,jj,:,jl)) - SUM(prhovs_max(ji,jj,:,jl)) ) * z1_dt
-                  hfx_res(ji,jj) = hfx_res(ji,jj) - SUM( pe_s(ji,jj,1:nlay_s,jl) ) * ( 1._wp - zfra ) * z1_dt ! W.m-2 <0
+                  wfx_res(ji,jj) = wfx_res(ji,jj) - SUM(prhov_s(ji,jj,:,jl) * ( 1._wp - zfra )) * z1_dt
+                  hfx_res(ji,jj) = hfx_res(ji,jj) - SUM( pe_s(ji,jj,1:nlay_s,jl) ) * ( 1._wp - zfra )  * z1_dt ! W.m-2 <0
                   !
                   pe_s(ji,jj,1:nlay_s,jl) = pe_s(ji,jj,1:nlay_s,jl) * zfra
                   pv_s(ji,jj,jl)          = pa_i(ji,jj,jl) * phs_max(ji,jj,jl)
+                  pdv_s(ji,jj,1:nlay_s,jl) = pdv_s(ji,jj,1:nlay_s,jl) * zfra 
+                  prhov_s(ji,jj,1:nlay_s,jl) = prhov_s(ji,jj,1:nlay_s,jl) * zfra
+                  WHERE(pdv_s(ji,jj,1:nlay_s,jl) > 0._wp) 
+                      prho_s(ji,jj,1:nlay_s,jl) = prhov_s(ji,jj,1:nlay_s,jl) / pdv_s(ji,jj,1:nlay_s,jl)
+                  ELSEWHERE
+                      prho_s(ji,jj,1:nlay_s,jl) = 330._wp
+                  ENDWHERE
                ENDIF
+
                !
                !                               ! -- check s_i -- !
                ! if s_i is larger than the surrounding 9 pts => put salt excess in the ocean
@@ -886,12 +948,55 @@ CONTAINS
             ENDIF
          END_3D
       END DO
+                                                 ! -- check rho_s -- !
+      DO jl = 1, jpl
+         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
+            IF ( pdv_s(ji,jj,jk,jl) > 0._wp ) THEN
+               ! if e_s/v_s is larger than the surrounding 9 pts => put the heat
+               ! excess in the ocean
+               IF( prho_s(ji,jj,jk,jl)  > prhos_max(ji,jj,jk,jl) .AND. pa_i(ji,jj,jl) < 0.15 ) THEN !.AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
+                  zfra = prhos_max(ji,jj,jk,jl) / prho_s(ji,jj,jk,jl)
+                  wfx_res(ji,jj) = wfx_res(ji,jj) - prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt
+                  hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra )  * z1_dt ! W.m-2 <0
+                  !
+                  pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
+                  pdv_s(ji,jj,jk,jl) = pdv_s(ji,jj,jk,jl) * zfra
+                  prho_s(ji,jj,jk,jl) = prhos_max(ji,jj,jk,jl)
+                  prhov_s(ji,jj,jk,jl) = prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl)
+               ENDIF
+            ENDIF
+         END_3D
+      END DO
+
+!      !                                           ! -- check rhov_s -- !
+!      DO jl = 1, jpl
+!         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
+!            IF ( pdv_s(ji,jj,jk,jl) > 0._wp ) THEN
+!               ! if e_s/v_s is larger than the surrounding 9 pts => put the heat
+!               ! excess in the ocean
+!               IF( prhov_s(ji,jj,jk,jl)  > prhovs_max(ji,jj,jk,jl) .AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
+!                  zfra = prhovs_max(ji,jj,jk,jl) / prhov_s(ji,jj,jk,jl)
+!                  wfx_res(ji,jj) = wfx_res(ji,jj) - prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt
+!                  !hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra )  * z1_dt ! W.m-2 <0
+!                  !
+!                  !pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
+!                  pdv_s(ji,jj,jk,jl) = pdv_s(ji,jj,jk,jl) * zfra
+!                  prhov_s(ji,jj,jk,jl) = prhovs_max(ji,jj,jk,jl)
+!                  prho_s(ji,jj,jk,jl) = prhovs_max(ji,jj,jk,jl) / pdv_s(ji,jj,jk,jl)
+!               ENDIF
+!            ENDIF
+!         END_3D
+!      END DO
+
+
+
       !                                           ! -- check e_s/v_s -- !
       DO jl = 1, jpl
          DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
-            IF ( pv_s(ji,jj,jl) > 0._wp ) THEN
-               ! if e_s/v_s is larger than the surrounding 9 pts => put the heat excess in the ocean
-               zes = pe_s(ji,jj,jk,jl) / pv_s(ji,jj,jl)
+            IF ( pdv_s(ji,jj,jk,jl) > 0._wp ) THEN
+               ! if e_s/v_s is larger than the surrounding 9 pts => put the heat
+               ! excess in the ocean
+               zes = pe_s(ji,jj,jk,jl) / pdv_s(ji,jj,jk,jl)
                IF( zes > pes_max(ji,jj,jk,jl) .AND. pa_i(ji,jj,jl) < 0.15 ) THEN
                   zfra = pes_max(ji,jj,jk,jl) / zes
                   hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt ! W.m-2 <0
@@ -901,12 +1006,16 @@ CONTAINS
          END_3D
       END DO
       !
-   END SUBROUTINE Hbig
+      !
 
 
-   SUBROUTINE Hsnow( pdt, pv_i, pv_s, pa_i, pa_ip, pe_s )
+
+   END SUBROUTINE Hbig_isbaes
+
+
+   SUBROUTINE Hsnow_isbaes( pdt, pv_i, pv_s, pa_i, pa_ip, pe_s, prho_s, pdv_s ,prhov_s)
       !!-------------------------------------------------------------------
-      !!                  ***  ROUTINE Hsnow  ***
+      !!                  ***  ROUTINE Hsnow_isbaes  ***
       !!
       !! ** Purpose : 1- Check snow load after advection
       !!              2- Correct pond concentration to avoid a_ip > a_i
@@ -922,9 +1031,14 @@ CONTAINS
       REAL(wp)                    , INTENT(in   ) ::   pdt   ! tracer time-step
       REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   pv_i, pv_s, pa_i, pa_ip
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_s
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prho_s
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pdv_s
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prhov_s
+
+
       !
-      INTEGER  ::   ji, jj, jl   ! dummy loop indices
-      REAL(wp) ::   z1_dt, zvs_excess, zfra
+      INTEGER  ::   ji, jj, jl, jk   ! dummy loop indices
+      REAL(wp) ::   z1_dt, zvs_excess, zfra, zdv, zden, rho_s_m
       !!-------------------------------------------------------------------
       !
       z1_dt = 1._wp / pdt
@@ -932,28 +1046,43 @@ CONTAINS
       ! -- check snow load -- !
       DO jl = 1, jpl
          DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
-            IF ( pv_i(ji,jj,jl) > 0._wp ) THEN
-               !
-               zvs_excess = MAX( 0._wp, pv_s(ji,jj,jl) - pv_i(ji,jj,jl) * (rho0-rhoi) * r1_rhos )
-               !
-               IF( zvs_excess > 0._wp ) THEN   ! snow-ice interface deplets below the ocean surface
-                  ! put snow excess in the ocean
-                  zfra = ( pv_s(ji,jj,jl) - zvs_excess ) / MAX( pv_s(ji,jj,jl), epsi20 )
-                  wfx_res(ji,jj) = wfx_res(ji,jj) + zvs_excess * rhos * z1_dt
-                  hfx_res(ji,jj) = hfx_res(ji,jj) - SUM( pe_s(ji,jj,1:nlay_s,jl) ) * ( 1._wp - zfra ) * z1_dt ! W.m-2 <0
-                  ! correct snow volume and heat content
-                  pe_s(ji,jj,1:nlay_s,jl) = pe_s(ji,jj,1:nlay_s,jl) * zfra
-                  pv_s(ji,jj,jl)          = pv_s(ji,jj,jl) - zvs_excess
-               ENDIF
-               !
+            zvs_excess = 0._wp
+            IF ( pv_i(ji,jj,jl) > 0._wp .AND. SUM(pdv_s(ji,jj,:,jl)) > 0._wp ) THEN
+                  !
+
+               !zden = (SUM(prhov_s(ji,jj,:,jl)) / SUM(pdv_s(ji,jj,:,jl)))  + rho0 - rhoi !  denominator 
+               !zdv  = 0.7 * SUM(pdv_s(ji,jj,:,jl)) ! (MAX( SUM(prhov_s(ji,jj,:,jl)) + ( rhoi - rho0 ) * pv_i(ji,jj,jl) , 0._wp) / zden ! snow ice for layer jk 
+               rho_s_m = SUM(rho_s(ji,jj,:,jl) * pdv_s(ji,jj,:,jl)) / SUM(pdv_s(ji,jj,:,jl ))
+               zdv = MAX( 0._wp, SUM(pdv_s(ji,jj,:,jl)) - pv_i(ji,jj,jl) * (rho0-rhoi) * (1 / rho_s_m) )
+
+               DO jk = nlay_s, 1, -1
+                  
+                  zvs_excess = MIN( zdv, pdv_s(ji,jj,jk,jl) )
+                  !
+                  IF( zvs_excess > 0._wp .AND. pdv_s(ji,jj,jk,jl) > 0._wp) THEN   ! snow-ice interface deplets below the ocean surface
+                     ! put snow excess in the ocean
+                     zfra = (pdv_s(ji,jj,jk,jl) - zvs_excess) / pdv_s(ji,jj,jk,jl)
+                     !wfx_res(ji,jj) = wfx_res(ji,jj) + zvs_excess * prho_s(ji,jj,jk,jl) * z1_dt
+                     wfx_res(ji,jj) = wfx_res(ji,jj) + prhov_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt 
+                     hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt 
+                     ! correct snow volume and heat content
+                     pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
+                     pdv_s(ji,jj,jk,jl)          = pdv_s(ji,jj,jk,jl)  * zfra !- zvs_excess
+                     prhov_s(ji,jj,jk,jl)        = prhov_s(ji,jj,jk,jl) * zfra
+                  ENDIF
+
+                  zdv = zdv - zvs_excess 
+                  !
+               ENDDO
             ENDIF
+            pv_s(ji,jj,jl) = SUM(pdv_s(ji,jj,:,jl))
          END_2D
       END DO
       !
       !-- correct pond concentration to avoid a_ip > a_i -- !
       WHERE( pa_ip(:,:,:) > pa_i(:,:,:) )   pa_ip(:,:,:) = pa_i(:,:,:)
       !
-   END SUBROUTINE Hsnow
+   END SUBROUTINE Hsnow_isbaes
 
 
    SUBROUTINE adv_pra_isbaes_init
@@ -988,6 +1117,23 @@ CONTAINS
          &      syye (jpi,jpj,nlay_i,jpl) , sxye (jpi,jpj,nlay_i,jpl)                             , &
          &      STAT = ierr )
       !
+      !      sxice = 0._wp   ;   syice = 0._wp   ;   sxxice = 0._wp   ;   syyice = 0._wp   ;   sxyice = 0._wp      ! ice thickness
+      !      sxsn  = 0._wp   ;   sysn  = 0._wp   ;   sxxsn  = 0._wp   ;   syysn = 0._wp   ;   sxysn  = 0._wp      ! snow thickness
+      !      sxa   = 0._wp   ;   sya   = 0._wp   ;   sxxa   = 0._wp   ;   syya = 0._wp   ;   sxya   = 0._wp      ! ice concentration
+      !      sxsal = 0._wp   ;   sysal = 0._wp   ;   sxxsal = 0._wp   ;   syysal = 0._wp   ;   sxysal = 0._wp      ! ice salinity
+      !      sxage = 0._wp   ;   syage = 0._wp   ;   sxxage = 0._wp   ;   syyage = 0._wp   ;   sxyage = 0._wp      ! ice age
+      !      sxc0  = 0._wp   ;   syc0  = 0._wp   ;   sxxc0  = 0._wp   ;   syyc0 = 0._wp   ;   sxyc0  = 0._wp      ! snow layers heat content
+      !      sxdvs  = 0._wp   ;   sydvs  = 0._wp   ;   sxxdvs  = 0._wp   ; syydvs  = 0._wp   ;   sxydvs  = 0._wp      ! snow layers volume
+      !      sxrhovs  = 0._wp   ;   syrhovs  = 0._wp   ;   sxxrhovs  = 0._wp   ; syyrhovs  = 0._wp   ;   sxyrhovs  = 0._wp      !  snow layers mass 
+
+      !!      sxe   = 0._wp   ;   sye   = 0._wp   ;   sxxe   = 0._wp   ;   syye = 0._wp   ;   sxye   = 0._wp      ! ice layers heat content
+!            IF( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
+!               sxap = 0._wp ;   syap = 0._wp    ;   sxxap = 0._wp    ;   syyap = 0._wp    ;   sxyap = 0._wp       ! melt pond fraction
+!               sxvp = 0._wp ;   syvp = 0._wp    ;   sxxvp = 0._wp    ;   syyvp = 0._wp    ;   sxyvp = 0._wp       ! melt pond volume
+!               IF ( ln_pnd_lids ) THEN sxvl = 0._wp; syvl = 0._wp    ;   sxxvl = 0._wp    ;   syyvl = 0._wp    ;   sxyvl = 0._wp       ! melt pond lid volume
+!               ENDIF
+!            ENDIF
+
       CALL mpp_sum( 'icedyn_adv_pra_isbaes', ierr )
       IF( ierr /= 0 )   CALL ctl_stop('STOP', 'adv_pra_isbaes_init : unable to allocate ice arrays for Prather advection scheme')
       !

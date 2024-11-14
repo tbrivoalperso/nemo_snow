@@ -339,7 +339,6 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_thd         !: ice-ocean heat flux from thermo processes (icethd_dh) [W.m-2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_dyn         !: ice-ocean heat flux from ridging                      [W.m-2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_res         !: heat flux due to correction on ice thick. (residual)  [W.m-2]
-   
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   rn_amax_2d      !: maximum ice concentration 2d array
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qtr_ice_bot     !: transmitted solar radiation under ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   t1_ice          !: temperature of the first layer          (ln_cndflx=T) [K]
@@ -499,6 +498,14 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dhm_s           !: Snow thickness averaged over categories         [m]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dvt_s
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   rhovt_s !Total mass per layer 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::  prc_ip1 ! dVAR/dt between i and i+1
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::  prc_im1 !  dVAR/dt between i and i-1
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::  prc_jp1 !  dVAR/dt between i and i+1
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::  prc_jm1 !  dVAR/dt between i and i-1
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_res_adv     !: hfx residual due to advection of too small temperatures after adv [W.m-2] 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   wfx_res_adv         !: wfx residual due to advection of too small temperatures after adv [kg.m-2.s-1]
+
+
 !: Snow layer density X olume per unit area               (m)
 #endif
    !
@@ -613,7 +620,8 @@ CONTAINS
       ALLOCATE( rho_s(jpi,jpj,nlay_s,jpl) ,swe_s(jpi,jpj,nlay_s,jpl) , o_s(jpi,jpj,nlay_s,jpl), lwc_s(jpi,jpj,nlay_s,jpl), ov_s(jpi,jpj,nlay_s,jpl), albs_isbaes(jpi,jpj,jpl), & 
                 & albi_isbaes(jpi,jpj,jpl),cnd_i_isbaes(jpi,jpj,jpl), cnd_s_isbaes(jpi,jpj,jpl), dh_s(jpi,jpj,nlay_s,jpl),dv_s(jpi,jpj,nlay_s,jpl),rhov_s(jpi,jpj,nlay_s,jpl), & 
                 & rhov_s_b(jpi,jpj,nlay_s,jpl), qns_ice_b(jpi,jpj,jpl), qsr_ice_b(jpi,jpj,jpl), &
-                & hbdg_isbaes(jpi,jpj,jpl),dvt_s(jpi,jpj,nlay_s), rhovt_s(jpi,jpj,nlay_s), dhm_s(jpi,jpj,nlay_s), STAT=ierr(ii) )
+                & hbdg_isbaes(jpi,jpj,jpl),dvt_s(jpi,jpj,nlay_s), rhovt_s(jpi,jpj,nlay_s), dhm_s(jpi,jpj,nlay_s), prc_ip1(jpi,jpj,nlay_s,jpl), prc_im1(jpi,jpj,nlay_s,jpl),    &
+                & prc_jp1(jpi,jpj,nlay_s,jpl), prc_jm1(jpi,jpj,nlay_s,jpl), hfx_res_adv(jpi,jpj), wfx_res_adv(jpi,jpj), STAT=ierr(ii) )
 #endif
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )

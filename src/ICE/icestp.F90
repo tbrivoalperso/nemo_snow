@@ -117,7 +117,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kbb, Kmm ! ocean time level indices
       INTEGER, INTENT(in) ::   ksbc     ! flux formulation (user defined, bulk, or Pure Coupled)
       !
-      INTEGER ::   jl   ! dummy loop index
+      INTEGER ::   jl,ji,jj   ! dummy loop index
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('icestp')
@@ -159,6 +159,7 @@ CONTAINS
                                         CALL diag_set0                ! set diag of mass, heat and salt fluxes to 0
                                         CALL ice_rst_opn( kt )        ! Open Ice restart file (if necessary)
          !
+
          IF( ln_icedyn .AND. .NOT.ln_c1d )   &
             &                           CALL ice_dyn( kt, Kmm )       ! -- Ice dynamics
          !
@@ -167,6 +168,7 @@ CONTAINS
          !                          !==  lateral boundary conditions  ==!
          IF( ln_icethd .AND. ln_bdy )   CALL bdy_ice( kt )            ! -- bdy ice thermo
          !
+
          !                          !==  previous lead fraction and ice volume for flux calculations
                                         CALL ice_var_glo2eqv          ! h_i and h_s for ice albedo calculation
                                         CALL ice_var_agg(1)           ! at_i for coupling
@@ -443,6 +445,9 @@ CONTAINS
 
          wfx_err_sub(ji,jj) = 0._wp
          !
+#if defined key_isbaes
+         hfx_res_adv(ji,jj) = 0._wp   ; wfx_res_adv(ji,jj) = 0._wp   ;
+#endif
          diag_heat(ji,jj) = 0._wp ;   diag_sice(ji,jj) = 0._wp
          diag_vice(ji,jj) = 0._wp ;   diag_vsnw(ji,jj) = 0._wp
          diag_aice(ji,jj) = 0._wp ;   diag_vpnd(ji,jj) = 0._wp

@@ -212,7 +212,6 @@ CONTAINS
                nptidx(npti) = (jj - 1) * jpi + ji
             ENDIF
          END_2D
-         PRINT*,'icethic',h_i
          IF( npti > 0 ) THEN  ! If there is no ice, do nothing.
             !
 
@@ -275,19 +274,40 @@ CONTAINS
                         e_s_1d(ji,jk)    = 0._wp 
                         dh_s_1d(ji,jk) = 0._wp
                         rhov_s_1d(ji,jk) = 0._wp
-                        rho_s_1d(ji,jk) = 400._wp
+                        rho_s_1d(ji,jk) = 330._wp
                         t_s_1d(ji,jk)   = 273.15_wp
                      ENDDO
                   ENDIF
+                  
+!                  ! Avoid unrealitic values after advection, put unrealitic snow layers into the ocean
+!                  DO jk=1, nlay_s 
+!                     IF((dh_s_1d(ji,jk) < 1e-5) .AND. (t_s_1d(ji,jk) < 200._wp)) THEN
+!                        hfx_res_1d(ji) = hfx_res_1d(ji) - e_s_1d(ji,jk) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
+!
+!                        ! Mass flux is computed from 3D density arrays instead
+!                        ! of constant density
+!                        wfx_res_1d(ji) = wfx_res_1d(ji) + rho_s_1d(ji,jk) * dh_s_1d(ji,jk) * a_i_1d(ji) * r1_Dt_ice  ! mass flux
+!
+!                        dh_s_1d(ji,jk) = 0._wp
+!                        swe_s_1d(ji,jk) = 0._wp
+!                        h_s_1d(ji)    = 0._wp
+!                        e_s_1d(ji,jk)    = 0._wp
+!                        dh_s_1d(ji,jk) = 0._wp
+!                        dv_s_1d(ji,jk) = 0._wp
+!
+!                        rhov_s_1d(ji,jk) = 0._wp
+!                        rho_s_1d(ji,jk) = 330._wp
+!                        o_s_1d(ji,jk)   = 10.
+!                        t_s_1d(ji,jk)   = 273.15
+!                     ENDIF
+!                  END DO
 
                   ! Compute pressure at atmospheric level
                   ! Careful : for now, atmospheric level (m) for U & T data are hard-coded
                   zpa_t(ji) = pres_temp(qair_isbaes_1d(ji), slp_isbaes_1d(ji), 2., ptpot=tair_isbaes_1d(ji), l_ice=.true. )
 
                   zsnowfall = snow_isbaes_1d(ji)*rn_Dt/XRHOSMAX_ES ! maximum possible snowfall depth (m)
-                  PRINT*,'snwfl',zsnowfall
-                  PRINT*,'h_s_1d',SUM(dh_s_1d(ji,:))
-                  IF ((SUM(dh_s_1d(ji,:)) > XSNOWDMIN .OR. zsnowfall > XSNOWDMIN)) THEN   
+                  IF ((SUM(dh_s_1d(ji,:)) > 1e-6 .OR. zsnowfall > XSNOWDMIN)) THEN   
                      CALL CALL_MODEL(kt,ji,nlay_s, rn_Dt, za_s_fra(ji),zsnowblow(ji), zpa_t(ji), ZP_RADXS, zq_rema(ji), &
                           &   zevap_rema(ji), hbdg_isbaes_1d(ji))
                      isnow(ji) = 1.
@@ -303,7 +323,7 @@ CONTAINS
                            dv_s_1d(ji,jk) = 0._wp
 
                            rhov_s_1d(ji,jk) = 0._wp
-                           rho_s_1d(ji,jk) = 400._wp
+                           rho_s_1d(ji,jk) = 330._wp
                            t_s_1d(ji,jk)   = 273.15_wp
                         ENDDO
                      ENDIF
@@ -324,7 +344,7 @@ CONTAINS
                         dv_s_1d(ji,jk) = 0._wp
 
                         rhov_s_1d(ji,jk) = 0._wp
-                        rho_s_1d(ji,jk) = 400._wp
+                        rho_s_1d(ji,jk) = 330._wp
                         o_s_1d(ji,jk)   = 10.
                         t_s_1d(ji,jk)   = 273.15 
                      END DO

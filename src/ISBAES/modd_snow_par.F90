@@ -336,7 +336,7 @@ REAL, PARAMETER :: XSNOWFALL_C_SN_OPT =  52.0 ! kg(m7/2 s1/2) 3 * Default of Bru
 REAL, PARAMETER       :: XRHOSMAX_R21 = 600.   ! (kg m-3)  
 REAL, PARAMETER :: XVROMAX_R21 = 600. ! increase in maximum density
 ! drift compaction to account for high Arctic wind speeds UNIT : kg m-3 
-REAL, PARAMETER :: XCOEF_EFFECT_R21 = 1.5 !1.5 ! increase in coefficient for impact on density due
+REAL, PARAMETER :: XCOEF_EFFECT_R21 = 3. !1.5 ! increase in coefficient for impact on density due
 !
 !
 ! Coefficients for the optimal vertical grid calculation
