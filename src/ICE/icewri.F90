@@ -71,7 +71,7 @@ CONTAINS
 
       ! get missing value from xml
       CALL iom_miss_val( 'icetemp', zmiss_val )
-      !zmiss_val = -99999 
+      !zmiss_val = -9999 
       ! brine volume
       CALL ice_var_bv
 

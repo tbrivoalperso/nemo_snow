@@ -401,6 +401,7 @@ CONTAINS
                e_s(ji,jj,jk,jl) = 0._wp
                dv_s(ji,jj,jk,jl) = 0._wp
                rhov_s(ji,jj,jk,jl) = 0._wp
+               rho_s(ji,jj,jk,jl) = 330._wp
             ENDIF
          END_3D
       END DO

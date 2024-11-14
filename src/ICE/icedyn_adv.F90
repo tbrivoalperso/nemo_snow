@@ -113,7 +113,7 @@ CONTAINS
             ENDWHERE
          ENDDO
 
-      IF( iom_use('rhos_diagadv') )   CALL iom_put('rhos_diagadv', rho_s_3D) !  Diagnose rho_s after advection & limiter
+      !IF( iom_use('rhos_diagadv') )   CALL iom_put('rhos_diagadv', rho_s_3D) !  Diagnose rho_s after advection & limiter
 
       v_s(:,:,:) = SUM(dv_s(:,:,:,:), DIM=3) 
       h_s(:,:,:) = SUM(dh_s(:,:,:,:), DIM=3)

@@ -143,101 +143,18 @@ CONTAINS
          CALL ice_dyn_rhg   ( kt, Kmm )                                     ! -- rheology
          CALL ice_dyn_adv   ( kt )                                          ! -- advection of ice
          CALL ice_dyn_rdgrft( kt )                                          ! -- ridging/rafting
+         CALL ice_var_zapsmall                                              ! -- zap small areas
+
          CALL ice_cor       ( kt , 1 )                                      ! -- Corrections
          !
       CASE ( np_dynRHGADV  )       !==  no ridge/raft & no corrections ==!
          !
-      !DO jl = 1, jpl
-
-      !   DO_2D( 0, 0, 0, 0 )
-
-      !      IF((ABS(glamt(ji,jj) - (-143.999737468590)) .lt. 1e-4) .AND.  (ABS(gphit(ji,jj) - (-62.1951258146339)) .lt. 1e-4) ) THEN
-      !          PRINT*,'                   '
-      !          PRINT*,'                   '
-      !          PRINT*,'                   '
-      !          PRINT*,'TS=',kt,'BEFORE RHG'
-      !          PRINT*,'jl',jl
-      !          PRINT*,'a_i',a_i(ji,jj,jl)
-      !          PRINT*,'e_s',e_s(ji,jj,:,jl)
-      !          PRINT*,'dh_s',dh_s(ji,jj,:,jl)
-      !          PRINT*,'dv_s',dv_s(ji,jj,:,jl)
-      !          PRINT*,'rhov_s',rhov_s(ji,jj,:,jl)
-      !          PRINT*,'v_i',v_i(ji,jj,jl)
-      !          PRINT*,'rho_s',rho_s(ji,jj,:,jl)
-
-      !      ENDIF
-      !   END_2D
-      !END DO
 
          CALL ice_dyn_rhg   ( kt, Kmm )                                     ! -- rheology
 
-      !DO jl = 1, jpl
-
-      !   DO_2D( 0, 0, 0, 0 )
-
-      !      IF((ABS(glamt(ji,jj) - (-143.999737468590)) .lt. 1e-4) .AND.  (ABS(gphit(ji,jj) - (-62.1951258146339)) .lt. 1e-4) ) THEN
-      !          PRINT*,'                   '
-      !          PRINT*,'                   '
-      !          PRINT*,'                   '
-      !          PRINT*,'TS=',kt,'BEFORE ADV'
-      !          PRINT*,'jl',jl
-      !          PRINT*,'a_i',a_i(ji,jj,jl)
-      !          PRINT*,'e_s',e_s(ji,jj,:,jl)
-      !          PRINT*,'dh_s',dh_s(ji,jj,:,jl)
-      !          PRINT*,'dv_s',dv_s(ji,jj,:,jl)
-      !          PRINT*,'rhov_s',rhov_s(ji,jj,:,jl)
-      !          PRINT*,'v_i',v_i(ji,jj,jl)
-      !          PRINT*,'rho_s',rho_s(ji,jj,:,jl)
-
-      !      ENDIF
-      !   END_2D
-      !END DO
-
          CALL ice_dyn_adv   ( kt )                                          ! -- advection of ice
-      !DO jl = 1, jpl
-
-      !   DO_2D( 0, 0, 0, 0 )
-
-      !      IF((ABS(glamt(ji,jj) - (-143.999737468590)) .lt. 1e-4) .AND.  (ABS(gphit(ji,jj) - (-62.1951258146339)) .lt. 1e-4) ) THEN
-      !          PRINT*,'                   '
-      !          PRINT*,'                   '
-      !          PRINT*,'                   '
-      !          PRINT*,'TS=',kt,'BEFORE PILING'
-      !          PRINT*,'jl',jl
-      !          PRINT*,'a_i',a_i(ji,jj,jl)
-      !          PRINT*,'e_s',e_s(ji,jj,:,jl)
-      !          PRINT*,'dh_s',dh_s(ji,jj,:,jl)
-      !          PRINT*,'dv_s',dv_s(ji,jj,:,jl)
-      !          PRINT*,'rhov_s',rhov_s(ji,jj,:,jl)
-      !          PRINT*,'v_i',v_i(ji,jj,jl)
-      !          PRINT*,'rho_s',rho_s(ji,jj,:,jl)
-
-      !      ENDIF
-      !   END_2D
-      !END DO
 
          CALL Hpiling                                                       ! -- simple pile-up (replaces ridging/rafting)
-      !DO jl = 1, jpl
-
-      !   DO_2D( 0, 0, 0, 0 )
-
-      !      IF((ABS(glamt(ji,jj) - (-143.999737468590)) .lt. 1e-4) .AND.  (ABS(gphit(ji,jj) - (-62.1951258146339)) .lt. 1e-4) ) THEN
-      !          PRINT*,'                   '
-      !          PRINT*,'                   '
-      !          PRINT*,'                   '
-      !          PRINT*,'TS=',kt,'AFTER PILING'
-      !          PRINT*,'jl',jl
-      !          PRINT*,'a_i',a_i(ji,jj,jl)
-      !          PRINT*,'e_s',e_s(ji,jj,:,jl)
-      !          PRINT*,'dh_s',dh_s(ji,jj,:,jl)
-      !          PRINT*,'dv_s',dv_s(ji,jj,:,jl)
-      !          PRINT*,'rhov_s',rhov_s(ji,jj,:,jl)
-      !          PRINT*,'v_i',v_i(ji,jj,jl)
-      !          PRINT*,'rho_s',rho_s(ji,jj,:,jl)
-
-      !      ENDIF
-      !   END_2D
-      !END DO
 
          CALL ice_var_zapsmall                                              ! -- zap small areas
          !
