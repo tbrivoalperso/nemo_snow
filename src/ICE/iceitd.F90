@@ -610,7 +610,7 @@ CONTAINS
       !       because of truncation error ( i.e. 1. - 1. /= 0 )
 #if defined key_isbaes
       CALL ice_var_roundoff_isbaes( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d, &
-              & zrhov_s_2d, zdv_s_2d)
+              & zrhov_s_2d, zdv_s_2d, zov_s_2d)
 #else
       CALL ice_var_roundoff( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d )
 #endif

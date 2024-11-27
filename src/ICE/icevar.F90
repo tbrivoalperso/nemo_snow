@@ -378,7 +378,7 @@ CONTAINS
             rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
             ZSCAP(:,:,jk,:) = XCI * rho_s(:,:,jk,:) 
             dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)
-            t_s(:,:,jk,:) = rt0 + ( (- e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) &
+            t_s(:,:,jk,:)  = rt0 + ( (- e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) &
             &       + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) )
             lwc_s(:,:,jk,:) = MAX(0._wp, t_s(:,:,jk,:) - rt0) * ZSCAP(:,:,jk,:) * dh_s(:,:,jk,:) / (XLMTT*XRHOLW)  
             t_s(:,:,jk,:)   = MIN(rt0, t_s(:,:,jk,:))
@@ -674,6 +674,8 @@ CONTAINS
 #if defined key_isbaes
             dv_s  (ji,jj,:,jl) = dv_s (ji,jj,:,jl) * zswitch(ji,jj)
             rhov_s  (ji,jj,:,jl) = rhov_s (ji,jj,:,jl) * zswitch(ji,jj)
+            ov_s  (ji,jj,:,jl) = ov_s (ji,jj,:,jl) * zswitch(ji,jj)
+
 #endif
 
             t_su (ji,jj,jl) = t_su(ji,jj,jl) * zswitch(ji,jj) + t_bo(ji,jj) * ( 1._wp - zswitch(ji,jj) )
@@ -709,7 +711,7 @@ CONTAINS
    END SUBROUTINE ice_var_zapsmall
 
 #if defined key_isbaes
-   SUBROUTINE ice_var_zapneg( pdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, pdv_s, prhov_s )
+   SUBROUTINE ice_var_zapneg( pdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, pdv_s, prhov_s, pov_s )
 #else
    SUBROUTINE ice_var_zapneg( pdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i )
 #endif
@@ -733,6 +735,8 @@ CONTAINS
 #if defined key_isbaes
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout), OPTIONAL ::   pdv_s       ! snw heat content
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout), OPTIONAL ::   prhov_s       ! snw heat content
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout), OPTIONAL ::   pov_s       !  snw heat content
+
 #endif
       !
       INTEGER  ::   ji, jj, jl, jk   ! dummy loop indices
@@ -779,6 +783,7 @@ CONTAINS
                pv_s   (ji,jj,jl) = 0._wp
                pdv_s(ji,jj,:,jl) = 0._wp
                prhov_s(ji,jj,:,jl) = 0._wp
+               pov_s(ji,jj,:,jl) = 0._wp
 
             ENDIF
 #else
@@ -849,7 +854,7 @@ CONTAINS
    END SUBROUTINE ice_var_roundoff
 
 #if defined key_isbaes
-   SUBROUTINE ice_var_roundoff_isbaes( pa_i, pv_i, pv_s, psv_i, poa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, prhov_s, pdv_s )
+   SUBROUTINE ice_var_roundoff_isbaes( pa_i, pv_i, pv_s, psv_i, poa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, prhov_s, pdv_s, pov_s)
       !!-------------------------------------------------------------------
       !!                   ***  ROUTINE ice_var_roundoff ***
       !!
@@ -868,6 +873,8 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   pe_i       ! ice heat content
       REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   prhov_s      ! snw 3D mass
       REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   pdv_s       ! snw 3D volume
+      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   pov_s       ! snw 3D age
+
 
       !!-------------------------------------------------------------------
       !
@@ -881,6 +888,7 @@ CONTAINS
       WHERE( pe_s (1:npti,:,:) < 0._wp )   pe_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
       WHERE( pdv_s (1:npti,:,:) < 0._wp )   pdv_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
       WHERE( prhov_s (1:npti,:,:) < 0._wp )   prhov_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
+      WHERE( pov_s (1:npti,:,:) < 0._wp )   pov_s (1:npti,:,:) = 0._wp   !  e_s must be >= 0
 
       IF( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
          WHERE( pa_ip(1:npti,:) < 0._wp )    pa_ip(1:npti,:)   = 0._wp   ! a_ip must be >= 0

@@ -90,12 +90,12 @@ CONTAINS
       CASE( np_advUMx )                ! ULTIMATE-MACHO scheme !
          !                             !-----------------------!
          CALL ice_dyn_adv_umx_isbaes( nn_UMx, kt, u_ice, v_ice, h_i, h_s, h_ip, &
-            &                          ato_i, v_i, v_s, sv_i, oa_i, a_i, a_ip, v_ip, v_il, e_s, e_i, dv_s, rhov_s)
+            &                          ato_i, v_i, v_s, sv_i, oa_i, a_i, a_ip, v_ip, v_il, e_s, e_i, dv_s, rhov_s, ov_s)
          !                             !-----------------------!
       CASE( np_advPRA )                ! PRATHER scheme        !
          !                             !-----------------------!
          CALL ice_dyn_adv_pra_isbaes(         kt, u_ice, v_ice, h_i, h_s, h_ip, &
-            &                          ato_i, v_i, v_s, sv_i, oa_i, a_i, a_ip, v_ip, v_il, e_s, e_i, dv_s, rhov_s)
+            &                          ato_i, v_i, v_s, sv_i, oa_i, a_i, a_ip, v_ip, v_il, e_s, e_i, dv_s, rhov_s, ov_s)
 
       DO jk = 1, nlay_s 
          WHERE(a_i(:,:,:) > 0._wp) dh_s(:,:,jk,:) = dv_s(:,:,jk,:) / a_i(:,:,:)

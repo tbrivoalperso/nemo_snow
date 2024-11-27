@@ -276,6 +276,7 @@ CONTAINS
                         rhov_s_1d(ji,jk) = 0._wp
                         rho_s_1d(ji,jk) = 330._wp
                         t_s_1d(ji,jk)   = 273.15_wp
+                        o_s_1d(ji,jk) = 0._wp
                      ENDDO
                   ENDIF
                   
@@ -325,6 +326,8 @@ CONTAINS
                            rhov_s_1d(ji,jk) = 0._wp
                            rho_s_1d(ji,jk) = 330._wp
                            t_s_1d(ji,jk)   = 273.15_wp
+                          o_s_1d(ji,jk) = 0._wp
+
                         ENDDO
                      ENDIF
                   ELSE
@@ -345,7 +348,7 @@ CONTAINS
 
                         rhov_s_1d(ji,jk) = 0._wp
                         rho_s_1d(ji,jk) = 330._wp
-                        o_s_1d(ji,jk)   = 10.
+                        o_s_1d(ji,jk)   = 0.
                         t_s_1d(ji,jk)   = 273.15 
                      END DO
                   ENDIF
@@ -667,16 +670,27 @@ CONTAINS
          END DO
 #if defined key_isbaes
          DO jk = 1, nlay_s
-            ! Conversion is done after isbaes  
-            WHERE( dh_s_1d(1:npti,jk)>0._wp ) e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) !/ (dh_s_1d(1:npti,jk) * a_i_1d(1:npti))    
-            ! Recompute the mass and the volume, which are the variables that will be advected later on
-            WHERE( dh_s_1d(1:npti,jk)>0._wp ) dh_s_1d (1:npti,jk) = dv_s_1d (1:npti,jk) / a_i_1d (1:npti)
-            WHERE( dh_s_1d(1:npti,jk)>0._wp ) rho_s_1d (1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
-            WHERE( dh_s_1d(1:npti,jk)>0._wp ) o_s_1d (1:npti,jk) = ov_s_1d(1:npti,jk) / dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
-!            WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d(1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d(1:npti,jk)
+            ! Conversion is done after isbaes 
+            WHERE( a_i_1d(1:npti)>0._wp ) 
+               dh_s_1d (1:npti,jk) = dv_s_1d (1:npti,jk) / a_i_1d (1:npti)
+            ELSEWHERE
+               dh_s_1d (1:npti,jk) = 0._wp
+            ENDWHERE
+   
+            WHERE( dh_s_1d(1:npti,jk)>0._wp ) 
+               e_s_1d(1:npti,jk) = e_s_1d(1:npti,jk) 
+               rho_s_1d (1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d (1:npti,jk) 
+               o_s_1d (1:npti,jk) = ov_s_1d(1:npti,jk) / dv_s_1d (1:npti,jk)
+            ELSEWHERE
+               e_s_1d(1:npti,jk)    = 0._wp
+               rho_s_1d (1:npti,jk) = 0._wp
+               o_s_1d (1:npti,jk)   = 0._wp 
+            ENDWHERE 
          END DO
+
          DO ji = 1, npti
             v_s_1d (ji) = SUM(dv_s_1d (ji,:))
+            h_s_1d (ji) = SUM(dh_s_1d (ji,:))
          END DO
                  
 #else
@@ -713,7 +727,7 @@ CONTAINS
             dv_s_1d (1:npti,jk) = dh_s_1d (1:npti,jk) * a_i_1d (1:npti) 
             rhov_s_1d (1:npti,jk) = rho_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
             ov_s_1d (1:npti,jk) = o_s_1d(1:npti,jk) * dv_s_1d (1:npti,jk) !* a_i_1d (1:npti)
-!            WHERE( h_s_1d(1:npti)>0._wp ) rho_s_1d(1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d(1:npti,jk)
+            !WHERE( dh_s_1d(1:npti,jk)>0._wp ) rho_s_1d(1:npti,jk) = rhov_s_1d(1:npti,jk) / dv_s_1d(1:npti,jk)
 
          END DO
          DO ji = 1, npti

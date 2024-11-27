@@ -162,7 +162,11 @@ CONTAINS
          CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
       END DO
 #if defined key_isbaes         
-
+      !WHERE(dv_s(:,:,:,:) > 0._wp)
+      !    rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+      !ELSEWHERE
+      !    rho_s(:,:,:,:) = 330._wp 
+      !ENDWHERE
       ! Snow volume
       DO jk = 1, nlay_s
          WRITE(zchar1,'(I2.2)') jk
@@ -177,6 +181,27 @@ CONTAINS
          z3d(:,:,:) = rhov_s(:,:,jk,:)
          CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
       END DO
+
+      ! Snow density
+      DO jk = 1, nlay_s
+         WRITE(zchar1,'(I2.2)') jk
+         znam = 'rho_s'//'_l'//zchar1
+         z3d(:,:,:) = rho_s(:,:,jk,:)
+         CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
+      END DO
+
+      ! Snow age
+      DO jk = 1, nlay_s
+         WRITE(zchar1,'(I2.2)') jk
+         znam = 'ov_s'//'_l'//zchar1
+         z3d(:,:,:) = ov_s(:,:,jk,:)
+         CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
+      END DO
+
+      CALL iom_rstput( iter, nitrst, numriw, 'cnd_i_isbaes'  , cnd_i_isbaes   )
+      CALL iom_rstput( iter, nitrst, numriw, 'albs_isbaes'  , albs_isbaes   )
+      CALL iom_rstput( iter, nitrst, numriw, 'albi_isbaes'  , albi_isbaes   )
+   
 #endif
       ! Ice enthalpy
       DO jk = 1, nlay_i
@@ -298,6 +323,27 @@ CONTAINS
             CALL iom_get( numrir, jpdom_auto, znam , z3d )
             rhov_s(:,:,jk,:) = z3d(:,:,:)
          END DO
+
+         ! Snow layer density
+         DO jk = 1, nlay_s
+            WRITE(zchar1,'(I2.2)') jk
+            znam = 'rho_s'//'_l'//zchar1
+            CALL iom_get( numrir, jpdom_auto, znam , z3d )
+            rho_s(:,:,jk,:) = z3d(:,:,:)
+         END DO
+
+         ! Snow layer age
+         DO jk = 1, nlay_s
+            WRITE(zchar1,'(I2.2)') jk
+            znam = 'ov_s'//'_l'//zchar1
+            CALL iom_get( numrir, jpdom_auto, znam , z3d )
+            ov_s(:,:,jk,:) = z3d(:,:,:)
+         END DO
+
+         CALL iom_get( numrir, jpdom_auto, 'cnd_i_isbaes'  , cnd_i_isbaes   )
+         CALL iom_get( numrir, jpdom_auto, 'albs_isbaes'  , albs_isbaes   )
+         CALL iom_get( numrir, jpdom_auto, 'albi_isbaes'  , albi_isbaes   )
+         v_s(:,:,:) = SUM(dv_s(:,:,:,:), DIM=3)
 #endif
          ! Ice enthalpy
          DO jk = 1, nlay_i

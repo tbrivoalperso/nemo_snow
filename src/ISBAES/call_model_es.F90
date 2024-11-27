@@ -417,7 +417,8 @@ DO JWRK=1,KSIZE2
      lwc_s_1d(JI,JWRK) = ZP_SNOWLIQ  (1,JWRK) ! Liquid water content (m) 
      dh_s_1d(JI,JWRK)  = ZP_SNOWSWE(1,JWRK)/ZP_SNOWRHO(1,JWRK) ! Snow layer thicknesses (m) 
      dv_s_1d(JI,JWRK)  = dh_s_1d(JI,JWRK) * a_i_1d(JI) ! Snow layer volume (m per unit area)
-     rhov_s_1d(JI,JWRK) = rho_s_1d(JI,JWRK) * dv_s_1d(JI,JWRK) ! Snow mass (kg / m2 per unit area)
+     rhov_s_1d(JI,JWRK)= rho_s_1d(JI,JWRK) * dv_s_1d(JI,JWRK) ! Snow mass (kg / m2 per unit area)
+     ov_s_1d(JI,JWRK)  = o_s_1d(JI,JWRK) * dv_s_1d(JI,JWRK) 
 ENDDO
 
 ! 2D variables

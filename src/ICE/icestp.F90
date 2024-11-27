@@ -206,7 +206,14 @@ CONTAINS
          !
                                         CALL ice_wri( kt )            ! -- Ice outputs
          !
-         IF( lrst_ice )                 CALL ice_rst_write( kt )      ! -- Ice restart file
+#if defined key_isbaes
+      WHERE(dv_s(:,:,:,:) > 0._wp)
+          rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+      ELSEWHERE
+          rho_s(:,:,:,:) = 330._wp
+      ENDWHERE
+#endif
+        IF( lrst_ice )                 CALL ice_rst_write( kt )      ! -- Ice restart file
          !
          IF( ln_icectl )                CALL ice_ctl( kt )            ! -- Control checks
          !
