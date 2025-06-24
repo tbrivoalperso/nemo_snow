@@ -315,6 +315,9 @@ CONTAINS
             CALL tab_2d_1d( npti, nptidx(1:npti), t_i_1d (1:npti,jk), t_i (:,:,jk,jl) )
          END DO
 
+#if defined key_isbaes
+         CALL tab_2d_1d( npti, nptidx(1:npti), drhov_s_mlt_1d(1:npti), drhov_s_mlt(:,:,jl) )
+#endif
          !-----------------------
          ! Melt pond calculations
          !-----------------------
@@ -339,7 +342,11 @@ CONTAINS
                !------------------!
                !
                !--- available meltwater for melt ponding (zdv_avail) ---!
+#if defined key_isbaes
+               zdv_avail = -( dh_i_sum(ji)*rhoi ) * z1_rhow * a_i_1d(ji) + drhov_s_mlt_1d(ji) * z1_rhow! > 0
+#else
                zdv_avail = -( dh_i_sum(ji)*rhoi + dh_s_mlt(ji)*rhos ) * z1_rhow * a_i_1d(ji) ! > 0
+#endif
                zfr_mlt   = rn_apnd_min + ( rn_apnd_max - rn_apnd_min ) * at_i_1d(ji) !  = ( 1 - r ) = fraction of melt water that is not flushed
                zdv_mlt   = MAX( 0._wp, zfr_mlt * zdv_avail ) ! max for roundoff errors?
                !
@@ -594,8 +601,13 @@ CONTAINS
                IF ( a_i(ji,jj,jl) > epsi10 ) THEN
 
                   !--- Available and contributing meltwater for melt ponding ---!
+#if defined key_isbaes
+                  ! available volume of surface melt water per grid area
+                  zv_mlt  = - ( dh_i_sum_2d(ji,jj,jl) * rhoi ) * z1_rhow * a_i(ji,jj,jl) + drhov_s_mlt(ji,jj,jl) * z1_rhow 
+#else
                   zv_mlt  = - ( dh_i_sum_2d(ji,jj,jl) * rhoi + dh_s_mlt_2d(ji,jj,jl) * rhos ) &        ! available volume of surface melt water per grid area
                      &    * z1_rhow * a_i(ji,jj,jl)
+#endif
                       ! MV -> could move this directly in ice_thd_dh and get an array (ji,jj,jl) for surface melt water volume per grid area
                   zfr_mlt = rn_apnd_min + ( rn_apnd_max - rn_apnd_min ) * at_i(ji,jj)                  ! fraction of surface meltwater going to ponds
                   zv_pnd  = zfr_mlt * zv_mlt                                                           ! contributing meltwater volume for category jl
@@ -856,7 +868,9 @@ CONTAINS
           deltah, &
           perm, &
           msno
-
+#if defined key_isbaes
+       REAL (wp) :: zrhom_s
+#endif
        REAL (wp), parameter :: &
           viscosity = 1.79e-3_wp     ! kinematic water viscosity in kg/m/s
 
@@ -950,7 +964,22 @@ CONTAINS
               ! total volume in level including snow
               cum_max_vol_tmp(jl) = cum_max_vol_tmp(jl-1) + &
                  (alfan(jl+1) - alfan(jl)) * sum(reduced_aicen(1:jl))
+#if defined key_isbaes
+              ! subtract snow solid volumes from lower categories in current
+              ! level
+              IF( SUM(dv_s(ji,jj,:,jl)) > epsi10) THEN 
+                 zrhom_s = SUM(rho_s(ji,jj,:,jl) * dv_s(ji,jj,:,jl)) / SUM(dv_s(ji,jj,:,jl))
+              ELSE
+                 zrhom_s = 330._wp
+              ENDIF
 
+              DO ns = 1, jl
+                 cum_max_vol_tmp(jl) = cum_max_vol_tmp(jl) &
+                    - zrhom_s/rhow * &     ! free air fraction that can be filled by water
+                      asnon(ns)  * &    ! effective areal fraction of snow in that category
+                      max(min(hsnon(ns)+alfan(ns)-alfan(jl), alfan(jl+1)-alfan(jl)), 0._wp)
+              END DO
+#else
               ! subtract snow solid volumes from lower categories in current level
               DO ns = 1, jl
                  cum_max_vol_tmp(jl) = cum_max_vol_tmp(jl) &
@@ -958,7 +987,7 @@ CONTAINS
                       asnon(ns)  * &    ! effective areal fraction of snow in that category
                       max(min(hsnon(ns)+alfan(ns)-alfan(jl), alfan(jl+1)-alfan(jl)), 0._wp)
               END DO
-
+#endif
            ELSE ! assume higher categories unoccupied
               cum_max_vol_tmp(jl) = cum_max_vol_tmp(jl-1)
            END IF
@@ -987,8 +1016,17 @@ CONTAINS
 
         ! height and area corresponding to the remaining volume
         ! routine leaves zvolp unchanged
-        CALL ice_thd_pnd_depth(reduced_aicen, asnon, hsnon, alfan, zvolp(ji,jj), cum_max_vol, hpond, m_index)
+#if defined key_isbaes
+        IF( SUM(dv_s(ji,jj,:,jl)) > epsi10) THEN
+           zrhom_s = SUM(rho_s(ji,jj,:,jl) * dv_s(ji,jj,:,jl)) / SUM(dv_s(ji,jj,:,jl))
+        ELSE
+           zrhom_s = 330._wp
+        ENDIF
+        CALL ice_thd_pnd_depth(reduced_aicen, asnon, hsnon, alfan, zvolp(ji,jj), cum_max_vol, zrhom_s, hpond, m_index)
 
+#else
+        CALL ice_thd_pnd_depth(reduced_aicen, asnon, hsnon, alfan, zvolp(ji,jj), cum_max_vol, hpond, m_index)
+#endif
         DO jl = 1, m_index
            !h_ip(jl) = hpond - alfan(jl) + alfan(1) ! here oui choulde update
            !                                         !  volume instead, no ?
@@ -1007,7 +1045,11 @@ CONTAINS
         ! sea water level
         msno = 0._wp
         DO jl = 1 , jpl
+#if defined key_isbaes
+          msno = msno + SUM(rhov_s(ji,jj,:,jl)) 
+#else
           msno = msno + v_s(ji,jj,jl) * rhos
+#endif
         END DO
         floe_weight = ( msno + rhoi*vt_i(ji,jj) + rho0*zvolp(ji,jj) ) / at_i(ji,jj)
         hsl_rel = floe_weight / rho0 &
@@ -1046,7 +1088,17 @@ CONTAINS
            ! adjust melt pond dimensions
            IF (permflag > 0) THEN
               ! recompute pond depth
+#if defined key_isbaes
+              IF( SUM(dv_s(ji,jj,:,jl)) > epsi10) THEN
+                 zrhom_s = SUM(rho_s(ji,jj,:,jl) * dv_s(ji,jj,:,jl)) / SUM(dv_s(ji,jj,:,jl))
+              ELSE
+                 zrhom_s = 330._wp
+              ENDIF
+             CALL ice_thd_pnd_depth(reduced_aicen, asnon, hsnon, alfan, zvolp(ji,jj), cum_max_vol, zrhom_s, hpond, m_index)
+#else
+
              CALL ice_thd_pnd_depth(reduced_aicen, asnon, hsnon, alfan, zvolp(ji,jj), cum_max_vol, hpond, m_index)
+#endif
               DO jl = 1, m_index
                  h_ip(ji,jj,jl) = hpond - alfan(jl) + alfan(1)
                  a_ip(ji,jj,jl) = reduced_aicen(jl)
@@ -1070,8 +1122,20 @@ CONTAINS
 
         ! Calculate pond volume for lower categories
         DO jl = 1,m_index-1
+#if defined key_isbaes
+           ! subtract snow solid volumes from lower categories in current
+           ! level
+           IF( SUM(dv_s(ji,jj,:,jl)) > epsi10) THEN
+              zrhom_s = SUM(rho_s(ji,jj,:,jl) * dv_s(ji,jj,:,jl)) / SUM(dv_s(ji,jj,:,jl))
+           ELSE
+              zrhom_s = 330._wp
+           ENDIF
+           v_ip(ji,jj,jl) = a_ip(ji,jj,jl) * h_ip(ji,jj,jl) & ! what is not in the snow
+                          - (zrhom_s/rhow) * asnon(jl) * min(hsnon(jl), h_ip(ji,jj,jl))
+#else
            v_ip(ji,jj,jl) = a_ip(ji,jj,jl) * h_ip(ji,jj,jl) & ! what is not in the snow
                           - (rhos/rhow) * asnon(jl) * min(hsnon(jl), h_ip(ji,jj,jl))
+#endif
         END DO
 
         ! Calculate pond volume for highest category = remaining pond volume
@@ -1119,8 +1183,11 @@ CONTAINS
 
     END SUBROUTINE ice_thd_pnd_area
 
-
+#if defined key_isbaes
+    SUBROUTINE ice_thd_pnd_depth(aicen, asnon, hsnon, alfan, zvolp, cum_max_vol,zrhom_s, hpond, m_index)
+#else
     SUBROUTINE ice_thd_pnd_depth(aicen, asnon, hsnon, alfan, zvolp, cum_max_vol, hpond, m_index)
+#endif
        !!-------------------------------------------------------------------
        !!                ***  ROUTINE ice_thd_pnd_depth  ***
        !!
@@ -1136,7 +1203,10 @@ CONTAINS
 
        REAL (wp), INTENT(IN) :: &
           zvolp
-
+#if defined key_isbaes
+       REAL (wp), INTENT(IN) :: &
+          zrhom_s          
+#endif
        REAL (wp), INTENT(OUT) :: &
           hpond
 
@@ -1263,9 +1333,13 @@ CONTAINS
 
         ! move up over layers incrementing volume
         DO n = 1, m_index+1
-
+#if defined key_isbaes
+           area = sum(aicetl(:)) - &                 ! total area of sub-layer
+                (zrhom_s/rho0) * sum(aicetl(n:jpl+1)) ! area of sub-layer occupied by snow
+#else
            area = sum(aicetl(:)) - &                 ! total area of sub-layer
                 (rhos/rho0) * sum(aicetl(n:jpl+1)) ! area of sub-layer occupied by snow
+#endif
 
            vol = (hitl(n) - hitl(n-1)) * area      ! thickness of sub-layer times area
 

@@ -95,6 +95,10 @@ CONTAINS
                &                 , s_i , 'T', 1._wp, t_su, 'T', 1._wp, v_i , 'T', 1._wp, v_s , 'T', 1._wp, sv_i, 'T', 1._wp &
                &                 , a_ip, 'T', 1._wp, v_ip, 'T', 1._wp, v_il, 'T', 1._wp                                     &
                &                 , kfillmode=jpfillnothing ,lsend=llsend1, lrecv=llrecv1 )
+#if defined key_isbaes
+            CALL lbc_lnk('bdyice', dh_s , 'T', 1._wp, dv_s , 'T', 1._wp, kfillmode=jpfillnothing ,lsend=llsend1, lrecv=llrecv1 )
+            CALL lbc_lnk('bdyice', rho_s , 'T', 1._wp, rhov_s , 'T', 1._wp, kfillmode=jpfillnothing ,lsend=llsend1, lrecv=llrecv1 )
+#endif
             ! exchange 4d arrays :   third dimension = 1   and then   third dimension = jpk
             CALL lbc_lnk('bdyice', t_s , 'T', 1._wp, e_s , 'T', 1._wp, kfillmode=jpfillnothing ,lsend=llsend1, lrecv=llrecv1 )
             CALL lbc_lnk('bdyice', t_i , 'T', 1._wp, e_i , 'T', 1._wp, kfillmode=jpfillnothing ,lsend=llsend1, lrecv=llrecv1 )

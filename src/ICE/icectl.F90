@@ -242,9 +242,14 @@ CONTAINS
       REAL(wp), DIMENSION(4)             ::   zchk         
       !!-------------------------------------------------------------------
 
-      ztmp(:,:,1) = ( wfx_ice + wfx_snw + wfx_spr + wfx_sub + wfx_pnd + diag_vice + diag_vsnw + diag_vpnd - diag_adv_mass ) * e1e2t ! mass diag
-      ztmp(:,:,2) = ( sfx + diag_sice - diag_adv_salt ) * e1e2t                                                                     ! salt
-      ztmp(:,:,3) = ( qt_oce_ai - qt_atm_oi + diag_heat - diag_adv_heat ) * e1e2t                                                   ! heat
+      !ztmp(:,:,1) = ( wfx_ice + wfx_snw + wfx_spr + wfx_sub + wfx_pnd + diag_vice + diag_vsnw + diag_vpnd - diag_adv_mass ) * e1e2t ! mass diag
+      !ztmp(:,:,2) = ( sfx + diag_sice - diag_adv_salt ) * e1e2t                                                                     ! salt
+      !ztmp(:,:,3) = ( qt_oce_ai - qt_atm_oi + diag_heat - diag_adv_heat ) * e1e2t        
+
+      ztmp(:,:,1) = ( wfx_ice + wfx_snw + wfx_spr + wfx_sub + wfx_pnd + diag_vice + diag_vsnw + diag_vpnd  ) * e1e2t ! mass diag
+      ztmp(:,:,2) = ( sfx + diag_sice  ) * e1e2t ! salt
+      ztmp(:,:,3) = ( qt_oce_ai - qt_atm_oi + diag_heat  ) * e1e2t
+                                           ! heat
       ! equivalent to this:
       !! ( -diag_heat + hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_opw + hfx_snw &
       !!   &                                        - hfx_thd - hfx_dyn - hfx_res - hfx_sub - hfx_spr ) * e1e2t )

@@ -142,6 +142,8 @@ CONTAINS
                                                                 + SUM(dh_s_1d(ji,1:nlay_s) * e_s_1d(ji,1:nlay_s) ) )
 
             wfx_lam_1d(ji) =  wfx_lam_1d(ji) + zda * r1_Dt_ice * ( rhoi * h_i_1d(ji) + SUM(rho_s_1d(ji,1:nlay_s) * dh_s_1d(ji,1:nlay_s)) )
+!            wfx_lam_1d(ji) =  wfx_lam_1d(ji) + zda * r1_Dt_ice * ( rhoi * h_i_1d(ji) + SUM(rhov_s_1d(ji,1:nlay_s)) )
+
 #else
             ! Contribution to heat flux into the ocean [W.m-2], (<0)  
             hfx_thd_1d(ji) = hfx_thd_1d(ji) - zda * r1_Dt_ice * ( h_i_1d(ji) * r1_nlay_i * SUM( e_i_1d(ji,1:nlay_i) )  &

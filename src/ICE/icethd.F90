@@ -308,12 +308,11 @@ CONTAINS
                   zpa_t(ji) = pres_temp(qair_isbaes_1d(ji), slp_isbaes_1d(ji), 2., ptpot=tair_isbaes_1d(ji), l_ice=.true. )
 
                   zsnowfall = snow_isbaes_1d(ji)*rn_Dt/XRHOSMAX_ES ! maximum possible snowfall depth (m)
-                  IF ((SUM(dh_s_1d(ji,:)) > 1e-6 .OR. zsnowfall > XSNOWDMIN)) THEN   
+                  IF ((SUM(dh_s_1d(ji,:)) > 1e-6 .OR. zsnowfall > 1e-6)) THEN   
                      CALL CALL_MODEL(kt,ji,nlay_s, rn_Dt, za_s_fra(ji),zsnowblow(ji), zpa_t(ji), ZP_RADXS, zq_rema(ji), &
                           &   zevap_rema(ji), hbdg_isbaes_1d(ji))
                      isnow(ji) = 1.
                      zradtr_s(ji,nlay_s) = ZP_RADXS(1)
-
                      IF (SUM(dh_s_1d(ji,:)) .eq. 0._wp) THEN
                         DO jk = 1, nlay_s
                            dh_s_1d(ji,jk) = 0._wp
@@ -405,6 +404,7 @@ CONTAINS
           qsr_tot(:,:) =  qsr_tot(:,:) + isnow_save(:,:,jl) * a_i_b(:,:,jl) * qsr_ice(:,:,jl)   &
                   &       + (1 - isnow_save(:,:,jl)) * a_i_b(:,:,jl) * qsr_ice_b(:,:,jl)
       END DO
+      rhov_s(:,:,:,:) = rho_s(:,:,:,:) * dv_s(:,:,:,:)
 #endif
       !diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3) - diag1_2D(:,:) 
       diag3_2D(:,:) = SUM((qns_ice(:,:,:) ) * a_i_b(:,:,:),DIM=3)
@@ -657,6 +657,9 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), qsb_ice_isbaes_1d (1:npti), qsb_ice_isbaes (:,:,kl) )
          CALL tab_2d_1d( npti, nptidx(1:npti), qla_ice_isbaes_1d (1:npti), qla_ice_isbaes (:,:,kl) )
          CALL tab_2d_1d( npti, nptidx(1:npti), hbdg_isbaes_1d (1:npti), hbdg_isbaes (:,:,kl) )
+         CALL tab_2d_1d( npti, nptidx(1:npti), drhov_s_mlt_1d   (1:npti), drhov_s_mlt(:,:,kl)       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), Cd_ice_isbaes_1d   (1:npti), Cd_ice_isbaes(:,:,kl)       )
+         CALL tab_2d_1d( npti, nptidx(1:npti), Ch_ice_isbaes_1d   (1:npti), Ch_ice_isbaes(:,:,kl)       )
 
          ! Those variables are here because we need to update the flux
          CALL tab_2d_1d( npti, nptidx(1:npti), qemp_ice_1d (1:npti), qemp_ice (:,:) )
@@ -849,6 +852,9 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), qsb_ice_isbaes_1d(1:npti), qsb_ice_isbaes(:,:,kl)    )
          CALL tab_1d_2d( npti, nptidx(1:npti), qla_ice_isbaes_1d(1:npti), qla_ice_isbaes(:,:,kl)    )
          CALL tab_1d_2d( npti, nptidx(1:npti), hbdg_isbaes_1d(1:npti), hbdg_isbaes(:,:,kl)    )
+         CALL tab_1d_2d( npti, nptidx(1:npti), drhov_s_mlt_1d    (1:npti), drhov_s_mlt(:,:,kl)       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), Cd_ice_isbaes_1d    (1:npti), Cd_ice_isbaes(:,:,kl)       )
+         CALL tab_1d_2d( npti, nptidx(1:npti), Ch_ice_isbaes_1d    (1:npti), Ch_ice_isbaes(:,:,kl)       )
 
 ! Those variables are here because we need to update the flux
          CALL tab_1d_2d( npti, nptidx(1:npti), qemp_ice_1d(1:npti), qemp_ice(:,:)    )

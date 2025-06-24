@@ -165,7 +165,9 @@ CONTAINS
             zs_newice(1:npti) = rn_icesal
          CASE ( 2 )                    ! Sice = F(z,t) [Vancoppenolle et al (2005)]
             DO ji = 1, npti
-               zs_newice(ji) = MIN(  4.606 + 0.91 / zh_newice(ji) , rn_simax , 0.5 * sss_1d(ji) )
+               !!! zs_newice(ji) = MIN(  4.606 + 0.91 / zh_newice(ji) , rn_simax , 0.5 * sss_1d(ji) )
+               !! MV 2025 hard code 75% of liquid fraction of new ice
+               zs_newice(ji) = 0.75 * sss_1d(ji)
             END DO
          CASE ( 3 )                    ! Sice = F(z) [multiyear ice]
             zs_newice(1:npti) =   2.3

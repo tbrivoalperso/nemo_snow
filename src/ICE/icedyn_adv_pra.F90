@@ -273,11 +273,11 @@ CONTAINS
             &                          , z0ai  , 'T', 1._wp, sxa   , 'T', -1._wp, sya   , 'T', -1._wp  & ! ice concentration
             &                          , sxxa  , 'T', 1._wp, syya  , 'T',  1._wp, sxya  , 'T',  1._wp  &
             &                          , z0oi  , 'T', 1._wp, sxage , 'T', -1._wp, syage , 'T', -1._wp  & ! ice age
-            &                          , sxxage, 'T', 1._wp, syyage, 'T',  1._wp, sxyage, 'T',  1._wp  )
+            &                          , sxxage, 'T', 1._wp, syyage, 'T',  1._wp, sxyage, 'T',  1._wp) 
          CALL lbc_lnk( 'icedyn_adv_pra', z0es  , 'T', 1._wp, sxc0  , 'T', -1._wp, syc0  , 'T', -1._wp  & ! snw enthalpy
-            &                          , sxxc0 , 'T', 1._wp, syyc0 , 'T',  1._wp, sxyc0 , 'T',  1._wp  )
+            &                          , sxxc0 , 'T', 1._wp, syyc0 , 'T',  1._wp, sxyc0 , 'T',  1._wp)  
          CALL lbc_lnk( 'icedyn_adv_pra', z0ei  , 'T', 1._wp, sxe   , 'T', -1._wp, sye   , 'T', -1._wp  & ! ice enthalpy
-            &                          , sxxe  , 'T', 1._wp, syye  , 'T',  1._wp, sxye  , 'T',  1._wp  )
+            &                          , sxxe  , 'T', 1._wp, syye  , 'T',  1._wp, sxye  , 'T',  1._wp)
          IF ( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
             IF( ln_pnd_lids ) THEN
                CALL lbc_lnk( 'icedyn_adv_pra', z0ap , 'T', 1._wp, sxap , 'T', -1._wp, syap , 'T', -1._wp  & ! melt pond fraction
@@ -285,12 +285,12 @@ CONTAINS
                   &                          , z0vp , 'T', 1._wp, sxvp , 'T', -1._wp, syvp , 'T', -1._wp  & ! melt pond volume
                   &                          , sxxvp, 'T', 1._wp, syyvp, 'T',  1._wp, sxyvp, 'T',  1._wp  &
                   &                          , z0vl , 'T', 1._wp, sxvl , 'T', -1._wp, syvl , 'T', -1._wp  & ! melt pond lid volume
-                  &                          , sxxvl, 'T', 1._wp, syyvl, 'T',  1._wp, sxyvl, 'T',  1._wp  )
+                  &                          , sxxvl, 'T', 1._wp, syyvl, 'T',  1._wp, sxyvl, 'T',  1._wp)
             ELSE
                CALL lbc_lnk( 'icedyn_adv_pra', z0ap , 'T', 1._wp, sxap , 'T', -1._wp, syap , 'T', -1._wp  & ! melt pond fraction
                   &                          , sxxap, 'T', 1._wp, syyap, 'T',  1._wp, sxyap, 'T',  1._wp  &
                   &                          , z0vp , 'T', 1._wp, sxvp , 'T', -1._wp, syvp , 'T', -1._wp  & ! melt pond volume
-                  &                          , sxxvp, 'T', 1._wp, syyvp, 'T',  1._wp, sxyvp, 'T',  1._wp  )
+                  &                          , sxxvp, 'T', 1._wp, syyvp, 'T',  1._wp, sxyvp, 'T',  1._wp)
             ENDIF
          ENDIF
 

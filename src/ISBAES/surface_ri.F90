@@ -109,7 +109,7 @@ PRI(:) = XG * PDIRCOSZW(:) * PUREF(:) * PUREF(:)              &
           * (ZTHVA(:)-ZTHVS(:)) / (0.5 * (ZTHVA(:)+ZTHVS(:)) )  &
           / (ZVMOD(:)*ZVMOD(:)) /PZREF(:)  
 !
-PRI(:) = MIN(PRI(:),XRIMAX)
+PRI(:) = 0. !MIN(PRI(:),XRIMAX)
 !
 !-------------------------------------------------------------------------------
 !

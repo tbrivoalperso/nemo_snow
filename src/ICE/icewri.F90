@@ -65,7 +65,7 @@ CONTAINS
       !
 #if defined key_isbaes
       REAL(wp), DIMENSION(jpi,jpj,nlay_s) :: rho_s_3D, t_s_3D, dh_s_3D      
-
+      REAL(wp), DIMENSION(jpi,jpj) :: cndm_s_isbaes, Cdm_ice_isbaes, Chm_ice_isbaes
 #endif
       IF( ln_timing )   CALL timing_start('icewri')
 
@@ -137,7 +137,20 @@ CONTAINS
       IF( iom_use('snwtemp' ) )   CALL iom_put( 'snwtemp', ( tm_s  - rt0 ) * zmsksn + zmiss_val * ( 1._wp - zmsksn ) )      ! snw mean temperature
 #if defined key_isbaes
       IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn )      ! snw mean density
-      IF( iom_use('cnd_s_isbaes' ) )   CALL iom_put( 'cnd_s_isbaes', SUM(cnd_s_isbaes(:,:,:) * a_i(:,:,:),DIM=3)  * zmsksn )      !  snw conductivity 
+      WHERE(SUM(a_i(:,:,:), DIM=3) > 0._wp) 
+          cndm_s_isbaes(:,:) = SUM(cnd_s_isbaes(:,:,:) * a_i(:,:,:) * zmsksnl(:,:,:) ,DIM=3) / SUM(a_i(:,:,:) * zmsksnl(:,:,:), DIM=3)
+          Cdm_ice_isbaes(:,:) = SUM(Cd_ice_isbaes(:,:,:) * a_i(:,:,:) * zmsksnl(:,:,:) ,DIM=3) / SUM(a_i(:,:,:) * zmsksnl(:,:,:), DIM=3)
+          Chm_ice_isbaes(:,:) = SUM(Ch_ice_isbaes(:,:,:) * a_i(:,:,:) * zmsksnl(:,:,:) ,DIM=3) / SUM(a_i(:,:,:) * zmsksnl(:,:,:), DIM=3)
+
+      ELSEWHERE
+          cndm_s_isbaes(:,:) = 0. !zmiss_val
+          Cdm_ice_isbaes(:,:) = 0.
+          Chm_ice_isbaes(:,:) = 0.
+      ENDWHERE
+      !WHERE(cndm_s_isbaes(:,:) == 0.) cndm_s_isbaes(:,:) = zmiss_val
+      IF( iom_use('cnd_s_isbaes' ) )   CALL iom_put( 'cnd_s_isbaes', cndm_s_isbaes(:,:)  )      !  snw conductivity 
+      IF( iom_use('Cd_ice_isbaes' ) )   CALL iom_put( 'Cd_ice_isbaes', Cdm_ice_isbaes(:,:)  )      !  snw conductivity 
+      IF( iom_use('Ch_ice_isbaes' ) )   CALL iom_put( 'Ch_ice_isbaes', Chm_ice_isbaes(:,:)  )      !  snw conductivity 
 
       IF( iom_use('snwrho_1' ) )   CALL iom_put( 'snwrho_1', SUM(rho_s(:,:,1,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw top density
       IF( iom_use('snwrho_N' ) )   CALL iom_put( 'snwrho_N', SUM(rho_s(:,:,nlay_s,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw bottom density

@@ -173,7 +173,7 @@ TYPE(DATE_TIME)         :: TPTIME      ! current date and time
 ! Model options 
 ! -------------------------------------------------------------------------------------------------------------------------------------------
 
-HSNOWRES = 'DEF'
+HSNOWRES = 'RIL' !'DEF'
 HIMPLICIT_WIND = 'OLD'
 OMEB = .false.
 OSI3 = .true.
@@ -244,9 +244,9 @@ XTAU_LW=0.5
 XRAGNC_FACTOR=200.
 XKDELTA_WR=0.25
 !
-ZP_UREF         = 10. ! atm. level for wind => zu => No flux computation no need 
+ZP_UREF         = rn_zu_isbaes !10. ! atm. level for wind => zu => No flux computation no need 
 ZP_DIRCOSZW     = 1. ! Cosine of the angle between the normal to the surface and the vertical => = 1 (bertrand) 
-ZP_ZREF         = 2. ! atm. level for temp. and humidity 
+ZP_ZREF         = rn_zqt_isbaes !10. ! atm. level for temp. and humidity 
 
 ZP_LVTT    (1)     = XLVTT  ! Fourni par modd_csts 
 ZP_LSTT    (1)     = XLSTT  ! Fourni par modd_csts 
@@ -262,19 +262,21 @@ ZP_PSN_GFLXCOR  = 0.
 ZP_WORK         = 0.
 ZP_SOILD        = 0.
 
+!---------------------------------------------------------------------------------------------
+! Initial mass and heat - used for conservation checks 
+!---------------------------------------------------------------------------------------------
 
-! -------------------------------------------------------------------------------------------------------------------------------------------
-!  Pack variables (= SI3 variables to ISBA-ES varaibles)
-! -------------------------------------------------------------------------------------------------------------------------------------------
-
-! --- diag error on heat diffusion - PART 1 --- !
-zq_ini = SUM( e_s_1d(JI,1:nlay_s))!  * dh_s_1d(JI,1:nlay_s) )!* r1_nlay_s 
+zq_ini = SUM( e_s_1d(JI,1:nlay_s))
 zm_ini = SUM(rho_s_1d(JI,1:nlay_s) * dv_s_1d(JI,1:nlay_s))
 
-!rho_s_1d(JI,:) = 330.
-! Snow variables
+
+!---------------------------------------------------------------------------------------------
+!                   Pack variables (= SI3 variables to ISBA-es variables)
+! ---------------------------------------------------------------------------------------------
+!   - Snow 3D variables 
+! ---------------------------------------------------------------------------------------------
+
 DO JWRK=1,KSIZE2
-     IF (e_s_1d(JI,JWRK) .eq. 0._wp) dh_s_1d(JI,JWRK) = 0._wp
      IF((dh_s_1d(JI,JWRK) .eq. 0._wp) .OR. (a_i_1d(JI) .eq. 0._wp)) THEN
         ZP_SNOWSWE (1,JWRK) = 0. 
         ZP_SNOWRHO (1,JWRK) = 330. 
@@ -284,96 +286,132 @@ DO JWRK=1,KSIZE2
         ZP_SNOWDZ  (1,JWRK) = 0. 
         ZP_SNOWHEAT(1,JWRK) = 0.
      ELSE
- 
-        ZP_SNOWSWE (1,JWRK) = rho_s_1d(JI,JWRK) * dh_s_1d(JI,JWRK) !swe_s_1d(JI,JWRK) ! Snow layer(s) liquid Water Equivalent (SWE:kg m-2) 
+        ZP_SNOWDZ  (1,JWRK) = dh_s_1d(JI,JWRK) 
+        ZP_SNOWSWE (1,JWRK) = rho_s_1d(JI,JWRK) * dh_s_1d(JI,JWRK) ! Snow layer(s) liquid Water Equivalent (SWE:kg m-2) 
         ZP_SNOWRHO (1,JWRK) = rho_s_1d(JI,JWRK) ! Snow layer(s) averaged density (kg/m3) 
         ZSCAP     = SNOW3LSCAP(ZP_SNOWRHO(1,JWRK))
-        ZP_SNOWTEMP(1,JWRK) = t_s_1d(JI,JWRK)   ! Snow temperature => °C ou K ?
-        ZP_SNOWAGE (1,JWRK) = o_s_1d (JI,JWRK)  ! Snow age (verifier si c'est x area ou pas)  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-        ZP_SNOWLIQ (1,JWRK) = lwc_s_1d(JI,JWRK) ! Diagnostique => Pas besoin d'advecter 
-        ZP_SNOWHEAT(1,JWRK) = - e_s_1d(JI,JWRK) / a_i_1d(JI)
+        ZP_SNOWTEMP(1,JWRK) = t_s_1d(JI,JWRK)   ! Snow temperature 
+        ZP_SNOWAGE (1,JWRK) = o_s_1d (JI,JWRK)  ! Snow age 
+        ZP_SNOWLIQ (1,JWRK) = lwc_s_1d(JI,JWRK) ! Snow liquid water content (diagnostic)
+        
+        ! Enthalpy: divide by the ice concentration because the enthalpy of SI3
+        ! is in J/m2 per unit area + negative factor because of ISBA-es convention
+        ZP_SNOWHEAT(1,JWRK) = - e_s_1d(JI,JWRK) / a_i_1d(JI) ! Snow enthalpy in J/m2  
+        ! 
      ENDIF
 ENDDO
 !
+
+!---------------------------------------------------------------------------------------------
+!   - Surface snow variables
+!---------------------------------------------------------------------------------------------
+
+ZP_SNOWALB (1)     = albs_isbaes_1d (JI) ! Snow albedo
+ZP_PSN3L   (1)     = 1. ! Snow fraction within ISBA-ES (not used in our case...  
+                        ! if a snow fraction is used, it should be applied to the variables before and after ISBA-es) 
+ZP_PSN           = ZP_PSN3L ! 
+
+!---------------------------------------------------------------------------------------------
+!   - Below-snow (sea-ice) variables
+!---------------------------------------------------------------------------------------------
+
+ZP_TG          (1) = t_i_1d(JI,1)       !* ZP_EXNS(1) ! Ground T° => 1st ice level T° (K)
+ZP_ALB         (1) = 0. ! Ice albedo, set to zero for now to be consistent with SI3 (set to albi_isbaes_1d(JI)) 
+ZP_SOILCOND    (1) = cnd_i_isbaes_1d(JI) ! Conductivity of 1st ice layer 
+ZP_D_G          = h_i_1d(JI) * r1_nlay_i ! First sea-ice layer thickness (m) 
+
+!---------------------------------------------------------------------------------------------
+!   - Surface Heat & Mass fluxes & atmospheric variables 
+!           * In forced mode: Downward heat fluxes and atmospheric variables should be set.
+!           * In coupled mode, or in the case of flux forcing, we should give the net fluxes instead.      
+!---------------------------------------------------------------------------------------------
+
+!------------------------------
+! CASE 1: Forced mode
+
+! Atmospheric variables
+ZP_Z0NAT   (1)     = 2.3e-04 ! Values from surfex
+ZP_Z0HNAT  (1)     = 2.3e-04 ! Values from surfex
+ZP_Z0EFF   (1)     = ZP_Z0NAT(1)  ! effective roughness length for momentum => equal to z0  
+ZP_PS          (1) = slp_isbaes_1d(JI)      ! pressure at the surface (Pa) 
+ZP_QA          (1) = qair_isbaes_1d(JI) ! air humidity at atm. level (kg/kg) 
+ZP_VMOD        (1) = wndm_isbaes_1d(JI) ! module of the horizontal wind (m/s) 
+ZP_RHOA        (1) = rho_air_isbaes_1d(JI) ! Air density (kg/m3) 
+ZP_EXNS        (1) = 1. !(ZP_PS(1)/XP00)**(XRD/XCPD) ! Exner function at sea surface 
+ZP_EXNA        (1) = 1. !(ZP_PA/XP00)**(XRD/XCPD) ! Exner function at atm level 
+ZP_TA          (1) = tair_isbaes_1d(JI) !* ZP_EXNA(1) ! Absolute air temperature (K)   
+
+! Downward heat fluxes
+ZP_SW_RAD      (1) = qsr_ice_isbaes_1d(JI) ! Incoming shortwave radiation (W/m2) 
+ZP_LW_RAD      (1) = qlwdwn_ice_isbaes_1d(JI) ! Incoming longwave radiation (W/m2)
+
+
+!------------------------------
+! CASE 2: Coupled or flux forced mode 
+
+ZP_RNSNOW  (1)     = 0. ! Net radiative flux (W/m2): SW + LW 
+ZP_HSNOW   (1)     = 0. ! Sensible heat flux (W/m2) 
+ZP_HPSNOW  (1)     = 0. ! Heat release from rainfall (usually set to zero, because it implies removing heat from the atmosphere) 
+ZP_LES3L       (1) = 0. ! Evaporation heat flux from snow (W/m2) 
+ZP_LEL3L       (1) = 0. ! Sublimation heat flux from snow (W/m2) 
+ZP_EVAP        (1) = 0. ! ZP_LES3L + ZP_LEL3L
+ZP_SWNETSNOW   (1) = qsr_ice_isbaes_1d(JI) * (1. - albs_isbaes_1d(JI)) ! Net shortwave radiation entering top of snowpack (W/m2) !
+! (qsr_ice_isbaes_1d(JI) * (1. - albs_isbaes_1d(JI)))
+ZP_SWNETSNOWS  (1) = qtr_ice_top_1d(JI) ! Net shortwave radiation in uppermost layer of snowpack (qtr_ice_top_1d(JI))
+ZP_LWNETSNOW    (1)= 0. ! Net longwave flux (W/m2) (qlw_ice_isbaes_1d(JI) )
+
+!------------------------------
+! Mass fluxes, should be set for both cases: 
+ZP_SRSNOW      (1) = (snow_isbaes_1d(JI) * ZP_SNOWBLOW / at_i_1d(JI)) ! Snow rate (kg/m2/s)
+ZP_RRSNOW      (1) = rain_isbaes_1d(JI) ! Rain rate over snow (kg/m2/s) 
+
+!---------------------------------------------------------------------------------------------
+! Geographic variables
+!---------------------------------------------------------------------------------------------
+
+ZP_LAT         (1) = gphit_1d(JI) ! Latitude 
+ZP_LON         (1) = glamt_1d(JI) ! Londitude
+
+! Zenital angle
+CALL SUNPOS (nyear, nmonth, nday, nsec_day, ZP_LON(1), ZP_LAT(1), ZP_TSUN, ZP_ZENITH, ZP_AZIMSOL)
+
+!---------------------------------------------------------------------------------------------
+! Variables needed because of the implicit budget formulation
+!---------------------------------------------------------------------------------------------
+
+ZP_PEW_A_COEF  (1) = 0.
+ZP_PEW_B_COEF  (1) = ZP_VMOD(1)
+ZP_PET_A_COEF  (1) =  0.
+ZP_PET_B_COEF  (1) =  ZP_TA(1) !/ (ZP_PA/XP00)**(XRD/XCPD)
+ZP_PEQ_A_COEF  (1) =  0.
+ZP_PEQ_B_COEF  (1) =  ZP_QA(1)
+
+!---------------------------------------------------------------------------------------------
+! Dummy variables
+!---------------------------------------------------------------------------------------------
+
 DO JWRK=1,KSIZE2
    ZP_SNOWGRAN1(1,JWRK) = XUNDEF ! Not used
    ZP_SNOWGRAN2(1,JWRK) = XUNDEF ! Not used
    ZP_SNOWHIST (1,JWRK) = XUNDEF ! Not used
 ENDDO
 !
-ZP_SNOWALB (1)     = albs_isbaes_1d (JI) ! Snow albedo
-ZP_PSN3L   (1)     = 1. ! Snow fraction (set to 1) 
-ZP_PSN           = ZP_PSN3L
 
-! Atmospheric variables
-ZP_Z0NAT   (1)     = 1e-03 ! Values from surfex
-ZP_Z0HNAT  (1)     = 1e-04 ! Values from surfex
-ZP_Z0EFF   (1)     = ZP_Z0NAT(1)  ! effective roughness length for momentum => equal to z0  
-ZP_PS          (1) = slp_isbaes_1d(JI)      ! pressure at the surface (Pa) 
-ZP_QA          (1) = qair_isbaes_1d(JI) ! air humidity at atm. level (kg/kg) 
-ZP_VMOD        (1) = wndm_isbaes_1d(JI) ! module of the horizontal wind (m/s) 
-ZP_RHOA        (1) = rho_air_isbaes_1d(JI) ! Air density (kg/m3) 
-ZP_EXNS        (1) = (ZP_PS(1)/XP00)**(XRD/XCPD) ! Exner function at sea surface 
-ZP_EXNA        (1) = (ZP_PA/XP00)**(XRD/XCPD) ! Exner function at atm level 
-ZP_TA          (1) = tair_isbaes_1d(JI) * ZP_EXNA(1) ! Absolute air temperature (K)   
+!---------------------------------------------------------------------------------------------
+! Initialisation of output vaiables 
+!---------------------------------------------------------------------------------------------
 
-! Needed because of the implicit budget formulation
-ZP_PEW_A_COEF  (1) = 0. 
-ZP_PEW_B_COEF  (1) = ZP_VMOD(1) 
-ZP_PET_A_COEF  (1) =  0.
-ZP_PET_B_COEF  (1) =  ZP_TA(1) / (ZP_PA/XP00)**(XRD/XCPD)
-ZP_PEQ_A_COEF  (1) =  0.
-ZP_PEQ_B_COEF  (1) =  ZP_QA(1)
+ZP_GRNDFLUX    (1) = 0. ! qcn_snw_bot_1d(JI) ! snow-ground flux before correction (W m-2)
 
-! Sea-ice variables
-ZP_TG          (1) = t_i_1d(JI,1)       * ZP_EXNS(1) ! Ground T° => 1st ice level (K)
-ZP_ALB         (1) = albi_isbaes_1d(JI) ! below snow albedo = albedo of snow-free sea-ice  
-ZP_SOILCOND    (1) = cnd_i_isbaes_1d(JI) ! Conductivity of 1st ice layer 
-ZP_D_G          = h_i_1d(JI) * r1_nlay_i ! Assumed first soil layer thickness (m) 
-
-! Heat & mass fluxes from the atmopshere
-! - Mass
-ZP_SRSNOW      (1) = (snow_isbaes_1d(JI) * ZP_SNOWBLOW / at_i_1d(JI)) ! Snow rate (kg/m2/s)
-ZP_RRSNOW      (1) = rain_isbaes_1d(JI) ! Rain rate over snow (kg/m2/s) 
-
-! - Heat
-ZP_SW_RAD      (1) = qsr_ice_isbaes_1d(JI) ! Incoming shortwave radiation (W/m2) 
-ZP_LW_RAD      (1) = qlwdwn_ice_isbaes_1d(JI) ! Incoming longwave radiation (W/m2)
-
-
-! /!\ Variables that needs to be set if ISBA-ES is forced by atmospheric fluxes
-ZP_RNSNOW  (1)     = 0. ! (1. - albs_isbaes_1d(JI)) * qsr_ice_isbaes_1d(JI) + qlw_ice_isbaes_1d(JI) ! net radiative flux from snow (W/m2)
-ZP_HSNOW   (1)     = 0. ! qsb_ice_isbaes_1d(JI) ! Sensible heat flux (W/m2) 
-ZP_HPSNOW  (1)     = 0. ! qprec_ice_1d(JI) ! heat release from rainfall 0. 
-ZP_LES3L       (1) = 0. ! Evaporation heat flux from snow (W/m2) 
-ZP_LEL3L       (1) = 0. ! Sublimation heat flux from snow (W/m2) 
-ZP_EVAP        (1) = 0. !ZP_LES3L(JI) + ZP_LEL3L(JI) ! total evaporative flux (kg/m2/s) LES + LEL ?????
-ZP_SWNETSNOW   (1) = qsr_ice_isbaes_1d(JI) * (1. - albs_isbaes_1d(JI)) ! net shortwave radiation entering top of snowpack (W m-2)
-ZP_SWNETSNOWS  (1) = qsr_ice_isbaes_1d(JI) * (1. - albs_isbaes_1d(JI)) ! net shortwave radiation in uppermost layer of snowpack
-!/!\ /!\/!\/!\/!\/!\/!\/!\/!\ SWNETSNOWS must take into account solar penetration => for now it is qsr * (1 -albedo)
-ZP_LWNETSNOW    (1)= qlw_ice_isbaes_1d(JI) ! net longwave radiation entering top of snowpack
-
-! Other variables need when the flux are not re-computed by ISBA-ES
-ZP_GRNDFLUX    (1) = 0. !qcn_snw_bot_1d(JI) ! snow-ground flux before correction (W m-2)
-
-! Other variables 
-! - Computed by isba-es, here we juste declare the pointers
-ZP_DELHEATG    (1) = 0. ! ground heat content change (diagnostic) (W/m2) JUST NEED TO DECLARE POINTER  
-ZP_DELHEATG_SFC(1) = 0. ! ground heat content change in sfc only (diagnostic) (W/m2) JUST NEED TO DECLARE POINTER
+ZP_DELHEATG    (1) = 0. ! ground heat content change (diagnostic) (W/m2) 
+ZP_DELHEATG_SFC(1) = 0. ! ground heat content change in sfc only (diagnostic) (W/m2) 
 ZP_DELHEATN    (1) = 0. ! total snow heat content change in the surface layer (W m-2)
 ZP_DELHEATN_SFC(1) = 0. ! total snow heat content change during the timestep (W m-2)
-ZP_SNOWSFCH    (1) = 0. ! snow surface layer pseudo-heating term owing to changes in grid thickness (W m-2) ! DIAG => PAS BESOIN
-ZP_MELTSTOT     (1)= 0.0
-ZP_SNREFREEZ    (1)= 0.0
-ZP_DELPHASEN    (1)= 0.0
-ZP_DELPHASEN_SFC(1)= 0.0
-! - Used in ISBA-ES  
-ZP_LAT         (1) = gphit_1d(JI) ! Latitude 
-ZP_LON         (1) = glamt_1d(JI) ! Londitude
-
-
-! Compute the zenital angle (ZP_ZENITH)
-CALL SUNPOS (nyear, nmonth, nday, nsec_day, ZP_LON(1), ZP_LAT(1), ZP_TSUN, ZP_ZENITH, ZP_AZIMSOL)
+ZP_SNOWSFCH    (1) = 0. ! snow surface layer pseudo-heating term owing to changes in grid thickness (W m-2) ! 
+ZP_MELTSTOT     (1)= 0.
+ZP_SNREFREEZ    (1)= 0.
+ZP_DELPHASEN    (1)= 0.
+ZP_DELPHASEN_SFC(1)= 0.
 
 !
 CALL SNOW3L(JI, HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,                   &
@@ -404,7 +442,10 @@ CALL SNOW3L(JI, HSNOWRES, TPTIME, OMEB, OSI3, HIMPLICIT_WIND,                   
 ! Nb: The enthalpy is defined in J/m2 in ISBA-ES whereas it should be defined in J/m2 per unit area in SI3,
 ! thus we have to multiply the enthalpy per the ice area to be consistent with SI3 conventions
 
-! Vertical profiles 
+! ---------------------------------------------------------------------------------------------
+!   - Snow 3D variables 
+! ---------------------------------------------------------------------------------------------
+
 DO JWRK=1,KSIZE2
 
      swe_s_1d(JI,JWRK) = ZP_SNOWSWE  (1,JWRK) ! snow water equivalent (kg/m2)
@@ -421,40 +462,50 @@ DO JWRK=1,KSIZE2
      ov_s_1d(JI,JWRK)  = o_s_1d(JI,JWRK) * dv_s_1d(JI,JWRK) 
 ENDDO
 
-! 2D variables
 
+! ---------------------------------------------------------------------------------------------
+!   - Snow 2D variables 
+! ---------------------------------------------------------------------------------------------
 albs_isbaes_1d(JI)   = ZP_SNOWALB(1) ! Snow albedo
 v_s_1d(JI) = SUM(dv_s_1d(JI,:)) ! Snowpack volume (m per unit area)
 h_s_1d(JI) = SUM(dh_s_1d(JI,:)) ! Snowpack thickness (m) 
 t_su_1d(JI) = t_s_1d(JI,1)      ! Surface temperature (K)
 
-!Surface heat fluxes
-qla_ice_isbaes_1d(JI) = ZP_LES3L(1) + ZP_LEL3L(1)    ! Latent heat flux (W/m2)
-qsb_ice_isbaes_1d(JI) = ZP_HSNOW(1)                  ! Sensible heat flux (W/m2)
-qlw_ice_isbaes_1d(JI) = ZP_LWNETSNOW(1)              ! Net longwave heat flux (W/m2)
-qns_ice_1d(JI) = ZP_GFLUXSNOW(1) - ZP_SWNETSNOWS(1)  ! Non-solar surface heat flux (W/m2)
-qsr_ice_1d(JI) = ZP_SWNETSNOWS(1)                    ! Net short-wave heat flux (W/m2)
-qemp_ice_1d(JI) = ZP_DELHEAT_SNWFL(1) * r1_Dt_ice    ! Evaporation heat flux (W/m2)
-
-
-! Conductive heat flux at the snow/ice interface, used to force the sea-ice thermodynamics (W/m2)
-qcn_snw_bot_1d(JI)  = ZP_GRNDFLUX(1) ! * a_i_1d(JI) ! 
-!We do not multiply the conduction flux per a_i as it is used to force the resolution of the temperature equation 
-! that is writen for an enthalpy in J/m3  
-
-! Remaining heat after snow solving (in J/m2 per unit area) (GFLXCOR =! 0. when snow vanishes)
-ZP_Q_REMA   =  (ZP_GFLXCOR(1)      + ZP_RADXS(1) ) * rDt_ice * a_i_1d(JI)
-
-! Remaining evaporation (=! 0. when snow vanishes)
-ZP_EVAP_REMA      =  (ZP_EVAPCOR(1) + ZP_SOILCOR(1)) * a_i_1d(JI) * rDt_ice
-
-! Snow conductivity
+! Average snowpack conductivity (diagnostic)
 IF(h_s_1d(JI) >  0.000001) THEN
    cnd_s_isbaes_1d(JI) = SUM(ZP_SCOND_ES(1,:) * dh_s_1d(JI,:)) / h_s_1d(JI)
 ELSE
    cnd_s_isbaes_1d(JI) = 0.
-ENDIF   
+ENDIF
 
+! Diagnotics 
+Cd_ice_isbaes_1d(JI) = ZP_CDSNOW(1)
+Ch_ice_isbaes_1d(JI) = ZP_CHSNOW(1)
+
+! ---------------------------------------------------------------------------------------------
+! Snow to ice fluxes
+! ---------------------------------------------------------------------------------------------
+! Conductive heat flux at the snow/ice interface, used to force the sea-ice thermodynamics (W/m2)
+qcn_snw_bot_1d(JI)  = ZP_GRNDFLUX(1) ! 
+
+! Remaining heat and mass fluxes if the whole snowpack melts
+ZP_Q_REMA   =  ZP_GFLXCOR(1) * rDt_ice * a_i_1d(JI) ! Remaining heat J/m2
+ZP_EVAP_REMA      =  (ZP_EVAPCOR(1) + ZP_SOILCOR(1)) * rDt_ice * a_i_1d(JI) !  kg/m2
+ 
+! ---------------------------------------------------------------------------------------------
+!   - Surface heat fluxes 
+! ---------------------------------------------------------------------------------------------
+! Surface heat fluxes to be updated:
+!    * qns_ice and qsr_ice should be updated because they are (for now) recomputed by isba-es 
+!    * After vertical thermodynamic processes, qns_tot and qsr_tot are updated in icethd_zdf
+qns_ice_1d(JI) = ZP_GFLUXSNOW(1) - ZP_SWNETSNOW(1)  ! Non-solar surface heat flux (W/m2)
+qsr_ice_1d(JI) = ZP_SWNETSNOW(1)                    ! Net short-wave heat flux (W/m2)
+qemp_ice_1d(JI) = ZP_SNOWHMASS(1) * r1_Dt_ice       ! E-P heat flux (W/m2) (precip only for now) 
+
+! Other surface heat fluxes (for diagnotics)
+qla_ice_isbaes_1d(JI) = ZP_LES3L(1) + ZP_LEL3L(1)    ! Latent heat flux (W/m2)
+qsb_ice_isbaes_1d(JI) = ZP_HSNOW(1)                  ! Sensible heat flux (W/m2)
+qlw_ice_isbaes_1d(JI) = ZP_LWNETSNOW(1)              ! Net longwave heat flux (W/m2)
 
 ! -------------------------------------------------------------------------------------------------------------------------------------------
 ! Heat fluxes for budget diagnostics
@@ -492,7 +543,6 @@ hfx_snw_1d(JI)  = hfx_snw_1d(JI)  + ((ZP_GFLUXSNOW(1) - ZP_GRNDFLUX(1) - ZP_GFLX
 ! Residual heat flux (W/m2, should be very small)
 hfx_res_1d(JI)  = hfx_res_1d(JI)  + ZP_BDG(1) ! ZP_BDG already in J/m2 per unit area
 
-
 ! -------------------------------------------------------------------------------------------------------------------------------------------
 ! Mass fluxes for budget diagnostics
 ! -------------------------------------------------------------------------------------------------------------------------------------------
@@ -501,10 +551,12 @@ hfx_res_1d(JI)  = hfx_res_1d(JI)  + ZP_BDG(1) ! ZP_BDG already in J/m2 per unit 
 wfx_spr_1d    (JI)   = wfx_spr_1d    (JI) -(ZP_SRSNOW(1) + ZP_RRSNOW(1) ) * a_i_1d(JI)  ! METTRE EVAP A SUB 
 
 ! Snow sublimation mass flux (kg/m2/s)
-wfx_snw_sub_1d   (JI)   =  wfx_snw_sub_1d   (JI) + ((ZP_PSN3L(1)*ZP_LES3L(1)/XLSTT) - (ZP_EVAPCOR(1) + ZP_SOILCOR(1))) * a_i_1d(JI)
+wfx_snw_sub_1d   (JI)   =  wfx_snw_sub_1d   (JI) + ((ZP_PSN3L(1)*ZP_LES3L(1)/XLSTT))* a_i_1d(JI) - (ZP_EVAPCOR(1) + ZP_SOILCOR(1)) * a_i_1d(JI)
 
 ! Liquid water flux leaving the snowpack (kg/m2/s) 
 wfx_snw_sum_1d(JI)   = wfx_snw_sum_1d(JI) + ZP_THRUFAL(1) * a_i_1d(JI)  ! rate that liquid water leaves snow pack (kg/(m2 s))
+
+drhov_s_mlt_1d(JI)   = ZP_THRUFAL(1) * a_i_1d(JI) * rDt_ice 
 
 ! Residual (kg/m2/s) (Should be very small)
 wfx_res_1d(JI)   = wfx_res_1d(JI) - zdm * r1_Dt_ice - (((ZP_PSN3L(1)*ZP_LES3L(1)/XLSTT) - (ZP_EVAPCOR(1) + ZP_SOILCOR(1))) &

@@ -2535,7 +2535,7 @@ INLVLS = SIZE(PSNOWRHO(:,:),2)
 ! 1. Snow thermal conductivity
 ! ----------------------------
 !
-YSNOWCOND='STU02' !'STU02' !'YEN81' !should be in namelist
+YSNOWCOND='AND76' !'STU02' !'YEN81' !should be in namelist
 !
 IF(YSNOWCOND=='AND76')THEN
 !  Thermal conductivity coefficients from Anderson (1976)
@@ -2562,6 +2562,8 @@ DO JJ=1,INLVLS
                                   + XSNOWTHRMCOND_CVAP)))*(XP00/PPS(JI)))
    ENDDO
 ENDDO
+!WHERE(PSCOND(:,:) > 0.5) PSCOND(:,:) = 0.5
+!PSCOND(:,:) = 0.33
 !
 !
 !-------------------------------------------------------------------------------
@@ -2759,7 +2761,7 @@ PSPECTRALALBEDO(:,3)=ZALB3(:)
 ! -----------------
 !
 PALBEDOSC(:)=XVSPEC1*ZALB1(:)+XVSPEC2*ZALB2(:)+XVSPEC3*ZALB3(:)
-!PALBEDOSC(:) = 0.8
+!PALBEDOSC(:) = 0.83
 !
 !
 !-------------------------------------------------------------------------------
@@ -2839,7 +2841,7 @@ CHARACTER(3)                       :: HSNOWFALL
 !
 !
 !
-HSNOWFALL = 'V12' !R21' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
+HSNOWFALL = 'R21' !R21' ! OPTIONS= 'V12', 'P75', 'R21', 'L22', 'GW1', 'GW2', 'S02'
 
 INI             = SIZE(PSNOWDZ(:,:),1)
 INLVLS          = SIZE(PSNOWDZ(:,:),2)
