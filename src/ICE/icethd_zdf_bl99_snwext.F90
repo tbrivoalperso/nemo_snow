@@ -637,7 +637,11 @@ CONTAINS
       IF( k_cnd == np_cnd_OFF .OR. k_cnd == np_cnd_EMU ) THEN
          !
          DO ji = 1, npti
-            IF(isnow(ji) == 0._wp) qcn_ice_top_1d(ji) = - ( 1._wp - isnow(ji) ) * zkappa_i(ji,0) * zg1  * ( t_i_1d(ji,1) - t_su_1d(ji) )
+            IF(isnow(ji) == 0._wp) THEN 
+               qcn_ice_top_1d(ji) = - zkappa_i(ji,0) * zg1  * ( t_i_1d(ji,1) - t_su_1d(ji) )
+            ELSE
+               qcn_ice_top_1d(ji) = qcn_snw_bot_1d(ji)
+            ENDIF
          END DO
          !
       ELSEIF( k_cnd == np_cnd_ON ) THEN

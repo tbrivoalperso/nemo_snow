@@ -200,6 +200,9 @@ MODULE ice1D
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   glamt_1d ! For isbaes use 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   gphit_1d ! For isbaes use 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   drhov_s_mlt_1d !: Snow mass change due to snow melt  
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   Cd_ice_isbaes_1d !: 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   Ch_ice_isbaes_1d !: 
 
 #endif
    ! 
@@ -301,7 +304,8 @@ CONTAINS
          &      tair_isbaes_1d(jpij), qair_isbaes_1d(jpij), slp_isbaes_1d(jpij), wndm_isbaes_1d(jpij), rain_isbaes_1d(jpij),   & 
          &      snow_isbaes_1d(jpij), qsr_ice_isbaes_1d(jpij), qns_ice_isbaes_1d(jpij), qlwdwn_ice_isbaes_1d(jpij), qlw_ice_isbaes_1d(jpij),          & 
          &      qla_ice_isbaes_1d(jpij), qsb_ice_isbaes_1d(jpij), qemp_ice_1d(jpij),                      &
-         &      rho_air_isbaes_1d(jpij), glamt_1d(jpij), gphit_1d(jpij), hbdg_isbaes_1d(jpij), STAT=ierr(ii) )
+         &      rho_air_isbaes_1d(jpij), glamt_1d(jpij), gphit_1d(jpij), hbdg_isbaes_1d(jpij),drhov_s_mlt_1d(jpij), &
+         &      Cd_ice_isbaes_1d(jpij), Ch_ice_isbaes_1d(jpij), STAT=ierr(ii) )
 #endif
 
       ice1D_alloc = MAXVAL( ierr(:) )

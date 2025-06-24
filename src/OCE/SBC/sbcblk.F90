@@ -44,7 +44,11 @@ MODULE sbcblk
    !
 #if defined key_si3
    USE sbc_ice        ! Surface boundary condition: ice fields #LB? ok to be in 'key_si3' ???
+#if defined key_isbaes
+   USE ice     
+#else
    USE ice     , ONLY :   u_ice, v_ice, jpl, a_i_b, at_i_b, t_su, rn_cnd_s, hfx_err_dif, nn_qtrice, ln_isbaes
+#endif
    USE icevar         ! for CALL ice_var_snwblow
    USE sbcblk_algo_ice_an05
    USE sbcblk_algo_ice_lu12
@@ -323,7 +327,13 @@ CONTAINS
          nblk_ice =  np_ice_lg15   ;   ioptio = ioptio + 1
       ENDIF
       IF( ioptio /= 1 )   CALL ctl_stop( 'sbc_blk_init: Choose one and only one ice-atm bulk algorithm' )
+
 #endif
+
+#if defined key_isbaes
+      rn_zqt_isbaes = rn_zqt
+      rn_zu_isbaes = rn_zu
+#endif 
 
 
       !                                   !* set the bulk structure

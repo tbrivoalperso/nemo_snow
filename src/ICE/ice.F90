@@ -504,7 +504,11 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)   ::  prc_jm1 !  dVAR/dt between i and i-1
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_res_adv     !: hfx residual due to advection of too small temperatures after adv [W.m-2] 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   wfx_res_adv         !: wfx residual due to advection of too small temperatures after adv [kg.m-2.s-1]
-
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   :: drhov_s_mlt   !  Mass change per category due to snow melt
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   :: Ch_ice_isbaes   !  
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   :: Cd_ice_isbaes   !  
+   REAL(wp), PUBLIC ::   rn_zqt_isbaes         !: reference height for T/Q 
+   REAL(wp), PUBLIC ::   rn_zu_isbaes          !: // for winds
 
 !: Snow layer density X olume per unit area               (m)
 #endif
@@ -621,7 +625,8 @@ CONTAINS
                 & albi_isbaes(jpi,jpj,jpl),cnd_i_isbaes(jpi,jpj,jpl), cnd_s_isbaes(jpi,jpj,jpl), dh_s(jpi,jpj,nlay_s,jpl),dv_s(jpi,jpj,nlay_s,jpl),rhov_s(jpi,jpj,nlay_s,jpl), & 
                 & rhov_s_b(jpi,jpj,nlay_s,jpl), qns_ice_b(jpi,jpj,jpl), qsr_ice_b(jpi,jpj,jpl), &
                 & hbdg_isbaes(jpi,jpj,jpl),dvt_s(jpi,jpj,nlay_s), rhovt_s(jpi,jpj,nlay_s), dhm_s(jpi,jpj,nlay_s), prc_ip1(jpi,jpj,nlay_s,jpl), prc_im1(jpi,jpj,nlay_s,jpl),    &
-                & prc_jp1(jpi,jpj,nlay_s,jpl), prc_jm1(jpi,jpj,nlay_s,jpl), hfx_res_adv(jpi,jpj), wfx_res_adv(jpi,jpj), STAT=ierr(ii) )
+                & prc_jp1(jpi,jpj,nlay_s,jpl), prc_jm1(jpi,jpj,nlay_s,jpl), hfx_res_adv(jpi,jpj), wfx_res_adv(jpi,jpj), drhov_s_mlt(jpi,jpj,jpl), Cd_ice_isbaes(jpi,jpj,jpl), &
+                & Ch_ice_isbaes(jpi,jpj,jpl), STAT=ierr(ii) )
 #endif
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )

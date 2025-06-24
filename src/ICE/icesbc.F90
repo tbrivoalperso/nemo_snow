@@ -150,7 +150,7 @@ CONTAINS
         ENDIF
       ENDDO
 
-      tair_isbaes(:,:) = sf(jp_tair)%fnow(:,:,1)    !#LB: should it be POTENTIAL temperature (theta_air_zt) instead ????
+      tair_isbaes(:,:) = theta_air_zt(:,:) !sf(jp_tair)%fnow(:,:,1)    !#LB: should it be POTENTIAL temperature (theta_air_zt) instead ????
       qair_isbaes(:,:) = q_air_zt(:,:)
       wndm_isbaes(:,:) = SQRT(sf(jp_wndi)%fnow(:,:,1) **2 + sf(jp_wndj)%fnow(:,:,1)**2)
       slp_isbaes(:,:)  = sf(jp_slp )%fnow(:,:,1)

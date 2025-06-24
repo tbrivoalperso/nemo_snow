@@ -60,7 +60,7 @@ CONTAINS
 
    SUBROUTINE ice_dyn_adv_umx_isbaes( kn_umx, kt, pu_ice, pv_ice, ph_i, ph_s, ph_ip,  &
       &                        pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip,  &
-                               pv_il, pe_s, pe_i, pdv_s, prhov_s )
+                               pv_il, pe_s, pe_i, pdv_s, prhov_s, pov_s )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE ice_dyn_adv_umx_isbaes  ***
       !!
@@ -90,6 +90,7 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_i       ! ice heat content
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pdv_s       ! snw mass
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prhov_s       ! snw mass 
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pov_s       ! snw age 
 
       !
       INTEGER  ::   ji, jj, jk, jl, jt      ! dummy loop indices
@@ -424,7 +425,7 @@ CONTAINS
          ! --- Ensure non-negative fields and in-bound thicknesses --- !
          ! Remove negative values (conservation is ensured)
          !    (because advected fields are not perfectly bounded and tiny negative values can occur, e.g. -1.e-20)
-         CALL ice_var_zapneg( zdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i ,pdv_s, prhov_s)
+         CALL ice_var_zapneg( zdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i ,pdv_s, prhov_s, pov_s)
          !
          ! --- Make sure ice thickness is not too big --- !
          !     (because ice thickness can be too large where ice concentration is very small)

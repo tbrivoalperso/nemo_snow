@@ -46,6 +46,7 @@ MODULE icedyn_adv_pra_isbaes
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxap , syap , sxxap , syyap , sxyap    ! melt pond fraction
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxvp , syvp , sxxvp , syyvp , sxyvp    ! melt pond volume
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxvl , syvl , sxxvl , syyvl , sxyvl    ! melt pond lid volume
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   sxovs , syovs , sxxovs , syyovs , sxyovs    ! snow layers mass
 
    !! * Substitutions
 #  include "do_loop_substitute.h90"
@@ -58,7 +59,7 @@ CONTAINS
 
    SUBROUTINE ice_dyn_adv_pra_isbaes(         kt, pu_ice, pv_ice, ph_i, ph_s, ph_ip,  &
       &                        pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip,  & 
-                               pv_il, pe_s, pe_i, pdv_s, prhov_s )
+                               pv_il, pe_s, pe_i, pdv_s, prhov_s, pov_s )
       !!----------------------------------------------------------------------
       !!                **  routine ice_dyn_adv_pra_isbaes  **
       !!
@@ -87,8 +88,10 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   pv_il      ! melt pond lid thickness
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_s       ! snw heat content
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_i       ! ice heat content
-      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pdv_s       ! snw mass
-      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prhov_s       ! snw mass 
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pdv_s       ! snw volume
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prhov_s       ! snw mass
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pov_s       ! snw mass
+ 
 
       !
       INTEGER  ::   ji, jj, jk, jl, jt      ! dummy loop indices
@@ -104,7 +107,8 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpl)        ::   z0ice, z0snw, z0ai, z0smi, z0oi
       REAL(wp), DIMENSION(jpi,jpj,jpl)        ::   z0ap , z0vp, z0vl
       REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) ::   z0es
-      REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) ::   z0dvs, z0rhovs, zdh_s, zrho_s, zdhs_max, zrhovs_max, zrhos_max 
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) ::   z0dvs, z0rhovs, zdh_s, zrho_s, zdhs_max, zrhovs_max, zrhos_max
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) ::   z0ovs 
       REAL(wp), DIMENSION(jpi,jpj,nlay_i,jpl) ::   z0ei
       !! diagnostics
       REAL(wp), DIMENSION(jpi,jpj)            ::   zdiag_adv_mass, zdiag_adv_salt, zdiag_adv_heat
@@ -209,6 +213,8 @@ CONTAINS
                z0es(:,:,jk,jl) = pe_s(:,:,jk,jl) * e1e2t(:,:) ! Snow heat content
                z0dvs(:,:,jk,jl) = pdv_s(:,:,jk,jl) * e1e2t(:,:) ! Snow volume
                z0rhovs(:,:,jk,jl) = prhov_s(:,:,jk,jl) * e1e2t(:,:) ! Snow mass
+               z0ovs(:,:,jk,jl) = pov_s(:,:,jk,jl) * e1e2t(:,:) ! Snow mass
+
             END DO
             DO jk = 1, nlay_i
                z0ei(:,:,jk,jl) = pe_i(:,:,jk,jl) * e1e2t(:,:) ! Ice  heat content
@@ -252,6 +258,12 @@ CONTAINS
                   &                                 sxxrhovs(:,:,jk,:), syrhovs(:,:,jk,:), syyrhovs(:,:,jk,:), sxyrhovs(:,:,jk,:) )
                CALL adv_y( zdt, zvdx, 0._wp, zarea, z0rhovs (:,:,jk,:), sxrhovs(:,:,jk,:),   &
                   &                                 sxxrhovs(:,:,jk,:), syrhovs(:,:,jk,:), syyrhovs(:,:,jk,:), sxyrhovs(:,:,jk,:) )
+
+                                                                                                        !--- snow age 
+               CALL adv_x( zdt, zudy, 1._wp, zarea, z0ovs (:,:,jk,:), sxovs(:,:,jk,:),   &
+                  &                                 sxxovs(:,:,jk,:), syovs(:,:,jk,:), syyovs(:,:,jk,:), sxyovs(:,:,jk,:) )
+               CALL adv_y( zdt, zvdx, 0._wp, zarea, z0ovs (:,:,jk,:), sxovs(:,:,jk,:),   &
+                  &                                 sxxovs(:,:,jk,:), syovs(:,:,jk,:), syyovs(:,:,jk,:), sxyovs(:,:,jk,:) )
 
             END DO
             DO jk = 1, nlay_i                                                                           !--- ice heat content
@@ -301,6 +313,11 @@ CONTAINS
                CALL adv_x( zdt, zudy, 0._wp, zarea, z0rhovs (:,:,jk,:), sxrhovs(:,:,jk,:),   &
                   &                                 sxxrhovs(:,:,jk,:), syrhovs(:,:,jk,:), syyrhovs(:,:,jk,:), sxyrhovs(:,:,jk,:) )
 
+                                                                                                        !--- snow age 
+               CALL adv_y( zdt, zvdx, 1._wp, zarea, z0ovs (:,:,jk,:), sxovs(:,:,jk,:),   &
+                  &                                 sxxovs(:,:,jk,:), syovs(:,:,jk,:), syyovs(:,:,jk,:), sxyovs(:,:,jk,:) )
+               CALL adv_x( zdt, zudy, 0._wp, zarea, z0ovs (:,:,jk,:), sxovs(:,:,jk,:),   &
+                  &                                 sxxovs(:,:,jk,:), syovs(:,:,jk,:), syyovs(:,:,jk,:), sxyovs(:,:,jk,:) )
 
             END DO
             DO jk = 1, nlay_i                                                                           !--- ice heat content
@@ -342,6 +359,9 @@ CONTAINS
          CALL lbc_lnk( 'icedyn_adv_pra_isbaes', z0rhovs  , 'T', 1._wp, sxrhovs  , 'T', -1._wp, syrhovs  , 'T', -1._wp  & ! snw mass 
             &                          , sxxrhovs , 'T', 1._wp, syyrhovs , 'T',  1._wp, sxyrhovs , 'T',  1._wp  )
 
+         CALL lbc_lnk( 'icedyn_adv_pra_isbaes', z0ovs  , 'T', 1._wp, sxovs , 'T', -1._wp, syovs  , 'T', -1._wp  & ! snw mass 
+            &                          , sxxovs , 'T', 1._wp, syyovs , 'T', 1._wp, sxyovs , 'T',  1._wp  )
+
          CALL lbc_lnk( 'icedyn_adv_pra_isbaes', z0ei  , 'T', 1._wp, sxe   , 'T', -1._wp, sye   , 'T', -1._wp  & ! ice enthalpy
             &                          , sxxe  , 'T', 1._wp, syye  , 'T',  1._wp, sxye  , 'T',  1._wp  )
          IF ( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
@@ -370,6 +390,7 @@ CONTAINS
             DO jk = 1, nlay_s
                pdv_s(:,:,jk,jl) = z0dvs(:,:,jk,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
                prhov_s(:,:,jk,jl) =  z0rhovs(:,:,jk,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
+               pov_s(:,:,jk,jl) =  z0ovs(:,:,jk,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
                pe_s(:,:,jk,jl) = z0es(:,:,jk,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
                WHERE(pdv_s(:,:,jk,jl) > 0._wp) zrho_s(:,:,jk,jl) = prhov_s(:,:,jk,jl) / pdv_s(:,:,jk,jl)
             END DO
@@ -409,13 +430,13 @@ CONTAINS
          ! --- Ensure non-negative fields --- !
          !     Remove negative values (conservation is ensured)
          !     (because advected fields are not perfectly bounded and tiny negative values can occur, e.g. -1.e-20)
-         CALL ice_var_zapneg( zdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i , pdv_s, prhov_s)
+         CALL ice_var_zapneg( zdt, pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i , pdv_s, prhov_s, pov_s)
          !
 
          ! --- Make sure ice thickness is not too big --- !
          !     (because ice thickness can be too large where ice concentration is very small)
          CALL Hbig_isbaes( zdt, zhi_max, zhs_max, zhip_max, zsi_max, zes_max,zdhs_max, zrhos_max ,zrhovs_max, zei_max, &
-            &            pv_i, pv_s, pa_i, pa_ip, pv_ip, psv_i, pe_s, pe_i, pdv_s, zrho_s, prhov_s)
+            &            pv_i, pv_s, pa_i, pa_ip, pv_ip, psv_i, pe_s, pe_i, pdv_s, zrho_s, prhov_s, pov_s)
          !
          WHERE(dv_s(:,:,:,:) > 0._wp)
              zrho_s(:,:,:,:) = prhov_s(:,:,:,:) / pdv_s(:,:,:,:) !zrho_s(:,:,:,:)
@@ -424,7 +445,7 @@ CONTAINS
          ENDWHERE
 
          !! --- Ensure snow load is not too big --- !
-         CALL Hsnow_isbaes( zdt, pv_i, pv_s, pa_i, pa_ip, pe_s, zrho_s, pdv_s, prhov_s ) ! We avoid this for now, since it has to be rewrited!
+         CALL Hsnow_isbaes( zdt, pv_i, pv_s, pa_i, pa_ip, pe_s, zrho_s, pdv_s, prhov_s, pov_s ) ! We avoid this for now, since it has to be rewrited!
          !!
          !!prhov_s(:,:,:,:) = zrho_s(:,:,:,:) * pdv_s(:,:,:,:)
          WHERE(dv_s(:,:,:,:) > 0._wp) 
@@ -432,6 +453,7 @@ CONTAINS
          ELSEWHERE
              rho_s(:,:,:,:) = 330._wp
          ENDWHERE
+         WHERE(ov_s(:,:,:,:) < 0._wp) ov_s(:,:,:,:) = 0._wp ! Make sure snow age is not negative (Not sure if it happen) 
       END DO
       !
       IF( lrst_ice )   CALL adv_pra_isbaes_rst( 'WRITE', kt )   !* write Prather fields in the restart file
@@ -826,7 +848,7 @@ CONTAINS
 
 
    SUBROUTINE Hbig_isbaes( pdt, phi_max, phs_max, phip_max, psi_max, pes_max,pdhs_max, prhos_max, prhovs_max, pei_max, &
-      &                  pv_i, pv_s, pa_i, pa_ip, pv_ip, psv_i, pe_s, pe_i, pdv_s, prho_s, prhov_s )
+      &                  pv_i, pv_s, pa_i, pa_ip, pv_ip, psv_i, pe_s, pe_i, pdv_s, prho_s, prhov_s, pov_s )
       !!-------------------------------------------------------------------
       !!                  ***  ROUTINE Hbig_isbaes  ***
       !!
@@ -851,6 +873,8 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pdv_s
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prho_s
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prhov_s
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pov_s
+
 
 
       !
@@ -895,7 +919,9 @@ CONTAINS
                      !
                      pe_s(ji,jj,jk,jl)    = pe_s(ji,jj,jk,jl) * zfra
                      pdv_s(ji,jj,jk,jl)   = pdv_s(ji,jj,jk,jl) * zfra ! pa_i(ji,jj,jl) * pdhs_max(ji,jj,jk,jl)
-                     prhov_s(ji,jj,jk,jl) = prhov_s(ji,jj,jk,jl) * zfra  
+                     prhov_s(ji,jj,jk,jl) = prhov_s(ji,jj,jk,jl) * zfra 
+                     pov_s(ji,jj,jk,jl) = pov_s(ji,jj,jk,jl) * zfra
+ 
                   ENDIF
                END DO 
                pv_s(ji,jj,jl) = SUM(pdv_s(ji,jj,:,jl))
@@ -913,6 +939,8 @@ CONTAINS
                   pv_s(ji,jj,jl)          = pa_i(ji,jj,jl) * phs_max(ji,jj,jl)
                   pdv_s(ji,jj,1:nlay_s,jl) = pdv_s(ji,jj,1:nlay_s,jl) * zfra 
                   prhov_s(ji,jj,1:nlay_s,jl) = prhov_s(ji,jj,1:nlay_s,jl) * zfra
+                  pov_s(ji,jj,1:nlay_s,jl) = pov_s(ji,jj,1:nlay_s,jl) * zfra
+
                   WHERE(pdv_s(ji,jj,1:nlay_s,jl) > 0._wp) 
                       prho_s(ji,jj,1:nlay_s,jl) = prhov_s(ji,jj,1:nlay_s,jl) / pdv_s(ji,jj,1:nlay_s,jl)
                   ELSEWHERE
@@ -963,6 +991,8 @@ CONTAINS
                   pdv_s(ji,jj,jk,jl) = pdv_s(ji,jj,jk,jl) * zfra
                   prho_s(ji,jj,jk,jl) = prhos_max(ji,jj,jk,jl)
                   prhov_s(ji,jj,jk,jl) = prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl)
+                  pov_s(ji,jj,jk,jl) = pov_s(ji,jj,jk,jl) * zfra
+
                ENDIF
             ENDIF
          END_3D
@@ -1013,7 +1043,7 @@ CONTAINS
    END SUBROUTINE Hbig_isbaes
 
 
-   SUBROUTINE Hsnow_isbaes( pdt, pv_i, pv_s, pa_i, pa_ip, pe_s, prho_s, pdv_s ,prhov_s)
+   SUBROUTINE Hsnow_isbaes( pdt, pv_i, pv_s, pa_i, pa_ip, pe_s, prho_s, pdv_s ,prhov_s, pov_s)
       !!-------------------------------------------------------------------
       !!                  ***  ROUTINE Hsnow_isbaes  ***
       !!
@@ -1034,6 +1064,8 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prho_s
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pdv_s
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   prhov_s
+      REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pov_s
+
 
 
       !
@@ -1069,6 +1101,8 @@ CONTAINS
                      pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
                      pdv_s(ji,jj,jk,jl)          = pdv_s(ji,jj,jk,jl)  * zfra !- zvs_excess
                      prhov_s(ji,jj,jk,jl)        = prhov_s(ji,jj,jk,jl) * zfra
+                     pov_s(ji,jj,jk,jl)        = pov_s(ji,jj,jk,jl) * zfra
+
                   ENDIF
 
                   zdv = zdv - zvs_excess 
@@ -1113,18 +1147,22 @@ CONTAINS
          &      sxrhovs (jpi,jpj,nlay_s,jpl) , syrhovs (jpi,jpj,nlay_s,jpl) , sxxrhovs(jpi,jpj,nlay_s,jpl) , &
          &      syyrhovs(jpi,jpj,nlay_s,jpl) , sxyrhovs(jpi,jpj,nlay_s,jpl)                             , &
 
+         &      sxovs (jpi,jpj,nlay_s,jpl) , syovs (jpi,jpj,nlay_s,jpl) , sxxovs(jpi,jpj,nlay_s,jpl) , &
+         &      syyovs(jpi,jpj,nlay_s,jpl) , sxyovs(jpi,jpj,nlay_s,jpl) , &
+
          &      sxe  (jpi,jpj,nlay_i,jpl) , sye  (jpi,jpj,nlay_i,jpl) , sxxe (jpi,jpj,nlay_i,jpl) , &
          &      syye (jpi,jpj,nlay_i,jpl) , sxye (jpi,jpj,nlay_i,jpl)                             , &
          &      STAT = ierr )
       !
-      !      sxice = 0._wp   ;   syice = 0._wp   ;   sxxice = 0._wp   ;   syyice = 0._wp   ;   sxyice = 0._wp      ! ice thickness
-      !      sxsn  = 0._wp   ;   sysn  = 0._wp   ;   sxxsn  = 0._wp   ;   syysn = 0._wp   ;   sxysn  = 0._wp      ! snow thickness
-      !      sxa   = 0._wp   ;   sya   = 0._wp   ;   sxxa   = 0._wp   ;   syya = 0._wp   ;   sxya   = 0._wp      ! ice concentration
-      !      sxsal = 0._wp   ;   sysal = 0._wp   ;   sxxsal = 0._wp   ;   syysal = 0._wp   ;   sxysal = 0._wp      ! ice salinity
-      !      sxage = 0._wp   ;   syage = 0._wp   ;   sxxage = 0._wp   ;   syyage = 0._wp   ;   sxyage = 0._wp      ! ice age
-      !      sxc0  = 0._wp   ;   syc0  = 0._wp   ;   sxxc0  = 0._wp   ;   syyc0 = 0._wp   ;   sxyc0  = 0._wp      ! snow layers heat content
-      !      sxdvs  = 0._wp   ;   sydvs  = 0._wp   ;   sxxdvs  = 0._wp   ; syydvs  = 0._wp   ;   sxydvs  = 0._wp      ! snow layers volume
-      !      sxrhovs  = 0._wp   ;   syrhovs  = 0._wp   ;   sxxrhovs  = 0._wp   ; syyrhovs  = 0._wp   ;   sxyrhovs  = 0._wp      !  snow layers mass 
+            sxice = 0._wp   ;   syice = 0._wp   ;   sxxice = 0._wp   ;   syyice = 0._wp   ;   sxyice = 0._wp      ! ice thickness
+            sxsn  = 0._wp   ;   sysn  = 0._wp   ;   sxxsn  = 0._wp   ;   syysn = 0._wp   ;   sxysn  = 0._wp      ! snow thickness
+            sxa   = 0._wp   ;   sya   = 0._wp   ;   sxxa   = 0._wp   ;   syya = 0._wp   ;   sxya   = 0._wp      ! ice concentration
+            sxsal = 0._wp   ;   sysal = 0._wp   ;   sxxsal = 0._wp   ;   syysal = 0._wp   ;   sxysal = 0._wp      ! ice salinity
+            sxage = 0._wp   ;   syage = 0._wp   ;   sxxage = 0._wp   ;   syyage = 0._wp   ;   sxyage = 0._wp      ! ice age
+            sxc0  = 0._wp   ;   syc0  = 0._wp   ;   sxxc0  = 0._wp   ;   syyc0 = 0._wp   ;   sxyc0  = 0._wp      ! snow layers heat content
+            sxdvs  = 0._wp   ;   sydvs  = 0._wp   ;   sxxdvs  = 0._wp   ; syydvs  = 0._wp   ;   sxydvs  = 0._wp      ! snow layers volume
+            sxrhovs  = 0._wp   ;   syrhovs  = 0._wp   ;   sxxrhovs  = 0._wp   ; syyrhovs  = 0._wp   ;   sxyrhovs  = 0._wp      !  snow layers mass 
+            sxovs  = 0._wp   ;   syovs  = 0._wp   ;   sxxovs  = 0._wp   ; syyovs  = 0._wp   ;   sxyovs  = 0._wp      !  snow layers mass 
 
       !!      sxe   = 0._wp   ;   sye   = 0._wp   ;   sxxe   = 0._wp   ;   syye = 0._wp   ;   sxye   = 0._wp      ! ice layers heat content
 !            IF( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
@@ -1244,6 +1282,22 @@ CONTAINS
                CALL iom_get( numrir, jpdom_auto, znam , z3d )   ;   syyrhovs(:,:,jk,:) = z3d(:,:,:)
                znam = 'sxyrhovs'//'_l'//zchar1
                CALL iom_get( numrir, jpdom_auto, znam , z3d )   ;   sxyrhovs(:,:,jk,:) = z3d(:,:,:)
+            END DO
+            !    
+            !                                                        ! snow
+            !                                                        layers mass
+            DO jk = 1, nlay_s
+               WRITE(zchar1,'(I2.2)') jk
+               znam = 'sxovs'//'_l'//zchar1
+               CALL iom_get( numrir, jpdom_auto, znam , z3d, psgn = -1._wp )   ; sxovs (:,:,jk,:) = z3d(:,:,:)
+               znam = 'syovs'//'_l'//zchar1
+               CALL iom_get( numrir, jpdom_auto, znam , z3d, psgn = -1._wp )   ; syovs (:,:,jk,:) = z3d(:,:,:)
+               znam = 'sxxovs'//'_l'//zchar1
+               CALL iom_get( numrir, jpdom_auto, znam , z3d )   ; sxxovs(:,:,jk,:) = z3d(:,:,:)
+               znam = 'syyovs'//'_l'//zchar1
+               CALL iom_get( numrir, jpdom_auto, znam , z3d )   ; syyovs(:,:,jk,:) = z3d(:,:,:)
+               znam = 'sxyovs'//'_l'//zchar1
+               CALL iom_get( numrir, jpdom_auto, znam , z3d )   ; sxyovs(:,:,jk,:) = z3d(:,:,:)
             END DO
             !    
 
@@ -1399,6 +1453,22 @@ CONTAINS
             znam = 'sxyrhovs'//'_l'//zchar1 ;   z3d(:,:,:) = sxyrhovs(:,:,jk,:)
             CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
          END DO
+
+         !                                                           ! snow layers age 
+         DO jk = 1, nlay_s
+            WRITE(zchar1,'(I2.2)') jk
+            znam = 'sxovs'//'_l'//zchar1  ;   z3d(:,:,:) = sxovs (:,:,jk,:)
+            CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
+            znam = 'syovs'//'_l'//zchar1  ;   z3d(:,:,:) = syovs (:,:,jk,:)
+            CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
+            znam = 'sxxovs'//'_l'//zchar1 ;   z3d(:,:,:) = sxxovs(:,:,jk,:)
+            CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
+            znam = 'syyovs'//'_l'//zchar1 ;   z3d(:,:,:) = syyovs(:,:,jk,:)
+            CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
+            znam = 'sxyovs'//'_l'//zchar1 ;   z3d(:,:,:) = sxyovs(:,:,jk,:)
+            CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
+         END DO
+
          !                                                           ! ice layers heat content
          DO jk = 1, nlay_i
             WRITE(zchar1,'(I2.2)') jk

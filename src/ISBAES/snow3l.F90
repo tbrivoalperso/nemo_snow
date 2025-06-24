@@ -369,6 +369,7 @@ REAL, DIMENSION(SIZE(PSNOWRHO,1),NSPEC_BAND_SNOW)  :: ZSPECTRALALBEDO, ZSPECTRAL
 !                                                     ZSPECTRALALBEDO=spectral albedo 
 !
 REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZSNOWHEAT0
+REAL          ::  DFAC    ! Factor to emulate the effect of the size distribution on snow conductivity
 !
 INTEGER                            :: JJ, JI     ! Loop control
 !
@@ -561,7 +562,7 @@ ENDDO
 ! Heat source (-sink) term due to shortwave
 ! radiation transmission within the snowpack:
 !
-CALL SNOW3LRAD(OMEB,XSNOWDZMIN,PSW_RAD,PSNOWALB,      &
+CALL SNOW3LRAD(OMEB,OSI3,XSNOWDZMIN,PSW_RAD,PSNOWALB,      &
                ZSPECTRALALBEDO,PSNOWDZ,PSNOWRHO,PALB, &
                PPERMSNOWFRAC,PZENITH,PSWNETSNOW,      &
                PSWNETSNOWS,ZRADSINK,ZRADXS,PSNOWAGE)  
@@ -572,6 +573,16 @@ CALL SNOW3LRAD(OMEB,XSNOWDZMIN,PSW_RAD,PSNOWALB,      &
 ! Snow thermal conductivity:
 !
 CALL SNOW3LTHRM(PSNOWRHO,ZSCOND,ZSNOWTEMP,PPS)
+
+!ZSCOND(:,:) = 1.57 * ZSCOND(:,:)
+! Apply a correction factor on the snow conductivity to account for the size
+! thickness distribution
+
+DFAC=1.57 ! 1.57 for rayleigh distribution  and 2 for gamma 
+!
+DO JI=1, INI
+   ZSCOND(JI,:) = (DFAC - (DFAC -  1) * EXP( - SUM(PSNOWDZ(JI,:))/ 0.03 )) * ZSCOND(JI,:)
+ENDDO
 !
 ! Precipitation heating term:
 ! Rainfall renders it's heat to the snow when it enters
@@ -679,11 +690,12 @@ DO JI=1,INI
                    - XLMTT*PSNOWRHO(JI,:) ) + XLMTT*XRHOLW*PSNOWLIQ(JI,:)) 
 ENDDO
 
-CALL SNOW3LGONE(PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                            &
+CALL SNOW3LGONE(OSI3,PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                            &
                 PSNOWHEAT,ZRADSINK(:,INLVLS),PEVAPCOR,PTHRUFAL,ZGRNDFLUX, &
                 PGFLUXSNOW,ZGRNDFLUXO,PSNOWDZ,PSNOWLIQ,ZSNOWTEMP,         &
                 PLVTT,PLSTT,ZRADXS,PSNOWMELT,ZSNOWGONE_DELTA              )  
-!
+!!
+
 ! For "normal" melt: transform excess heat content into snow liquid:
 !
 ZSNOWLIQ0(:,:) = PSNOWLIQ(:,:) ! save liquid water profile before update
@@ -1017,7 +1029,7 @@ INTEGER                             :: INLVLS
 ! ------------------
 !
 ! Change coefficients if we want to used Royer et al. (2021) snowdrift parameters
-HSNOWDRIFT= 'V12' ! 'R21' 
+HSNOWDRIFT= 'R21' ! 'R21 or V12' 
 IF(HSNOWDRIFT == 'R21') THEN
    HVROMAX = XVROMAX_R21
    HCOEF_EFFECT = XCOEF_EFFECT_R21
@@ -1176,7 +1188,7 @@ END SUBROUTINE SNOW3LDRIFT
 !####################################################################
 !####################################################################
 !####################################################################
-      SUBROUTINE SNOW3LRAD(OMEB, PSNOWDZMIN, PSW_RAD, PSNOWALB,      &
+      SUBROUTINE SNOW3LRAD(OMEB, OSI3, PSNOWDZMIN, PSW_RAD, PSNOWALB,      &
                            PSPECTRALALBEDO, PSNOWDZ, PSNOWRHO, PALB, &
                            PPERMSNOWFRAC, PZENITH,  PSWNETSNOW,      &
                            PSWNETSNOWS, PRADSINK, PRADXS, PSNOWAGE   )  
@@ -1202,6 +1214,7 @@ IMPLICIT NONE
 LOGICAL,            INTENT(IN)      :: OMEB ! if=T, then uppermost abs is diagnosed
 !                                           !       since fluxes known
 !
+LOGICAL,            INTENT(IN)      :: OSI3
 REAL,               INTENT(IN)      :: PSNOWDZMIN
 !
 REAL, DIMENSION(:), INTENT(IN)      :: PSW_RAD
@@ -1815,25 +1828,25 @@ ENDIF
 ! faster than for the composite soil-veg case), thus this correction
 ! is not as essential and is off.
 !
-IF(OSI3) THEN
-         ZKAPPA_SI(:) = PSCOND   (:,INLVLS) * PSOILCOND(:) &
-                  &                            / ( 0.5 * (  PSOILCOND(:) * PSNOWDZ(:,INLVLS) + PSCOND(:,INLVLS) * PD_G(:) ) )
-         PGRNDFLUXO(:) =   ZKAPPA_SI(:) * (ZSNOWTEMP(:,INLVLS)         -PTG(:)) 
-ELSE
+!IF(OSI3) THEN
+!         ZKAPPA_SI(:) = PSCOND   (:,INLVLS) * PSOILCOND(:) &
+!                  &                            / ( 0.5 * (  PSOILCOND(:) * PSNOWDZ(:,INLVLS) + PSCOND(:,INLVLS) * PD_G(:) ) )
+!         PGRNDFLUXO(:) =   ZKAPPA_SI(:) * (ZSNOWTEMP(:,INLVLS)         -PTG(:)) 
+!ELSE
 
-         PGRNDFLUXO(:)          = ZDTERM(:,INLVLS)*(ZSNOWTEMP(:,INLVLS)         -PTG(:))
-ENDIF          
+        PGRNDFLUXO(:)          = ZDTERM(:,INLVLS)*(ZSNOWTEMP(:,INLVLS)         -PTG(:))
+!ENDIF          
 
-IF(OSI3) THEN
-        PGRNDFLUX(:) =   ZKAPPA_SI(:) *(MIN(XTT,ZSNOWTEMP(:,INLVLS))-PTG(:)) 
+!IF(OSI3) THEN
+!       PGRNDFLUX(:) =   ZKAPPA_SI(:) *(MIN(XTT,ZSNOWTEMP(:,INLVLS))-PTG(:)) 
+!ELSE
+          
+IF(OMEB)THEN
+   PGRNDFLUX(:)        = PGRNDFLUXO(:) 
 ELSE
-           
-   IF(OMEB)THEN
-      PGRNDFLUX(:)        = PGRNDFLUXO(:) 
-   ELSE
-      PGRNDFLUX(:)        = ZDTERM(:,INLVLS)*(MIN(XTT,ZSNOWTEMP(:,INLVLS))-PTG(:))
-   ENDIF
+   PGRNDFLUX(:)        = ZDTERM(:,INLVLS)*(MIN(XTT,ZSNOWTEMP(:,INLVLS))-PTG(:))
 ENDIF
+!ENDIF
 !
 ZSNOWTEMP(:,INLVLS) = ZSNOWTEMP(:,INLVLS) + (PGRNDFLUXO(:)-PGRNDFLUX(:))/ZCTERM(:,INLVLS)
 !
@@ -1874,6 +1887,8 @@ END SUBROUTINE SNOW3LSOLVT
 !
 !
 USE MODD_CSTS,ONLY : XTT, XLMTT, XRHOLW, XRHOLI
+!
+USE MODD_SNOW_PAR, ONLY: XRHOSMAX_ES
 !
 USE MODE_SNOW3L
 !
@@ -1967,7 +1982,7 @@ WHERE(PSNOWDZ > 0.0)
                        (ZSNOWLWE(:,:)-MIN(PSNOWLIQ(:,:),ZWHOLDMAX(:,:)))  
 !
    PSNOWDZ(:,:)    = PSNOWDZ(:,:)*ZCMPRSFACT(:,:)
-   PSNOWRHO(:,:)   = ZSNOWLWE(:,:)*XRHOLW/PSNOWDZ(:,:)
+   PSNOWRHO(:,:)   = MIN(XRHOSMAX_ES, ZSNOWLWE(:,:)*XRHOLW/PSNOWDZ(:,:))
 !   PSNOWRHO(:,:)   = 330. 
 
 ! Make sure maximum density is not surpassed! If it is, lower the density
@@ -2018,6 +2033,8 @@ END SUBROUTINE SNOW3LMELT
 !
 !
 USE MODD_CSTS,     ONLY : XTT, XLMTT, XRHOLW
+!
+USE MODD_SNOW_PAR, ONLY: XRHOSMAX_ES
 !
 USE MODE_SNOW3L
 !
@@ -2168,7 +2185,7 @@ DO JJ=1,INLVLS
 ENDDO
 !
 ZWORK    (:,:) = MAX(XSNOWDZMIN,ZSNOWDZ(:,:))
-ZSNOWRHO (:,:) = ZSNOWRHO(:,:)+(ZSNOWLIQ(:,:)-PSNOWLIQ(:,:))*XRHOLW/ZWORK(:,:)  
+ZSNOWRHO (:,:) = MIN(XRHOSMAX_ES, ZSNOWRHO(:,:)+(ZSNOWLIQ(:,:)-PSNOWLIQ(:,:))*XRHOLW/ZWORK(:,:))  
 !ZSNOWRHO (:,:) = 330. 
 ZSCAP    (:,:) = SNOW3LSCAP(ZSNOWRHO(:,:))
 ZSNOWTEMP(:,:) = XTT +(((ZSNOWHEAT(:,:)/ZWORK(:,:))+XLMTT*ZSNOWRHO(:,:))/ZSCAP(:,:))
@@ -2599,7 +2616,7 @@ END SUBROUTINE SNOW3LEVAPN
 !####################################################################
 !####################################################################
 !####################################################################
-SUBROUTINE SNOW3LGONE(PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                 &
+SUBROUTINE SNOW3LGONE(OSI3,PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                 &
                    PSNOWHEAT,PRADSINK,PEVAPCOR,PTHRUFAL,PGRNDFLUX,   &
                    PGFLUXSNOW,PGRNDFLUXO,PSNOWDZ,PSNOWLIQ,PSNOWTEMP, &
                    PLVTT,PLSTT,PRADXS,PSNOWMELT,PSNOWGONE_DELTA      )  
@@ -2619,6 +2636,8 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+LOGICAL,            INTENT(IN)      :: OSI3
+
 REAL, INTENT(IN)                    :: PTSTEP
 !
 REAL, DIMENSION(:), INTENT(IN)      :: PLEL3L, PLES3L, PGFLUXSNOW, &
@@ -2683,13 +2702,20 @@ PSNOWGONE_DELTA(:)    = 1.0
 ! actual inflow of heat from below (as heat content correction owing to a corrected
 ! flux has not yet been done: here we compare to pre-corrected heat content).
 !
-WHERE(PGFLUXSNOW(:) + PRADSINK(:) >= (-ZSNOWHEATC(:)/PTSTEP) )
-   PGRNDFLUX(:)       = PGFLUXSNOW(:) + (ZSNOWHEATC(:)/PTSTEP)
-   PEVAPCOR(:)        = (PLEL3L(:)/PLVTT(:)) + (PLES3L(:)/PLSTT(:))
-   PRADXS(:)          = 0.0
-   PSNOWGONE_DELTA(:) = 0.0          ! FLAG...if=0 then snow vanishes, else=1
-END WHERE
-!
+IF(OSI3)THEN
+   WHERE(PGFLUXSNOW(:) + PRADSINK(:) >= (-ZSNOWHEATC(:)/PTSTEP) )
+      PGRNDFLUX(:)       = PGFLUXSNOW(:) + PRADSINK(:) + (ZSNOWHEATC(:)/PTSTEP)
+      PEVAPCOR(:)        = (PLEL3L(:)/PLVTT(:)) + (PLES3L(:)/PLSTT(:))
+      PSNOWGONE_DELTA(:) = 0.0          ! FLAG...if=0 then snow vanishes, else=1
+   END WHERE
+ELSE
+   WHERE(PGFLUXSNOW(:) + PRADSINK(:) >= (-ZSNOWHEATC(:)/PTSTEP) )
+      PGRNDFLUX(:)       = PGFLUXSNOW(:) + (ZSNOWHEATC(:)/PTSTEP)
+      PEVAPCOR(:)        = (PLEL3L(:)/PLVTT(:)) + (PLES3L(:)/PLSTT(:))
+      PRADXS(:)          = 0.0
+      PSNOWGONE_DELTA(:) = 0.0          ! FLAG...if=0 then snow vanishes, else=1
+   END WHERE
+ENDIF!
 DO JJ=1,INLVLS
    DO JI=1,INI
       PSNOWMELT(JI) = PSNOWMELT(JI) + (1.0-PSNOWGONE_DELTA(JI))*PSNOWRHO(JI,JJ)*PSNOWDZ(JI,JJ)/PTSTEP

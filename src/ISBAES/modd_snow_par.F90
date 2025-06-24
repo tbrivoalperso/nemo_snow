@@ -281,6 +281,13 @@ REAL, PARAMETER :: XVRKZ6 = 1.88
 REAL, PARAMETER :: XSNOWTHRMCOND_C11_1 = 2.5E-6   ! (W m5 K-1 kg-2)
 REAL, PARAMETER :: XSNOWTHRMCOND_C11_2 = -1.23E-4 ! (W m2 K-1 km-1)
 REAL, PARAMETER :: XSNOWTHRMCOND_C11_3 = 0.024    ! (W m-1 K-1) 
+
+
+! Macfarlane et al. 2023 thermal conductivity from mosaic
+REAL, PARAMETER :: XSNOWTHRMCOND_MAC_1 = 2.62E-6   ! (W m5 K-1 kg-2)
+REAL, PARAMETER :: XSNOWTHRMCOND_MAC_2 = 1.54E-33 ! (W m2 K-1 km-1)
+REAL, PARAMETER :: XSNOWTHRMCOND_MAC_3 = 3.04E-2    ! (W m-1 K-1) 
+
 !--------------------------------------------------------------------------------
 ! ISBA-ES CROCUS (Pahaut 1976): snowfall density coefficients:
 !

@@ -290,7 +290,9 @@ CONTAINS
                zfracs   = MIN( zswi1  * 0.12 + zswi12 * ( 0.8925 + 0.0568 * LOG( 100.0 * zgrr ) )   &
                   &          + zswi2  * 0.26 / ( 0.26 + 0.74 * EXP ( - 724300.0 * zgrr ) )  , 0.5 )
 
-               zs_i_new(ji)    = zswitch_sal * zfracs * sss_1d(ji) + ( 1. - zswitch_sal ) * s_i_1d(ji)  ! New ice salinity
+               ! zs_i_new(ji)    = zswitch_sal * zfracs * sss_1d(ji) + ( 1. - zswitch_sal ) * s_i_1d(ji)  ! New ice salinity
+               ! MV 2025 hard code 75% of new ice liquid fraction
+               zs_i_new(ji) = zswitch_sal * 0.75 * sss_1d(ji) + ( 1. - zswitch_sal ) * s_i_1d(ji)  ! New ice salinity
 
                ztmelts        = - rTmlt * zs_i_new(ji)                                                  ! New ice melting point (C)
 
