@@ -6,6 +6,7 @@ MODULE icedyn_adv_umx_isbaes
    !! History :  3.6  !  2014-11  (C. Rousset, G. Madec)  Original code
    !!            4.0  !  2018     (many people)           SI3 [aka Sea Ice cube]
    !!----------------------------------------------------------------------
+#if defined key_isbaes
 #if defined key_si3
    !!----------------------------------------------------------------------
    !!   'key_si3'                                       SI3 sea-ice model
@@ -1754,6 +1755,6 @@ CONTAINS
    !!   Default option           Dummy module         NO SI3 sea-ice model
    !!----------------------------------------------------------------------
 #endif
-
+#endif
    !!======================================================================
 END MODULE icedyn_adv_umx_isbaes

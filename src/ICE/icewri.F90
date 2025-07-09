@@ -149,8 +149,8 @@ CONTAINS
       ENDWHERE
       !WHERE(cndm_s_isbaes(:,:) == 0.) cndm_s_isbaes(:,:) = zmiss_val
       IF( iom_use('cnd_s_isbaes' ) )   CALL iom_put( 'cnd_s_isbaes', cndm_s_isbaes(:,:)  )      !  snw conductivity 
-      IF( iom_use('Cd_ice_isbaes' ) )   CALL iom_put( 'Cd_ice_isbaes', Cdm_ice_isbaes(:,:)  )      !  snw conductivity 
-      IF( iom_use('Ch_ice_isbaes' ) )   CALL iom_put( 'Ch_ice_isbaes', Chm_ice_isbaes(:,:)  )      !  snw conductivity 
+!      IF( iom_use('Cd_ice_isbaes' ) )   CALL iom_put( 'Cd_ice_isbaes', Cdm_ice_isbaes(:,:)  )      !  snw conductivity 
+!      IF( iom_use('Ch_ice_isbaes' ) )   CALL iom_put( 'Ch_ice_isbaes', Chm_ice_isbaes(:,:)  )      !  snw conductivity 
 
       IF( iom_use('snwrho_1' ) )   CALL iom_put( 'snwrho_1', SUM(rho_s(:,:,1,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw top density
       IF( iom_use('snwrho_N' ) )   CALL iom_put( 'snwrho_N', SUM(rho_s(:,:,nlay_s,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw bottom density
@@ -211,9 +211,10 @@ CONTAINS
          ! ice+ocean albedo
          zalb(:,:) = SUM( alb_ice * a_i_b, dim=3 ) + rn_alb_oce * ( 1._wp - at_i_b )
          CALL iom_put( 'albedo' , zalb )
+         IF( iom_use( 'snwalb')) CALL iom_put( 'snwalb' , zalb )
          DEALLOCATE( zalb, zmskalb )
       ENDIF
-
+#if defined key_isbaes
       IF( iom_use('snwalb') ) THEN                                                                   ! ice albedo and surface albedo
          ALLOCATE( zalb(jpi,jpj), zmskalb(jpi,jpj) )
          ! ice albedo
@@ -228,7 +229,7 @@ CONTAINS
          ! ice+ocean albedo
          DEALLOCATE( zalb, zmskalb )
       ENDIF
-
+#endif
 
       !
       ! --- category-dependent fields --- !

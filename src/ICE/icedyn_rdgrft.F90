@@ -289,7 +289,9 @@ CONTAINS
          END DO
 
          CALL ice_dyn_1d2d( 2 )            ! --- Move to 2D arrays --- !
+#if defined key_isbaes
          WHERE(dv_s(:,:,:,:) > 0._wp) rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+#endif
       ENDIF
 
       CALL ice_var_agg( 1 )

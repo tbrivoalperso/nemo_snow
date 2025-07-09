@@ -27,6 +27,7 @@ MODULE icethd
    USE ice1D          ! sea-ice: thermodynamics variables
    USE icethd_zdf     ! sea-ice: vertical heat diffusion
    USE icethd_dh      ! sea-ice: ice-snow growth and melt
+   USE icethd_dh_snwext      ! sea-ice: ice-snow growth and melt
    USE icethd_da      ! sea-ice: lateral melting
    USE icethd_sal     ! sea-ice: salinity
    USE icethd_ent     ! sea-ice: enthalpy redistribution
@@ -372,9 +373,15 @@ CONTAINS
             !
 
             IF( ln_icedH ) THEN                                         ! --- Growing/Melting --- !
-
-                              CALL ice_thd_dh( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness
-
+#if defined key_isbaes
+                              CALL ice_thd_dh_snwext( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness (external snow mode)
+#else
+                 IF(ln_snwext) THEN             
+                              CALL ice_thd_dh_snwext( isnow, zq_rema, zevap_rema, zh_s, ze_s )    ! Ice-Snow thickness (external snow mode)
+                 ELSE
+                              CALL ice_thd_dh                                                     ! Ice-Snow thickness
+                 ENDIF
+#endif
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF
                               CALL ice_thd_sal( ln_icedS )          ! --- Ice salinity --- !
@@ -426,9 +433,11 @@ CONTAINS
       !
                               CALL ice_cor( kt , 2 )                ! --- Corrections --- !
       !
+#if defined key_isbaes
       DO jk = 1, nlay_s 
          WHERE( a_i(:,:,:)>0._wp ) dh_s (:,:,jk,:) = dv_s (:,:,jk,:) / a_i (:,:,:)
       ENDDO
+#endif
       oa_i(:,:,:) = oa_i(:,:,:) + a_i(:,:,:) * rDt_ice              ! --- Ice natural aging incrementation
       !
       DO_2D( 0, 0, 0, 0 )                                           ! --- Ice velocity corrections

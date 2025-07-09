@@ -202,7 +202,7 @@ CONTAINS
          tm_i(:,:) = 0._wp
          tm_s(:,:) = 0._wp
          rhom_s(:,:) = 0._wp
-         dhm_s(:,:,:)  = 0._wp
+         !dhm_s(:,:,:)  = 0._wp
          DO jl = 1, jpl
             DO jk = 1, nlay_i
                tm_i(:,:) = tm_i(:,:) + r1_nlay_i * t_i (:,:,jk,jl) * v_i(:,:,jl) * z1_vt_i(:,:)
@@ -221,7 +221,7 @@ CONTAINS
            END DO
 #endif
          END DO
-
+#if defined key_isbaes
          DO jk = 1, nlay_s
 
             WHERE((SUM(a_i(:,:,:), DIM=3) > epsi06 ) )                      
@@ -242,6 +242,7 @@ CONTAINS
             tm_s(:,:) = rt0
             rhom_s(:,:) = 0._wp
          ENDWHERE
+#endif
          !
          !                           ! put rt0 where there is no ice
          WHERE( at_i(:,:)<=epsi20 )
@@ -745,8 +746,9 @@ CONTAINS
       !
       z1_dt = 1._wp / pdt
       !
+#if defined key_isbaes
       pv_s(:,:,:) = SUM(pdv_s(:,:,:,:), DIM=3) ! Make sure that the volume used is the right one (not sure if needed)
-
+#endif
       DO jl = 1, jpl       !==  loop over the categories  ==!
          !
          ! make sure a_i=0 where v_i<=0
@@ -951,6 +953,13 @@ CONTAINS
             e_i_1d(ji,jk) = rhoi * ( rcpi  * ( ztmelts - ( t_i_1d(ji,jk) - rt0 ) )           &
                &                   + rLfus * ( 1._wp - ztmelts / ( t_i_1d(ji,jk) - rt0 ) )   &
                &                   - rcp   * ztmelts )
+#if ! defined key_isbaes
+         END DO
+      END DO
+      DO jk = 1, nlay_s             ! Snow energy of melting
+         DO ji = 1, npti
+            e_s_1d(ji,jk) = rhos * ( rcpi * ( rt0 - t_s_1d(ji,jk) ) + rLfus )
+#endif
          END DO
       END DO
       !
