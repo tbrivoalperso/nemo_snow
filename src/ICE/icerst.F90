@@ -162,11 +162,6 @@ CONTAINS
          CALL iom_rstput( iter, nitrst, numriw, znam , z3d )
       END DO
 #if defined key_isbaes         
-      !WHERE(dv_s(:,:,:,:) > 0._wp)
-      !    rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
-      !ELSEWHERE
-      !    rho_s(:,:,:,:) = 330._wp 
-      !ENDWHERE
       ! Snow volume
       DO jk = 1, nlay_s
          WRITE(zchar1,'(I2.2)') jk
@@ -343,7 +338,7 @@ CONTAINS
          CALL iom_get( numrir, jpdom_auto, 'cnd_i_isbaes'  , cnd_i_isbaes   )
          CALL iom_get( numrir, jpdom_auto, 'albs_isbaes'  , albs_isbaes   )
          CALL iom_get( numrir, jpdom_auto, 'albi_isbaes'  , albi_isbaes   )
-         v_s(:,:,:) = SUM(dv_s(:,:,:,:), DIM=3)
+         !v_s(:,:,:) = SUM(dv_s(:,:,:,:), DIM=3)
 #endif
          ! Ice enthalpy
          DO jk = 1, nlay_i

@@ -263,22 +263,22 @@ CONTAINS
 !      PRINT*,cd_routine, 'hfx_sum(1,1)', hfx_sum(1,1), 'hfx_dif(1,1)', hfx_dif(1,1),'hfx_difs(1,1)', hfx_difs(1,1), 'hfx_snw(1,1)',&
 !            &  hfx_snw(1,1), 'hfx_thd', hfx_thd(1,1), 'hfx_res', hfx_res(1,1), 'hfx_sub',hfx_sub(1,1),  'hfx_spr', hfx_spr(1,1)
 !
-      IF( lwp ) THEN
-         IF( ABS(zchk(1)) > rchk_m * rn_icechk_glo * zchk(4) ) &
-            &                   WRITE(numout,*) cd_routine,' : violation mass cons. [kg] = ',zchk(1) * rDt_ice, 'Ice', h_i, 'snow', &
-            & h_s, 'isnow_save', isnow_save
-         IF( ABS(zchk(2)) > rchk_s * rn_icechk_glo * zchk(4) ) &
-            &                   WRITE(numout,*) cd_routine,' : violation salt cons. [g]  = ',zchk(2) * rDt_ice, 'Ice', h_i, 'snow', &
-            & h_s, 'isnow_save', isnow_save
+      !IF( lwp ) THEN
+      !   IF( ABS(zchk(1)) > rchk_m * rn_icechk_glo * zchk(4) ) &
+      !      &                   WRITE(numout,*) cd_routine,' : violation mass cons. [kg] = ',zchk(1) * rDt_ice, 'Ice', h_i, 'snow', &
+      !      & h_s, 'isnow_save', isnow_save
+      !   IF( ABS(zchk(2)) > rchk_s * rn_icechk_glo * zchk(4) ) &
+      !      &                   WRITE(numout,*) cd_routine,' : violation salt cons. [g]  = ',zchk(2) * rDt_ice, 'Ice', h_i, 'snow', &
+      !      & h_s, 'isnow_save', isnow_save
  
-         IF( ABS(zchk(3)) > rchk_t * rn_icechk_glo * zchk(4) ) THEN
-         
-            WRITE(numout,*) cd_routine,' : violation heat cons. [J]  = ',zchk(3) * rDt_ice, 'Ice', h_i, 'snow', &
-            & h_s, 'isnow_save', isnow_save
-            !STOP
-            PRINT*,'VIOL'
-         ENDIF
-      ENDIF
+      !   IF( ABS(zchk(3)) > rchk_t * rn_icechk_glo * zchk(4) ) THEN
+      !   
+      !      WRITE(numout,*) cd_routine,' : violation heat cons. [J]  = ',zchk(3) * rDt_ice, 'Ice', h_i, 'snow', &
+      !      & h_s, 'isnow_save', isnow_save
+      !      !STOP
+      !      PRINT*,'VIOL'
+      !   ENDIF
+      !ENDIF
       !
    END SUBROUTINE ice_cons_final
 

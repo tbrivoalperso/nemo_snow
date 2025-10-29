@@ -134,7 +134,7 @@ CONTAINS
 
       DO ji = 1, npti
          zdh = 0._wp
-         IF((SUM(zh_s(ji,:)) .ne. 0._wp) .AND. (h_i_1d(ji) .ne. 0._wp)) THEN     
+         IF((SUM(zh_s(ji,:)) > epsi20) .AND. (h_i_1d(ji) > epsi20)) THEN     
 
             !!! Calculate snow ice formation 
             zden = (SUM(mass_snow(ji,:)) / SUM(dh_s_1d(ji,:)))  + rho0 - rhoi ! denominator
@@ -169,6 +169,8 @@ CONTAINS
 #if defined key_isbaes      
          dh_s_1d(ji,1:nlay_s) = zh_s(ji,1:nlay_s)
          h_s_1d(ji) = SUM(dh_s_1d(ji,1:nlay_s))
+         dv_s_1d(ji,1:nlay_s) = dh_s_1d(ji,1:nlay_s) * a_i_1d(ji)
+         rhov_s_1d(ji,1:nlay_s) = rho_s_1d(ji,1:nlay_s) * dv_s_1d(ji,1:nlay_s) 
          !e_s_1d(ji,1:nlay_s) = ze_s(ji,1:nlay_s)
          !rhov_s_1d(ji,1:nlay_s) = mass_snow(ji,1:nlay_s)
 #else            

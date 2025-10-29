@@ -6,6 +6,7 @@ MODULE icedyn_adv_pra_isbaes
    !! History :       !  2008-03  (M. Vancoppenolle) original code
    !!            4.0  !  2018     (many people)      SI3 [aka Sea Ice cube]
    !!--------------------------------------------------------------------
+#if defined key_isbaes
 #if defined key_si3
    !!----------------------------------------------------------------------
    !!   'key_si3'                                       SI3 sea-ice model
@@ -159,7 +160,8 @@ CONTAINS
       CALL icemax4D( ze_i , zei_max )
       CALL icemax4D( ze_s , zes_max )
       CALL icemax4D( zdh_s, zdhs_max)  ! Mettre dH à la place pour capper
-      CALL icemax4D( zrho_s, zrhos_max)
+      !CALL icemax4D( zrho_s, zrhos_max)
+      zrhos_max(:,:,:,:) = 750. ! Max ISBA-ES density
       CALL icemax4D( prhov_s, zrhovs_max)
       CALL lbc_lnk( 'icedyn_adv_pra_isbaes', zei_max, 'T', 1._wp )
       CALL lbc_lnk( 'icedyn_adv_pra_isbaes', zes_max, 'T', 1._wp )
@@ -427,6 +429,16 @@ CONTAINS
             &                                        - SUM(SUM( pe_s(:,:,1:nlay_s,:) , dim=4 ), dim=3 ) &
             &                                        - zdiag_adv_heat(:,:) ) * z1_dt
          !
+
+         WHERE(dv_s(:,:,:,:) > epsi20)
+             zrho_s(:,:,:,:) = prhov_s(:,:,:,:) / pdv_s(:,:,:,:)
+         ELSEWHERE
+             zrho_s(:,:,:,:) = 330._wp
+             rhov_s(:,:,:,:) = 0._wp
+             dv_s(:,:,:,:) = 0._wp
+             e_s(:,:,:,:) = 0._wp
+         ENDWHERE
+
          ! --- Ensure non-negative fields --- !
          !     Remove negative values (conservation is ensured)
          !     (because advected fields are not perfectly bounded and tiny negative values can occur, e.g. -1.e-20)
@@ -438,20 +450,28 @@ CONTAINS
          CALL Hbig_isbaes( zdt, zhi_max, zhs_max, zhip_max, zsi_max, zes_max,zdhs_max, zrhos_max ,zrhovs_max, zei_max, &
             &            pv_i, pv_s, pa_i, pa_ip, pv_ip, psv_i, pe_s, pe_i, pdv_s, zrho_s, prhov_s, pov_s)
          !
-         WHERE(dv_s(:,:,:,:) > 0._wp)
-             zrho_s(:,:,:,:) = prhov_s(:,:,:,:) / pdv_s(:,:,:,:) !zrho_s(:,:,:,:)
+
+         WHERE(dv_s(:,:,:,:) > epsi20)
+             zrho_s(:,:,:,:) = prhov_s(:,:,:,:) / pdv_s(:,:,:,:) 
          ELSEWHERE
              zrho_s(:,:,:,:) = 330._wp
+             rhov_s(:,:,:,:) = 0._wp
+             dv_s(:,:,:,:) = 0._wp
+             e_s(:,:,:,:) = 0._wp
          ENDWHERE
 
-         !! --- Ensure snow load is not too big --- !
+         !!! --- Ensure snow load is not too big --- !
          CALL Hsnow_isbaes( zdt, pv_i, pv_s, pa_i, pa_ip, pe_s, zrho_s, pdv_s, prhov_s, pov_s ) ! We avoid this for now, since it has to be rewrited!
          !!
          !!prhov_s(:,:,:,:) = zrho_s(:,:,:,:) * pdv_s(:,:,:,:)
-         WHERE(dv_s(:,:,:,:) > 0._wp) 
+         WHERE(dv_s(:,:,:,:) > epsi20) 
              rho_s(:,:,:,:) = prhov_s(:,:,:,:) / pdv_s(:,:,:,:) !zrho_s(:,:,:,:)
          ELSEWHERE
              rho_s(:,:,:,:) = 330._wp
+             rhov_s(:,:,:,:) = 0._wp
+             dv_s(:,:,:,:) = 0._wp
+             e_s(:,:,:,:) = 0._wp
+
          ENDWHERE
          WHERE(ov_s(:,:,:,:) < 0._wp) ov_s(:,:,:,:) = 0._wp ! Make sure snow age is not negative (Not sure if it happen) 
       END DO
@@ -885,6 +905,47 @@ CONTAINS
       z1_dt = 1._wp / pdt
       pv_s(:,:,:) = SUM(pdv_s(:,:,:,:), DIM=3) ! Make sure that the volume used is the right one (not sure if needed)
       !
+                                                 ! -- check rho_s -- !
+      DO jl = 1, jpl ! Check if density exceed the maximum density
+         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
+            IF ( pdv_s(ji,jj,jk,jl) > epsi20) THEN
+               ! if rho_s is larger than the surrounding 9 pts => put the heat
+               ! excess in the ocean
+               IF( prho_s(ji,jj,jk,jl)  > prhos_max(ji,jj,jk,jl) .AND. prho_s(ji,jj,jk,jl) > 50._wp) THEN!.AND.  pa_i(ji,jj,jl) < 0.7 ) THEN !.AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
+                  zfra = prhos_max(ji,jj,jk,jl) / prho_s(ji,jj,jk,jl)
+                  wfx_res(ji,jj) = wfx_res(ji,jj) - prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt
+                  hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra )  * z1_dt ! W.m-2 <0
+                  !
+                  pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
+                  pdv_s(ji,jj,jk,jl) = pdv_s(ji,jj,jk,jl) * zfra
+                  prho_s(ji,jj,jk,jl) = prhos_max(ji,jj,jk,jl)
+                  prhov_s(ji,jj,jk,jl) = prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl)
+                  pov_s(ji,jj,jk,jl) = pov_s(ji,jj,jk,jl) * zfra
+
+               ENDIF
+            ENDIF
+         END_3D
+      END DO
+
+      ! Make sure the minimum snow density is respected
+      DO jl = 1, jpl ! Check if density exceed the maximum density
+         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
+            IF ( pdv_s(ji,jj,jk,jl) > epsi20) THEN
+               ! if rho_s is larger than the surrounding 9 pts => put the heat
+               ! excess in the ocean
+               IF( prho_s(ji,jj,jk,jl) < 50.) THEN!.AND.  pa_i(ji,jj,jl) < 0.7 ) THEN !.AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
+                  prho_s(ji,jj,jk,jl) = 50._wp
+                  pov_s(ji,jj,jk,jl) = pov_s(ji,jj,jk,jl) / pdv_s(ji,jj,jk,jl) !  step1 => pov to po
+                  pdv_s(ji,jj,jk,jl) = prhov_s(ji,jj,jk,jl) / prho_s(ji,jj,jk,jl)
+                  pov_s(ji,jj,jk,jl) = pov_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl)
+               ENDIF
+            ENDIF
+         END_3D
+      END DO
+
+      pv_s(:,:,:) = SUM(pdv_s(:,:,:,:), DIM=3) ! Make sure that the volume used is the right one (not sure if needed)
+
+
       DO jl = 1, jpl
          DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
             IF ( pv_i(ji,jj,jl) > 0._wp ) THEN
@@ -906,30 +967,30 @@ CONTAINS
                ENDIF
                !
                !                               ! -- check h_s -- !
-               pv_s(ji,jj,jl) = SUM(pdv_s(ji,jj,:,jl))
-               DO jk = 1, nlay_s
-                  zhs = pdv_s(ji,jj,jk,jl) / pa_i(ji,jj,jl)
+               !pv_s(ji,jj,jl) = SUM(pdv_s(ji,jj,:,jl))
+               !DO jk = 1, nlay_s
+               !   zhs = pdv_s(ji,jj,jk,jl) / pa_i(ji,jj,jl)
 
-                  IF( pdv_s(ji,jj,jk,jl) > 0._wp .AND. zhs > pdhs_max(ji,jj,jk,jl) .AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
-                     zfra = pdhs_max(ji,jj,jk,jl) / MAX( zhs, epsi20 )
-                     !
-                     wfx_res(ji,jj) = wfx_res(ji,jj) + ( pdv_s(ji,jj,jk,jl) - pa_i(ji,jj,jl) * pdhs_max(ji,jj,jk,jl) ) *  prho_s(ji,jj,jk,jl) * z1_dt
+               !   IF( pdv_s(ji,jj,jk,jl) > epsi20 .AND. zhs > pdhs_max(ji,jj,jk,jl) .AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
+               !      zfra = pdhs_max(ji,jj,jk,jl) / MAX( zhs, epsi20 )
+               !      !
+               !      wfx_res(ji,jj) = wfx_res(ji,jj) + ( pdv_s(ji,jj,jk,jl) - pa_i(ji,jj,jl) * pdhs_max(ji,jj,jk,jl) ) *  prho_s(ji,jj,jk,jl) * z1_dt
  
-                     hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt ! W.m-2 <0
-                     !
-                     pe_s(ji,jj,jk,jl)    = pe_s(ji,jj,jk,jl) * zfra
-                     pdv_s(ji,jj,jk,jl)   = pdv_s(ji,jj,jk,jl) * zfra ! pa_i(ji,jj,jl) * pdhs_max(ji,jj,jk,jl)
-                     prhov_s(ji,jj,jk,jl) = prhov_s(ji,jj,jk,jl) * zfra 
-                     pov_s(ji,jj,jk,jl) = pov_s(ji,jj,jk,jl) * zfra
+               !      hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt ! W.m-2 <0
+               !      !
+               !      pe_s(ji,jj,jk,jl)    = pe_s(ji,jj,jk,jl) * zfra
+               !      pdv_s(ji,jj,jk,jl)   = pdv_s(ji,jj,jk,jl) * zfra ! pa_i(ji,jj,jl) * pdhs_max(ji,jj,jk,jl)
+               !      prhov_s(ji,jj,jk,jl) = prhov_s(ji,jj,jk,jl) * zfra 
+               !      pov_s(ji,jj,jk,jl) = pov_s(ji,jj,jk,jl) * zfra
  
-                  ENDIF
-               END DO 
+               !   ENDIF
+               !END DO 
                pv_s(ji,jj,jl) = SUM(pdv_s(ji,jj,:,jl))
 
                !                               ! -- check h_s -- !
                ! if h_s is larger than the surrounding 9 pts => put the snow excess in the ocean
                zhs = pv_s(ji,jj,jl) / pa_i(ji,jj,jl)
-               IF( pv_s(ji,jj,jl) > 0._wp .AND. zhs > phs_max(ji,jj,jl) .AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
+               IF( pv_s(ji,jj,jl) > epsi20 .AND. zhs > phs_max(ji,jj,jl) .AND.  pa_i(ji,jj,jl) < 0.9 ) THEN ! Assuming snow can't pile-up appart on level ice
                   zfra = phs_max(ji,jj,jl) / MAX( zhs, epsi20 )
                   !
                   wfx_res(ji,jj) = wfx_res(ji,jj) - SUM(prhov_s(ji,jj,:,jl) * ( 1._wp - zfra )) * z1_dt
@@ -941,7 +1002,7 @@ CONTAINS
                   prhov_s(ji,jj,1:nlay_s,jl) = prhov_s(ji,jj,1:nlay_s,jl) * zfra
                   pov_s(ji,jj,1:nlay_s,jl) = pov_s(ji,jj,1:nlay_s,jl) * zfra
 
-                  WHERE(pdv_s(ji,jj,1:nlay_s,jl) > 0._wp) 
+                  WHERE(pdv_s(ji,jj,1:nlay_s,jl) > epsi20) 
                       prho_s(ji,jj,1:nlay_s,jl) = prhov_s(ji,jj,1:nlay_s,jl) / pdv_s(ji,jj,1:nlay_s,jl)
                   ELSEWHERE
                       prho_s(ji,jj,1:nlay_s,jl) = 330._wp
@@ -965,7 +1026,7 @@ CONTAINS
       !                                           ! -- check e_i/v_i -- !
       DO jl = 1, jpl
          DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_i )
-            IF ( pv_i(ji,jj,jl) > 0._wp ) THEN
+            IF ( pv_i(ji,jj,jl) > epsi20 ) THEN
                ! if e_i/v_i is larger than the surrounding 9 pts => put the heat excess in the ocean
                zei = pe_i(ji,jj,jk,jl) / pv_i(ji,jj,jl)
                IF( zei > pei_max(ji,jj,jk,jl) .AND. pa_i(ji,jj,jl) < 0.15 ) THEN
@@ -976,58 +1037,86 @@ CONTAINS
             ENDIF
          END_3D
       END DO
-                                                 ! -- check rho_s -- !
-      DO jl = 1, jpl
-         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
-            IF ( pdv_s(ji,jj,jk,jl) > 0._wp ) THEN
-               ! if e_s/v_s is larger than the surrounding 9 pts => put the heat
-               ! excess in the ocean
-               IF( prho_s(ji,jj,jk,jl)  > prhos_max(ji,jj,jk,jl) .AND. pa_i(ji,jj,jl) < 0.15 ) THEN !.AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
-                  zfra = prhos_max(ji,jj,jk,jl) / prho_s(ji,jj,jk,jl)
-                  wfx_res(ji,jj) = wfx_res(ji,jj) - prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt
-                  hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra )  * z1_dt ! W.m-2 <0
-                  !
-                  pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
-                  pdv_s(ji,jj,jk,jl) = pdv_s(ji,jj,jk,jl) * zfra
-                  prho_s(ji,jj,jk,jl) = prhos_max(ji,jj,jk,jl)
-                  prhov_s(ji,jj,jk,jl) = prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl)
-                  pov_s(ji,jj,jk,jl) = pov_s(ji,jj,jk,jl) * zfra
-
-               ENDIF
-            ENDIF
-         END_3D
-      END DO
-
-!      !                                           ! -- check rhov_s -- !
-!      DO jl = 1, jpl
+      
+!                                                 ! -- check rho_s -- !
+!      DO jl = 1, jpl ! Check if density exceed the maximum density
 !         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
-!            IF ( pdv_s(ji,jj,jk,jl) > 0._wp ) THEN
-!               ! if e_s/v_s is larger than the surrounding 9 pts => put the heat
+!            IF ( pdv_s(ji,jj,jk,jl) > epsi20 ) THEN
+!               ! if rho_s is larger than the surrounding 9 pts => put the heat
 !               ! excess in the ocean
-!               IF( prhov_s(ji,jj,jk,jl)  > prhovs_max(ji,jj,jk,jl) .AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
-!                  zfra = prhovs_max(ji,jj,jk,jl) / prhov_s(ji,jj,jk,jl)
+!               IF( prho_s(ji,jj,jk,jl)  > prhos_max(ji,jj,jk,jl) ) THEN!.AND. pa_i(ji,jj,jl) < 0.7 ) THEN !.AND.  pa_i(ji,jj,jl) < 0.15 ) THEN
+!                  zfra = prhos_max(ji,jj,jk,jl) / prho_s(ji,jj,jk,jl)
 !                  wfx_res(ji,jj) = wfx_res(ji,jj) - prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt
-!                  !hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra )  * z1_dt ! W.m-2 <0
+!                  hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra )  * z1_dt ! W.m-2 <0
 !                  !
-!                  !pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
+!                  pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
 !                  pdv_s(ji,jj,jk,jl) = pdv_s(ji,jj,jk,jl) * zfra
-!                  prhov_s(ji,jj,jk,jl) = prhovs_max(ji,jj,jk,jl)
-!                  prho_s(ji,jj,jk,jl) = prhovs_max(ji,jj,jk,jl) / pdv_s(ji,jj,jk,jl)
+!                  prho_s(ji,jj,jk,jl) = prhos_max(ji,jj,jk,jl)
+!                  prhov_s(ji,jj,jk,jl) = prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl)
+!                  pov_s(ji,jj,jk,jl) = pov_s(ji,jj,jk,jl) * zfra
+!
 !               ENDIF
 !            ENDIF
 !         END_3D
 !      END DO
 
+!      !                                           ! -- check rhov_s -- !
+      DO jl = 1, jpl
+         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
+            IF ( pdv_s(ji,jj,jk,jl) > 0._wp ) THEN
+               ! if rhov_s is larger than the surrounding 9 pts => put the heat
+               ! excess in the ocean
+               IF( prhov_s(ji,jj,jk,jl)  > prhovs_max(ji,jj,jk,jl) .AND.  pa_i(ji,jj,jl) < 0.9 ) THEN ! Assuming the snow can't pile up except on level ice
+                  zfra = prhovs_max(ji,jj,jk,jl) / prhov_s(ji,jj,jk,jl)
+                  wfx_res(ji,jj) = wfx_res(ji,jj) - prho_s(ji,jj,jk,jl) * pdv_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt
+                  !hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra )  * z1_dt ! W.m-2 <0
+                  !
+                  !pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
+                  pdv_s(ji,jj,jk,jl) = pdv_s(ji,jj,jk,jl) * zfra
+                  prhov_s(ji,jj,jk,jl) = prhovs_max(ji,jj,jk,jl)
+                  prho_s(ji,jj,jk,jl) = prhovs_max(ji,jj,jk,jl) / pdv_s(ji,jj,jk,jl)
+               ENDIF
+            ENDIF
+         END_3D
+      END DO
 
+
+
+!      !                                           ! -- check e_s/v_s -- !
+!      DO jl = 1, jpl
+!         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
+!            IF ( pdv_s(ji,jj,jk,jl) > epsi20 ) THEN
+!               ! if e_s/v_s is larger than the surrounding 9 pts => put the heat
+!               ! excess in the ocean
+!               zes = pe_s(ji,jj,jk,jl) / pdv_s(ji,jj,jk,jl)
+!               IF( zes > pes_max(ji,jj,jk,jl) .AND. pa_i(ji,jj,jl) < 0.15 ) THEN
+!                  zfra = pes_max(ji,jj,jk,jl) / zes
+!                  hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt ! W.m-2 <0
+!                  pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
+!               ENDIF
+!            ENDIF
+!         END_3D
+!      END DO
+      !
+      !
+      pv_s(ji,jj,jl) = SUM(pdv_s(ji,jj,:,jl))
 
       !                                           ! -- check e_s/v_s -- !
       DO jl = 1, jpl
          DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nlay_s )
-            IF ( pdv_s(ji,jj,jk,jl) > 0._wp ) THEN
+            IF ( pdv_s(ji,jj,jk,jl) > epsi20 ) THEN
                ! if e_s/v_s is larger than the surrounding 9 pts => put the heat
                ! excess in the ocean
                zes = pe_s(ji,jj,jk,jl) / pdv_s(ji,jj,jk,jl)
-               IF( zes > pes_max(ji,jj,jk,jl) .AND. pa_i(ji,jj,jl) < 0.15 ) THEN
+
+! Theo B: This condition miraculously function for SI3 only but is weird... A
+! grid point cannot be colder than the previous ones normally, and this in any
+! case, no ??
+! 
+!
+!               IF( zes > pes_max(ji,jj,jk,jl) .AND. pa_i(ji,jj,jl) < 0.15 ) THEN
+! We replace by:
+               IF( zes > pes_max(ji,jj,jk,jl) ) THEN
                   zfra = pes_max(ji,jj,jk,jl) / zes
                   hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt ! W.m-2 <0
                   pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
@@ -1035,8 +1124,6 @@ CONTAINS
             ENDIF
          END_3D
       END DO
-      !
-      !
 
 
 
@@ -1091,20 +1178,26 @@ CONTAINS
                   
                   zvs_excess = MIN( zdv, pdv_s(ji,jj,jk,jl) )
                   !
-                  IF( zvs_excess > 0._wp .AND. pdv_s(ji,jj,jk,jl) > 0._wp) THEN   ! snow-ice interface deplets below the ocean surface
-                     ! put snow excess in the ocean
-                     zfra = (pdv_s(ji,jj,jk,jl) - zvs_excess) / pdv_s(ji,jj,jk,jl)
-                     !wfx_res(ji,jj) = wfx_res(ji,jj) + zvs_excess * prho_s(ji,jj,jk,jl) * z1_dt
-                     wfx_res(ji,jj) = wfx_res(ji,jj) + prhov_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt 
-                     hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt 
-                     ! correct snow volume and heat content
-                     pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
-                     pdv_s(ji,jj,jk,jl)          = pdv_s(ji,jj,jk,jl)  * zfra !- zvs_excess
-                     prhov_s(ji,jj,jk,jl)        = prhov_s(ji,jj,jk,jl) * zfra
-                     pov_s(ji,jj,jk,jl)        = pov_s(ji,jj,jk,jl) * zfra
+                  IF(pdv_s(ji,jj,jk,jl) > epsi20 ) THEN
+                     IF( zvs_excess > 0._wp ) THEN   ! snow-ice interface deplets below the ocean surface
+                        ! put snow excess in the ocean
+                        zfra = (pdv_s(ji,jj,jk,jl) - zvs_excess) / pdv_s(ji,jj,jk,jl)
+                        !wfx_res(ji,jj) = wfx_res(ji,jj) + zvs_excess * prho_s(ji,jj,jk,jl) * z1_dt
+                        wfx_res(ji,jj) = wfx_res(ji,jj) + prhov_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt 
+                        hfx_res(ji,jj) = hfx_res(ji,jj) - pe_s(ji,jj,jk,jl) * ( 1._wp - zfra ) * z1_dt 
+                        ! correct snow volume and heat content
+                        pe_s(ji,jj,jk,jl) = pe_s(ji,jj,jk,jl) * zfra
+                        pdv_s(ji,jj,jk,jl)          = pdv_s(ji,jj,jk,jl)  * zfra !- zvs_excess
+                        prhov_s(ji,jj,jk,jl)        = prhov_s(ji,jj,jk,jl) * zfra
+                        pov_s(ji,jj,jk,jl)        = pov_s(ji,jj,jk,jl) * zfra
 
+                     ENDIF
+                  ELSE
+                     pdv_s(ji,jj,jk,jl)        = 0._wp
+                     prhov_s(ji,jj,jk,jl)      = 0._wp
+                     pov_s(ji,jj,jk,jl)        = 1._wp
+                     pe_s(ji,jj,jk,jl)         = 0._wp
                   ENDIF
-
                   zdv = zdv - zvs_excess 
                   !
                ENDDO
@@ -1589,6 +1682,7 @@ CONTAINS
    !!----------------------------------------------------------------------
    !!   Default option            Dummy module        NO SI3 sea-ice model
    !!----------------------------------------------------------------------
+#endif
 #endif
 
    !!======================================================================

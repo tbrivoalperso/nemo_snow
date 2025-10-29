@@ -96,28 +96,6 @@ CONTAINS
          !                             !-----------------------!
          CALL ice_dyn_adv_pra_isbaes(         kt, u_ice, v_ice, h_i, h_s, h_ip, &
             &                          ato_i, v_i, v_s, sv_i, oa_i, a_i, a_ip, v_ip, v_il, e_s, e_i, dv_s, rhov_s, ov_s)
-
-      DO jk = 1, nlay_s 
-         WHERE(a_i(:,:,:) > 0._wp) dh_s(:,:,jk,:) = dv_s(:,:,jk,:) / a_i(:,:,:)
-         WHERE((a_i(:,:,:) > 0._wp) .AND. (dv_s(:,:,jk,:) > 0._wp)) 
-             rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
-         ELSEWHERE
-             rho_s(:,:,jk,:) = 330._wp
-         ENDWHERE
-      ENDDO
-         DO jk = 1, nlay_s
-            WHERE((SUM(a_i(:,:,:), DIM=3) > epsi06 ) )
-                    rho_s_3D(:,:,jk) = SUM(rho_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
-            ELSEWHERE
-                    rho_s_3D(:,:,jk) = 0._wp
-            ENDWHERE
-         ENDDO
-
-      !IF( iom_use('rhos_diagadv') )   CALL iom_put('rhos_diagadv', rho_s_3D) !  Diagnose rho_s after advection & limiter
-
-      v_s(:,:,:) = SUM(dv_s(:,:,:,:), DIM=3) 
-      h_s(:,:,:) = SUM(dh_s(:,:,:,:), DIM=3)
-      
 #else
       !                                !-----------------------!
       CASE( np_advUMx )                ! ULTIMATE-MACHO scheme !

@@ -2503,7 +2503,10 @@ USE MODD_SNOW_PAR, ONLY : XVRKZ6, XSNOWTHRMCOND1, &
                           XSNOWTHRMCOND2,         &
                           XSNOWTHRMCOND_AVAP,     &
                           XSNOWTHRMCOND_BVAP,     &
-                          XSNOWTHRMCOND_CVAP 
+                          XSNOWTHRMCOND_CVAP,     &
+                          XSNOWTHRMCOND_MAC_1,    &
+                          XSNOWTHRMCOND_MAC_2,    &
+                          XSNOWTHRMCOND_MAC_3 
 !
 !
 IMPLICIT NONE
@@ -2535,7 +2538,7 @@ INLVLS = SIZE(PSNOWRHO(:,:),2)
 ! 1. Snow thermal conductivity
 ! ----------------------------
 !
-YSNOWCOND='AND76' !'STU02' !'YEN81' !should be in namelist
+YSNOWCOND='MAC23' !'AND76' !'STU02' !'YEN81' 'MAC23' !should be in namelist
 !
 IF(YSNOWCOND=='AND76')THEN
 !  Thermal conductivity coefficients from Anderson (1976)
@@ -2543,6 +2546,9 @@ IF(YSNOWCOND=='AND76')THEN
 ELSEIF(YSNOWCOND=='YEN81')THEN
 ! Thermal conductivity coefficients from Yen (1981)
   PSCOND(:,:) = XCONDI * EXP(XVRKZ6*LOG(PSNOWRHO(:,:)/XRHOLW))
+ELSEIF(YSNOWCOND=='MAC23')THEN
+! Macfarlane et al. 2023
+  PSCOND(:,:) = (XSNOWTHRMCOND_MAC_1 * PSNOWRHO(:,:)*PSNOWRHO(:,:)) + XSNOWTHRMCOND_MAC_2 * PSNOWRHO(:,:) + XSNOWTHRMCOND_MAC_3
 ELSE
   ! STU02 ! Sturm et al., (2002)      
   WHERE((PSNOWRHO(:,:) / 1000.) > 0.156) 
@@ -2556,13 +2562,28 @@ ENDIF
 ! 2. Implicit vapor diffn effects
 ! -------------------------------
 !
+!!IF(YSNOWCOND /= 'STU02') THEN
 DO JJ=1,INLVLS
    DO JI=1,INI
     PSCOND(JI,JJ) = PSCOND(JI,JJ) + MAX(0.0,(XSNOWTHRMCOND_AVAP+(XSNOWTHRMCOND_BVAP/(PSNOWTEMP(JI,JJ) &
                                   + XSNOWTHRMCOND_CVAP)))*(XP00/PPS(JI)))
    ENDDO
 ENDDO
-!WHERE(PSCOND(:,:) > 0.5) PSCOND(:,:) = 0.5
+!!ENDIF
+!WHERE(PSCOND(:,:) > 0.38) PSCOND(:,:) = 0.38
+!WHERE(PSCOND(:,:) < 0.14) PSCOND(:,:) = 0.14
+
+! Add offset to match SI3 conductivity
+
+!PSCOND(:,:) = PSCOND(:,:) + 0.7
+
+!WHERE(PSCOND(:,:) > 0.38) PSCOND(:,:) = 0.38
+!WHERE(PSCOND(:,:) < 0.14) PSCOND(:,:) = 0.14
+!
+!PSCOND(:,:) = PSCOND(:,:) + 0.07
+
+
+
 !PSCOND(:,:) = 0.33
 !
 !
@@ -2881,7 +2902,7 @@ WHERE (PSR(:) > 0.0 .AND. PSNOWDZ(:,1)>0.)
                     (ZSCAP(:)*MAX(XSNOWDZMIN,PSNOWDZ(:,1)))  
   ZSNOWTEMP(:)  = MIN(XTT, ZSNOWTEMP(:))
 ELSEWHERE
-  ZSNOWTEMP(:)  = MIN(XTT, PTA)
+ ZSNOWTEMP(:)  = MIN(XTT, PTA)
 END WHERE
 !
 ZWIND_RHO(:)   = PVMOD(:)*LOG(PPHREF_WIND_RHO/PZ0EFF)/          &
@@ -3274,22 +3295,22 @@ ENDDO
 ! the new layer inherits from the weighted average properties of the old ones
 ! heat and mass
 !
-!DO JL=1,INLVLS
-!   DO JI=1,INI
-!       IF(ZMASTOTN(JI,JL) > 0.) THEN 
-!          ZSNOWHEATN(JI,JL)= ZSNOWHEAN(JI,JL)
-!          ZSNOWAGEN (JI,JL)= ZSNOWAGN (JI,JL)/ZMASTOTN(JI,JL)
-!          ZSNOWRHON (JI,JL)= ZMASTOTN (JI,JL)/PSNOWDZN(JI,JL)
-!       ELSE
-!          ZSNOWHEATN(JI,JL)= 0. 
-!          ZSNOWAGEN (JI,JL)= 0.
-!          ZSNOWRHON (JI,JL)= 0.
-!       ENDIF
-!   END DO
-!END DO
-ZSNOWHEATN(:,:)= ZSNOWHEAN(:,:)
-ZSNOWAGEN (:,:)= ZSNOWAGN (:,:)/ZMASTOTN(:,:)
-ZSNOWRHON (:,:)= ZMASTOTN (:,:)/PSNOWDZN(:,:)
+DO JL=1,INLVLS
+   DO JI=1,INI
+       IF(ZMASTOTN(JI,JL) > 0.) THEN 
+          ZSNOWHEATN(JI,JL)= ZSNOWHEAN(JI,JL)
+          ZSNOWAGEN (JI,JL)= ZSNOWAGN (JI,JL)/ZMASTOTN(JI,JL)
+          ZSNOWRHON (JI,JL)= ZMASTOTN (JI,JL)/PSNOWDZN(JI,JL)
+       ELSE
+          ZSNOWHEATN(JI,JL)= 0. 
+          ZSNOWAGEN (JI,JL)= 0.
+          ZSNOWRHON (JI,JL)= 0.
+       ENDIF
+   END DO
+END DO
+!ZSNOWHEATN(:,:)= ZSNOWHEAN(:,:)
+!ZSNOWAGEN (:,:)= ZSNOWAGN (:,:)/ZMASTOTN(:,:)
+!ZSNOWRHON (:,:)= ZMASTOTN (:,:)/PSNOWDZN(:,:)
 
 !
 !

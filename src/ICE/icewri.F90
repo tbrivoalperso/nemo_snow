@@ -64,8 +64,10 @@ CONTAINS
       !!-------------------------------------------------------------------
       !
 #if defined key_isbaes
-      REAL(wp), DIMENSION(jpi,jpj,nlay_s) :: rho_s_3D, t_s_3D, dh_s_3D      
+      REAL(wp), DIMENSION(jpi,jpj,nlay_s) :: rho_s_l , t_s_l, dh_s_l      
       REAL(wp), DIMENSION(jpi,jpj) :: cndm_s_isbaes, Cdm_ice_isbaes, Chm_ice_isbaes
+      REAL(wp), DIMENSION(jpi,jpj,jpl) ::   zmsksnl_cnd, zmsksnl_rho            ! cat masks
+      REAL(wp), DIMENSION(jpi,jpj,jpl)     :: rho_s_3D
 #endif
       IF( ln_timing )   CALL timing_start('icewri')
 
@@ -86,6 +88,7 @@ CONTAINS
          DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
             zmsk00l(ji,jj,jl)  = MAX( 0._wp , SIGN( 1._wp , a_i(ji,jj,jl) - epsi06 ) )
             zmsksnl(ji,jj,jl)  = MAX( 0._wp , SIGN( 1._wp , v_s(ji,jj,jl) - epsi06 ) )
+
          END_2D
       END DO
 
@@ -136,40 +139,58 @@ CONTAINS
       IF( iom_use('icetemp' ) )   CALL iom_put( 'icetemp', ( tm_i  - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! ice mean temperature
       IF( iom_use('snwtemp' ) )   CALL iom_put( 'snwtemp', ( tm_s  - rt0 ) * zmsksn + zmiss_val * ( 1._wp - zmsksn ) )      ! snw mean temperature
 #if defined key_isbaes
-      IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn )      ! snw mean density
-      WHERE(SUM(a_i(:,:,:), DIM=3) > 0._wp) 
-          cndm_s_isbaes(:,:) = SUM(cnd_s_isbaes(:,:,:) * a_i(:,:,:) * zmsksnl(:,:,:) ,DIM=3) / SUM(a_i(:,:,:) * zmsksnl(:,:,:), DIM=3)
-          Cdm_ice_isbaes(:,:) = SUM(Cd_ice_isbaes(:,:,:) * a_i(:,:,:) * zmsksnl(:,:,:) ,DIM=3) / SUM(a_i(:,:,:) * zmsksnl(:,:,:), DIM=3)
-          Chm_ice_isbaes(:,:) = SUM(Ch_ice_isbaes(:,:,:) * a_i(:,:,:) * zmsksnl(:,:,:) ,DIM=3) / SUM(a_i(:,:,:) * zmsksnl(:,:,:), DIM=3)
+     
+      !IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn )      ! snw mean density
+      DO jl = 1, jpl
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+            IF(h_s(ji,jj,jl) > epsi10) THEN
+               rho_s_3D(ji,jj,jl) = SUM(rho_s(ji,jj,:,jl) * dh_s(ji,jj,:,jl)) / h_s(ji,jj,jl)       
+            ELSE
+               rho_s_3D(ji,jj,jl) = 0._wp
+            ENDIF   
+         END_2D
+      ENDDO
 
-      ELSEWHERE
-          cndm_s_isbaes(:,:) = 0. !zmiss_val
-          Cdm_ice_isbaes(:,:) = 0.
-          Chm_ice_isbaes(:,:) = 0.
-      ENDWHERE
-      !WHERE(cndm_s_isbaes(:,:) == 0.) cndm_s_isbaes(:,:) = zmiss_val
-      IF( iom_use('cnd_s_isbaes' ) )   CALL iom_put( 'cnd_s_isbaes', cndm_s_isbaes(:,:)  )      !  snw conductivity 
-      IF( iom_use('Cd_ice_isbaes' ) )   CALL iom_put( 'Cd_ice_isbaes', Cdm_ice_isbaes(:,:)  )      !  snw conductivity 
-      IF( iom_use('Ch_ice_isbaes' ) )   CALL iom_put( 'Ch_ice_isbaes', Chm_ice_isbaes(:,:)  )      !  snw conductivity 
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )      
+         IF (SUM(a_i(ji,jj,:) * zmsksnl(ji,jj,:)) > epsi06) THEN
+             cndm_s_isbaes(ji,jj) = MIN(100._wp, SUM(cnd_s_isbaes(ji,jj,:) * a_i(ji,jj,:) * zmsksnl(ji,jj,:)) / SUM(a_i(ji,jj,:) * zmsksnl(ji,jj,:)))
+             cndm_s_isbaes(ji,jj) = MAX(0., cndm_s_isbaes(ji,jj) )
+             rhom_s(ji,jj) = SUM(rho_s_3D(ji,jj,:) * a_i(ji,jj,:) * zmsksnl(ji,jj,:)) / SUM(a_i(ji,jj,:) * zmsksnl(ji,jj,:))
+             rhom_s(ji,jj) = MAX(0., rhom_s(ji,jj) ) 
+         !    Cdm_ice_isbaes(:,:) = SUM(Cd_ice_isbaes(:,:,:) * a_i(:,:,:) * zmsksnl(:,:,:) ,DIM=3) / SUM(a_i(:,:,:) , DIM=3)
+         !    Chm_ice_isbaes(:,:) = SUM(Ch_ice_isbaes(:,:,:) * a_i(:,:,:) * zmsksnl(:,:,:) ,DIM=3) / SUM(a_i(:,:,:) , DIM=3)
+
+         ELSE
+             cndm_s_isbaes(ji,jj) = zmiss_val
+             rhom_s(ji,jj) = zmiss_val
+         !!    Cdm_ice_isbaes(:,:) = 0.
+         !    Chm_ice_isbaes(:,:) = 0.
+         ENDIF
+      END_2D
+      IF( iom_use('snwrho' ) )   CALL iom_put( 'snwrho', rhom_s  * zmsksn + zmiss_val * (1._wp - zmsksn))      ! snw mean density
+      IF( iom_use('cnd_s_isbaes' ) )   CALL iom_put( 'cnd_s_isbaes', cndm_s_isbaes * zmsksn + zmiss_val * (1._wp - zmsksn))      !  snw conductivity 
+!      IF( iom_use('Cd_ice_isbaes' ) )   CALL iom_put( 'Cd_ice_isbaes', Cdm_ice_isbaes(:,:)  )      !  snw conductivity 
+!      IF( iom_use('Ch_ice_isbaes' ) )   CALL iom_put( 'Ch_ice_isbaes', Chm_ice_isbaes(:,:)  )      !  snw conductivity 
 
       IF( iom_use('snwrho_1' ) )   CALL iom_put( 'snwrho_1', SUM(rho_s(:,:,1,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw top density
       IF( iom_use('snwrho_N' ) )   CALL iom_put( 'snwrho_N', SUM(rho_s(:,:,nlay_s,:) * a_i(:,:,:),DIM=3)  * zmsksn )      ! snw bottom density
-      IF( iom_use('hbdg_isbaes') )       CALL iom_put( 'hbdg_isbaes'   , hbdg_isbaes(:,:,: )) ! ISBAES heat budget
+      IF( iom_use('hbdg_isbaes') )       CALL iom_put( 'hbdg_isbaes'   , SUM(hbdg_isbaes(:,:,: )* a_i(:,:,:), DIM=3)) ! ISBAES heat budget
+
       DO jk=1, nlay_s 
 
          WHERE(SUM(dv_s(:,:,jk,:), DIM=3) > epsi20) 
-                 t_s_3D(:,:,jk) = SUM(t_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
-                 rho_s_3D(:,:,jk) = SUM(rho_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
+                 t_s_l(:,:,jk) = SUM(t_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
+                 rho_s_l(:,:,jk) = SUM(rho_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
          ELSEWHERE 
-                 t_s_3D(:,:,jk) = rt0
-                 rho_s_3D(:,:,jk) = 330._wp
+                 t_s_l(:,:,jk) = rt0
+                 rho_s_l(:,:,jk) = 330._wp
          ENDWHERE
-         !dh_s_3D(:,:,jk)  = SUM(dh_s(:,:,jk,:) * a_i(:,:,:),DIM=3) 
+         !dh_s_l(:,:,jk)  = SUM(dh_s(:,:,jk,:) * a_i(:,:,:),DIM=3) 
       ENDDO
-      IF( iom_use('snwrho_3D' ) )   CALL iom_put( 'snwrho_3D', rho_s_3D(:,:,:)  )      ! snw mean density per layer
-      IF( iom_use('snwtemp_3D' ) )   CALL iom_put( 'snwtemp_3D', t_s_3D(:,:,:)  )      ! snw mean temperature per layer
+      IF( iom_use('snwrho_l' ) )   CALL iom_put( 'snwrho_l', rho_s_l(:,:,:)  )      ! snw mean density per layer
+      IF( iom_use('snwtemp_l' ) )   CALL iom_put( 'snwtemp_l', t_s_l(:,:,:)  )      ! snw mean temperature per layer
 
-      IF( iom_use('dh_s_3D' ) )   CALL iom_put( 'dh_s_3D', dhm_s(:,:,:)  )      ! snow thickness  
+      IF( iom_use('dh_s_l' ) )   CALL iom_put( 'dh_s_l', dhm_s(:,:,:)  )      ! snow thickness  
 #endif 
       IF( iom_use('icettop' ) )   CALL iom_put( 'icettop', ( tm_su - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice surface
       IF( iom_use('icetbot' ) )   CALL iom_put( 'icetbot', ( t_bo  - rt0 ) * zmsk00 + zmiss_val * ( 1._wp - zmsk00 ) )      ! temperature at the ice bottom
@@ -211,9 +232,10 @@ CONTAINS
          ! ice+ocean albedo
          zalb(:,:) = SUM( alb_ice * a_i_b, dim=3 ) + rn_alb_oce * ( 1._wp - at_i_b )
          CALL iom_put( 'albedo' , zalb )
+         IF( iom_use( 'snwalb')) CALL iom_put( 'snwalb' , zalb )
          DEALLOCATE( zalb, zmskalb )
       ENDIF
-
+#if defined key_isbaes
       IF( iom_use('snwalb') ) THEN                                                                   ! ice albedo and surface albedo
          ALLOCATE( zalb(jpi,jpj), zmskalb(jpi,jpj) )
          ! ice albedo
@@ -228,7 +250,7 @@ CONTAINS
          ! ice+ocean albedo
          DEALLOCATE( zalb, zmskalb )
       ENDIF
-
+#endif
 
       !
       ! --- category-dependent fields --- !
@@ -253,7 +275,12 @@ CONTAINS
       IF( iom_use('icealb_cat'  ) )   CALL iom_put( 'icealb_cat'  ,   alb_ice      * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! ice albedo for categories
       IF( iom_use('qns_bef') )       CALL iom_put( 'qns_bef'   , diag1_2D )
       IF( iom_use('qns_aft') )       CALL iom_put( 'qns_aft'   , diag3_2D )
+#if defined key_isbaes
+      IF( iom_use('qla_ice') )  CALL iom_put( 'qla_ice', SUM( - qla_ice_isbaes * a_i_b, dim=3 ) ) !#LB: sign consistent with what's done for ocean
+      IF( iom_use('qsb_ice') )  CALL iom_put( 'qsb_ice', SUM( - qsb_ice_isbaes * a_i_b, dim=3 ) ) !#LB:     ==> negative => loss of heat for sea-ice
+      IF( iom_use('qlw_ice') )  CALL iom_put( 'qlw_ice', SUM( qlw_ice_isbaes * a_i_b, dim=3 ) )
 
+#endif
       IF( iom_use('qsr_bef') )       CALL iom_put( 'qsr_bef'   , diag2_2D )
       IF( iom_use('qsr_aft') )       CALL iom_put( 'qsr_aft'   , diag4_2D )
       
