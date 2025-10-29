@@ -168,6 +168,18 @@ CONTAINS
       INTEGER, PARAMETER ::   jp_itermax = 20
       !!-------------------------------------------------------------------
       ! controls
+
+#if defined key_isbaes
+         WHERE(dv_s(:,:,:,:) > epsi20)
+            rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+         ELSEWHERE
+            dh_s(:,:,:,:) = 0._wp
+            dv_s(:,:,:,:) = 0._wp
+            rho_s(:,:,:,:) = 330._wp
+            rhov_s(:,:,:,:) = 0._wp
+            e_s(:,:,:,:)    = 0._wp
+         ENDWHERE
+#endif
       IF( ln_timing    )   CALL timing_start('icedyn_rdgrft')                                                             ! timing
       IF( ln_icediachk )   CALL ice_cons_hsm(0, 'icedyn_rdgrft', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft) ! conservation
       IF( ln_icediachk )   CALL ice_cons2D  (0, 'icedyn_rdgrft',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft) ! conservation
@@ -290,7 +302,15 @@ CONTAINS
 
          CALL ice_dyn_1d2d( 2 )            ! --- Move to 2D arrays --- !
 #if defined key_isbaes
-         WHERE(dv_s(:,:,:,:) > 0._wp) rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+         WHERE(dv_s(:,:,:,:) > epsi20) 
+            rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+         ELSEWHERE
+            dh_s(:,:,:,:) = 0._wp
+            dv_s(:,:,:,:) = 0._wp
+            rho_s(:,:,:,:) = 330._wp
+            rhov_s(:,:,:,:) = 0._wp
+            e_s(:,:,:,:) = 0._wp
+         ENDWHERE
 #endif
       ENDIF
 

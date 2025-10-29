@@ -224,10 +224,10 @@ CONTAINS
 #if defined key_isbaes
          DO jk = 1, nlay_s
 
-            WHERE((SUM(a_i(:,:,:), DIM=3) > epsi06 ) )                      
-                    t_s_3D(:,:,jk) = SUM(t_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
-                    rho_s_3D(:,:,jk) = SUM(rho_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
-                    dhm_s(:,:,jk) = SUM(dh_s(:,:,jk,:) * a_i(:,:,:),DIM=3) / SUM(a_i(:,:,:), DIM=3)
+            WHERE(vt_s > epsi06 )                       
+                    t_s_3D(:,:,jk) = SUM(t_s(:,:,jk,:) * dvt_s(:,:,:),DIM=3) / vt_s(:,:)
+                    rho_s_3D(:,:,jk) = SUM(rho_s(:,:,jk,:) * dvt_s(:,:,:),DIM=3) / vt_s(:,:)
+                    dhm_s(:,:,jk) = SUM(dh_s(:,:,jk,:) * dvt_s(:,:,:),DIM=3) / vt_s(:,:)
             ELSEWHERE
                     t_s_3D(:,:,jk) = rt0
                     rho_s_3D(:,:,jk) = 0._wp
@@ -374,11 +374,31 @@ CONTAINS
 #if defined key_isbaes 
       ! With ISBA-ES, the snow temperature is not used elsewhere than inside the snow model.
       ! Thus, we do not need to recompute the temperature
+      WHERE(dv_s(:,:,:,:) > epsi20)
+         rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+      ENDWHERE
+
+      WHERE(rho_s(:,:,:,:) < epsi20) ! Should not happen but it seems that it does sometimes
+         rho_s(:,:,:,:) = 330._wp 
+      ENDWHERE
+
+      DO jk=1, nlay_s
+         WHERE(a_i(:,:,:) > epsi20)
+            dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i(:,:,:)
+         ELSEWHERE
+            dh_s(:,:,jk,:) = 0._wp
+            dv_s(:,:,jk,:) = 0._wp
+            rho_s(:,:,jk,:) = 330._wp
+            rhov_s(:,:,jk,:) = 0._wp
+         ENDWHERE
+      ENDDO
+      h_s(:,:,:) = SUM(dh_s(:,:,:,:) , DIM=3)
+      v_s(:,:,:) = SUM(dv_s(:,:,:,:) , DIM=3)
+
+
       DO jk = 1, nlay_s
-         WHERE( dv_s(:,:,jk,:) > epsi20 )        !--- icy area
-            rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
+         WHERE( (dh_s(:,:,jk,:) > epsi20) .AND. (a_i(:,:,:) > epsi20) )        !--- icy area
             ZSCAP(:,:,jk,:) = XCI * rho_s(:,:,jk,:) 
-            dh_s(:,:,jk,:) = dv_s (:,:,jk,:) * z1_a_i(:,:,:)
             t_s(:,:,jk,:)  = rt0 + ( (- e_s(:,:,jk,:) / (dh_s(:,:,jk,:) * a_i(:,:,:)) &
             &       + XLMTT*rho_s(:,:,jk,:))/ZSCAP(:,:,jk,:) )
             lwc_s(:,:,jk,:) = MAX(0._wp, t_s(:,:,jk,:) - rt0) * ZSCAP(:,:,jk,:) * dh_s(:,:,jk,:) / (XLMTT*XRHOLW)  
@@ -386,7 +406,6 @@ CONTAINS
  
         ELSEWHERE                           !--- no ice
             t_s(:,:,jk,:) = rt0
-            rho_s(:,:,jk,:) = 330.
         END WHERE
       END DO
          ! After the advection, T° can be very cold over very thin snow layers,
@@ -399,6 +418,7 @@ CONTAINS
                wfx_res(ji,jj) = wfx_res(ji,jj) + rhov_s(ji,jj,jk,jl) * r1_Dt_ice !  mass flux 
                dh_s(ji,jj,jk,jl) = 0._wp
                t_s(ji,jj,jk,jl) = rt0
+               t_su(ji,jj,jl) = rt0
                e_s(ji,jj,jk,jl) = 0._wp
                dv_s(ji,jj,jk,jl) = 0._wp
                rhov_s(ji,jj,jk,jl) = 0._wp
@@ -899,6 +919,7 @@ CONTAINS
             WHERE( pv_il(1:npti,:) < 0._wp .AND. pv_il(1:npti,:) > -epsi10 ) pv_il(1:npti,:)   = 0._wp   ! v_il must be >= 0
          ENDIF
       ENDIF
+      pv_s(1:npti,:) = SUM(pdv_s(1:npti,:,:), DIM=2)
       !
    END SUBROUTINE ice_var_roundoff_isbaes
 #endif

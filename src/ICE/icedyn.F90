@@ -97,15 +97,18 @@ CONTAINS
       ! retrieve thickness from volume for landfast param. and UMx advection scheme
 #if defined key_isbaes
       DO jk=1, nlay_s
-   
-         WHERE( a_i(:,:,:) >= epsi20 )
-            dh_s(:,:,jk,:) = dv_s(:,:,jk,:) / a_i_b(:,:,:)
+         WHERE(( a_i(:,:,:) > epsi20 ) .AND. dv_s(:,:,jk,:) > epsi20)
+            dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i_b(:,:,:)
+            rho_s(:,:,jk,:) = rhov_s(:,:,jk,:) / dv_s(:,:,jk,:)
          ELSEWHERE
             dh_s(:,:,jk,:) = 0._wp
-         END WHERE
-      END DO
-
-      h_s(:,:,:) = SUM(dh_s(:,:,:,:),DIM=3)
+            dv_s(:,:,jk,:) = 0._wp
+            rho_s(:,:,jk,:) = 330._wp
+            rhov_s(:,:,jk,:) = 0._wp
+         ENDWHERE
+      ENDDO
+      h_s(:,:,:) = SUM(dh_s(:,:,:,:) , DIM=3)
+      v_s(:,:,:) = SUM(dv_s(:,:,:,:) , DIM=3)
 
       WHERE( a_i(:,:,:) >= epsi20 )
          h_i(:,:,:) = v_i(:,:,:) / a_i_b(:,:,:)
@@ -187,6 +190,23 @@ CONTAINS
 
       END SELECT
       !
+
+      WHERE(dv_s(:,:,:,:) > epsi20)
+         rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+      ENDWHERE
+      DO jk=1, nlay_s
+         WHERE(a_i(:,:,:) > epsi20)
+            dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i(:,:,:)
+         ELSEWHERE
+            dh_s(:,:,jk,:) = 0._wp
+            dv_s(:,:,jk,:) = 0._wp
+            rho_s(:,:,jk,:) = 330._wp
+            rhov_s(:,:,jk,:) = 0._wp
+         ENDWHERE
+      ENDDO
+      h_s(:,:,:) = SUM(dh_s(:,:,:,:) , DIM=3)
+      v_s(:,:,:) = SUM(dv_s(:,:,:,:) , DIM=3)
+
       !
       ! diagnostics: divergence at T points
       IF( iom_use('icediv') ) THEN

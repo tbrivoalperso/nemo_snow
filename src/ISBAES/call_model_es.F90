@@ -291,7 +291,7 @@ DO JWRK=1,KSIZE2
         ZP_SNOWRHO (1,JWRK) = rho_s_1d(JI,JWRK) ! Snow layer(s) averaged density (kg/m3) 
         ZSCAP     = SNOW3LSCAP(ZP_SNOWRHO(1,JWRK))
         ZP_SNOWTEMP(1,JWRK) = t_s_1d(JI,JWRK)   ! Snow temperature 
-        ZP_SNOWAGE (1,JWRK) = o_s_1d (JI,JWRK)  ! Snow age 
+        ZP_SNOWAGE (1,JWRK) = 1. !o_s_1d (JI,JWRK)  ! Snow age 
         ZP_SNOWLIQ (1,JWRK) = lwc_s_1d(JI,JWRK) ! Snow liquid water content (diagnostic)
         
         ! Enthalpy: divide by the ice concentration because the enthalpy of SI3
@@ -473,7 +473,7 @@ t_su_1d(JI) = t_s_1d(JI,1)      ! Surface temperature (K)
 
 ! Average snowpack conductivity (diagnostic)
 IF(h_s_1d(JI) >  0.000001) THEN
-   cnd_s_isbaes_1d(JI) = SUM(ZP_SCOND_ES(1,:) * dh_s_1d(JI,:)) / h_s_1d(JI)
+   cnd_s_isbaes_1d(JI) = MIN(100._wp, SUM(ZP_SCOND_ES(1,:) * dh_s_1d(JI,:)) / h_s_1d(JI))
 ELSE
    cnd_s_isbaes_1d(JI) = 0.
 ENDIF

@@ -547,6 +547,25 @@ CONTAINS
             END WHERE
          END DO
       ENDIF
+
+      DO ji = 1, npti
+         IF (SUM(dh_s_1d(ji,:)) < epsi20) THEN
+            DO jk = 1, nlay_s
+               dh_s_1d(ji,jk) = 0._wp
+               swe_s_1d(ji,jk) = 0._wp
+               h_s_1d(ji)    = 0._wp
+               e_s_1d(ji,jk)    = 0._wp
+               dh_s_1d(ji,jk) = 0._wp
+               dv_s_1d(ji,jk) = 0._wp
+ 
+               rhov_s_1d(ji,jk) = 0._wp
+               rho_s_1d(ji,jk) = 330._wp
+               t_s_1d(ji,jk)   = 273.15_wp
+              o_s_1d(ji,jk) = 0._wp
+ 
+            ENDDO
+         ENDIF
+     END DO
 #endif
    END SUBROUTINE ice_thd_dh_snwext
 

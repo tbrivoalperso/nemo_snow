@@ -192,16 +192,22 @@ CONTAINS
       ! Thermodynamic computation (only on grid points covered by ice) => loop over ice categories
       !-------------------------------------------------------------------------------------------!
 #if defined key_isbaes
-      dv_s(:,:,:,:) = rhov_s(:,:,:,:) / rho_s(:,:,:,:)
+      WHERE(dv_s(:,:,:,:) > epsi20) 
+         rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+      ENDWHERE
       DO jk=1, nlay_s
-         WHERE(a_i(:,:,:) > 0._wp) 
+         WHERE(a_i(:,:,:) > epsi20) 
             dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i(:,:,:)
          ELSEWHERE
             dh_s(:,:,jk,:) = 0._wp
             dv_s(:,:,jk,:) = 0._wp
+            rho_s(:,:,jk,:) = 330._wp
+            rhov_s(:,:,jk,:) = 0._wp
          ENDWHERE
       ENDDO  
       h_s(:,:,:) = SUM(dh_s(:,:,:,:) , DIM=3) 
+      v_s(:,:,:) = SUM(dv_s(:,:,:,:) , DIM=3)
+      hbdg_isbaes(:,:,:) = 0._wp
 #endif
       DO jl = 1, jpl
 
@@ -229,7 +235,8 @@ CONTAINS
             za_s_fra  (1:npti)    = 0._wp ; zq_rema(1:npti)     = 0._wp
             zevap_rema(1:npti)    = 0._wp ; zh_s(1:npti, 0:nlay_s) = 0._wp
             ze_s(1:npti, 0:nlay_s) = 0._wp ; 
-                       
+            Cd_ice_isbaes_1d(1:npti) = 0._wp
+            Ch_ice_isbaes_1d(1:npti) = 0._wp 
             qcn_snw_bot_1d(1:npti)     = 0._wp
             isnow_save_1d(1:npti)            = 0._wp
 
@@ -267,19 +274,6 @@ CONTAINS
                CALL ice_var_snwblow( 1._wp - at_i_1d(1:npti), zsnowblow(1:npti) )   ! snow distribution over ice after wind blowing
                
                DO ji = 1, npti
-                  IF (SUM(dh_s_1d(ji,:)) .eq. 0._wp) THEN
-                     DO jk = 1, nlay_s
-                        dh_s_1d(ji,jk) = 0._wp
-                        swe_s_1d(ji,jk) = 0._wp
-                        h_s_1d(ji)    = 0._wp
-                        e_s_1d(ji,jk)    = 0._wp 
-                        dh_s_1d(ji,jk) = 0._wp
-                        rhov_s_1d(ji,jk) = 0._wp
-                        rho_s_1d(ji,jk) = 330._wp
-                        t_s_1d(ji,jk)   = 273.15_wp
-                        o_s_1d(ji,jk) = 0._wp
-                     ENDDO
-                  ENDIF
                   
 !                  ! Avoid unrealitic values after advection, put unrealitic snow layers into the ocean
 !                  DO jk=1, nlay_s 
@@ -309,12 +303,30 @@ CONTAINS
                   zpa_t(ji) = pres_temp(qair_isbaes_1d(ji), slp_isbaes_1d(ji), 2., ptpot=tair_isbaes_1d(ji), l_ice=.true. )
 
                   zsnowfall = snow_isbaes_1d(ji)*rn_Dt/XRHOSMAX_ES ! maximum possible snowfall depth (m)
+
+                  IF (SUM(dh_s_1d(ji,:)) < epsi20) THEN
+                     DO jk = 1, nlay_s
+                        dh_s_1d(ji,jk) = 0._wp
+                        swe_s_1d(ji,jk) = 0._wp
+                        h_s_1d(ji)    = 0._wp
+                        e_s_1d(ji,jk)    = 0._wp
+                        dh_s_1d(ji,jk) = 0._wp
+                        dv_s_1d(ji,jk) = 0._wp
+
+                        rhov_s_1d(ji,jk) = 0._wp
+                        rho_s_1d(ji,jk) = 330._wp
+                        t_s_1d(ji,jk)   = 273.15_wp
+                       o_s_1d(ji,jk) = 0._wp
+
+                     ENDDO
+                  ENDIF
+
                   IF ((SUM(dh_s_1d(ji,:)) > 1e-6 .OR. zsnowfall > 1e-6)) THEN   
                      CALL CALL_MODEL(kt,ji,nlay_s, rn_Dt, za_s_fra(ji),zsnowblow(ji), zpa_t(ji), ZP_RADXS, zq_rema(ji), &
                           &   zevap_rema(ji), hbdg_isbaes_1d(ji))
                      isnow(ji) = 1.
                      zradtr_s(ji,nlay_s) = ZP_RADXS(1)
-                     IF (SUM(dh_s_1d(ji,:)) .eq. 0._wp) THEN
+                     IF (SUM(dh_s_1d(ji,:)) < epsi20) THEN
                         DO jk = 1, nlay_s
                            dh_s_1d(ji,jk) = 0._wp
                            swe_s_1d(ji,jk) = 0._wp
@@ -411,7 +423,23 @@ CONTAINS
           qsr_tot(:,:) =  qsr_tot(:,:) + isnow_save(:,:,jl) * a_i_b(:,:,jl) * qsr_ice(:,:,jl)   &
                   &       + (1 - isnow_save(:,:,jl)) * a_i_b(:,:,jl) * qsr_ice_b(:,:,jl)
       END DO
-      rhov_s(:,:,:,:) = rho_s(:,:,:,:) * dv_s(:,:,:,:)
+
+      WHERE(dv_s(:,:,:,:) > epsi20)
+         rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+      ENDWHERE
+      DO jk=1, nlay_s
+         WHERE(a_i(:,:,:) > epsi20)
+            dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i(:,:,:)
+         ELSEWHERE
+            dh_s(:,:,jk,:) = 0._wp
+            dv_s(:,:,jk,:) = 0._wp
+            rho_s(:,:,jk,:) = 330._wp
+            rhov_s(:,:,jk,:) = 0._wp
+         ENDWHERE
+      ENDDO
+      h_s(:,:,:) = SUM(dh_s(:,:,:,:) , DIM=3)
+      v_s(:,:,:) = SUM(dv_s(:,:,:,:) , DIM=3)
+
 #endif
       !diag1_2D(:,:) = SUM((qns_ice(:,:,:) + qsr_ice(:,:,:)) * a_i_b(:,:,:),DIM=3) - diag1_2D(:,:) 
       diag3_2D(:,:) = SUM((qns_ice(:,:,:) ) * a_i_b(:,:,:),DIM=3)
@@ -434,10 +462,23 @@ CONTAINS
                               CALL ice_cor( kt , 2 )                ! --- Corrections --- !
       !
 #if defined key_isbaes
-      DO jk = 1, nlay_s 
-         WHERE( a_i(:,:,:)>0._wp ) dh_s (:,:,jk,:) = dv_s (:,:,jk,:) / a_i (:,:,:)
+      WHERE(dv_s(:,:,:,:) > epsi20)
+         rho_s(:,:,:,:) = rhov_s(:,:,:,:) / dv_s(:,:,:,:)
+      ENDWHERE
+      DO jk=1, nlay_s
+         WHERE(a_i(:,:,:) > epsi20)
+            dh_s(:,:,jk,:) = dv_s(:,:,jk,:) /  a_i(:,:,:)
+         ELSEWHERE
+            dh_s(:,:,jk,:) = 0._wp
+            dv_s(:,:,jk,:) = 0._wp
+            rho_s(:,:,jk,:) = 330._wp
+            rhov_s(:,:,jk,:) = 0._wp
+         ENDWHERE
       ENDDO
+      h_s(:,:,:) = SUM(dh_s(:,:,:,:) , DIM=3)
+      v_s(:,:,:) = SUM(dv_s(:,:,:,:) , DIM=3)
 #endif
+
       oa_i(:,:,:) = oa_i(:,:,:) + a_i(:,:,:) * rDt_ice              ! --- Ice natural aging incrementation
       !
       DO_2D( 0, 0, 0, 0 )                                           ! --- Ice velocity corrections
